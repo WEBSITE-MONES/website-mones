@@ -194,8 +194,8 @@ Circles.create({
 $.notify(
     {
         icon: "fa fa-check-circle",
-        title: "TPK New Makassar Terminal 2",
-        message: "Selamat datang di Sistem Laporan Realisasi Anggaran",
+        title: "PT Pelabuhan Indonesia (PERSERO)",
+        message: "Selamat datang di Sistem Monitoring Investasi",
     },
     {
         type: "primary",

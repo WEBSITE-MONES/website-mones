@@ -9,7 +9,7 @@
         type="image/x-icon" />
 
     <!-- Fonts and icons -->
-    <script src={{ asset("assets/js/plugin/webfont/webfont.min.js") }}></script>
+    <script src="{{ asset('assets/js/plugin/webfont/webfont.min.js') }}"></script>
     <script>
     WebFont.load({
         google: {
@@ -22,7 +22,7 @@
                 "Font Awesome 5 Brands",
                 "simple-line-icons",
             ],
-            urls: ["assets/css/fonts.min.css"],
+            urls: ["{{ asset('assets/css/fonts.min.css') }}"],
         },
         active: function() {
             sessionStorage.fonts = true;
@@ -30,25 +30,26 @@
     });
     </script>
 
+
     <!-- CSS Files -->
     <link rel="stylesheet" href="{{ asset("assets/css/bootstrap.min.css") }}" />
     <link rel="stylesheet" href="{{ asset("assets/css/plugins.min.css") }}" />
     <link rel="stylesheet" href="{{ asset("assets/css/kaiadmin.min.css") }}" />
 
-    <!-- CSS Just for demo purpose, don't include it in your project -->
     <link rel="stylesheet" href="{{ asset("assets/css/demo.css") }}" />
 </head>
 
 <body>
     <div class="wrapper">
         <!-- Sidebar -->
-        <div class="sidebar" data-background-color="dark">
+        <div class="sidebar" data-background-color="white">
             <div class="sidebar-logo">
                 <!-- Logo Header -->
-                <div class="logo-header" data-background-color="dark">
-                    <a href="#" class="logo">
-                        <img src="{{ asset("assets/img/kaiadmin/logo_light.svg") }}" alt="navbar brand"
-                            class="navbar-brand" height="20" />
+                <div class="logo-header" data-background-color="blue"
+                    class="d-flex justify-content-center align-items-center w-100">
+                    <a href="{{ route('dashboard.index') }}" class="logo">
+                        <img src="{{ asset("assets/img/kaiadmin/logo_spjm2.png") }}" alt="navbar brand"
+                            class="navbar-brand" height="95" />
                     </a>
                     <div class="nav-toggle">
                         <button class="btn btn-toggle toggle-sidebar">
@@ -66,11 +67,17 @@
             </div>
             <div class="sidebar-wrapper scrollbar scrollbar-inner">
                 <div class="sidebar-content">
-                    <ul class="nav nav-secondary">
-                        <li class="nav-item active">
-                            <a data-bs-toggle="collapse" href="#dashboard" class="collapsed" aria-expanded="false">
+                    <ul class="nav nav-primary">
+                        <li class="nav-item">
+                            <a href="{{ route('dashboard.index') }}">
                                 <i class="fas fa-home"></i>
                                 <p>Dashboard</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#">
+                                <i class="fas fa-tasks"></i>
+                                <p>Rencana Kerja</p>
                                 <span></span>
                             </a>
                         </li>
@@ -151,7 +158,7 @@
             <div class="main-header">
                 <div class="main-header-logo">
                     <!-- Logo Header -->
-                    <div class="logo-header" data-background-color="dark">
+                    <div class="logo-header" data-background-color="blue">
                         <a href="index.html" class="logo">
                             <img src="{{ asset("assets/img/kaiadmin/logo_light.svg") }}" alt="navbar brand"
                                 class="navbar-brand" height="20" />
@@ -175,8 +182,9 @@
                     <div class="container-fluid">
                         <!--  selamat datang -->
                         <div class="text-blue d-none d-lg-block">
-                            Selamat Datang di Aplikasi Laporan Realisasi Anggaran <span class="text-custom-blue">TPK New
-                                Makassar Terminal 2</span>
+                            Selamat Datang di Aplikasi Monitoring Investasi <span class="text-custom-blue">PT Pelabuhan
+                                Indonesia (PERSERO)
+                            </span>
                         </div>
 
                         <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
@@ -262,7 +270,7 @@
                             <li class="nav-item topbar-user dropdown hidden-caret">
                                 <a class="dropdown-toggle profile-pic text-blue" href="#" data-bs-toggle="dropdown"
                                     aria-expanded="false">
-                                    Admin P-Mones <i class="fa fa-caret-down"></i>
+                                    {{ Auth::user()->name }} <i class="fa fa-caret-down"></i>
                                 </a>
 
                                 <ul class="dropdown-menu dropdown-user animated fadeIn shadow">
@@ -272,8 +280,8 @@
                                                 src="http://36.95.192.170:2028/e-report/public/img/user.jpg"
                                                 alt="image profile" class="avatar-img rounded"></div>
                                         <div class="u-text">
-                                            <h4>Admin P-mones</h4>
-                                            <p class="text-muted">Administrator</p>
+                                            <h4>{{ Auth::user()->name }}</h4>
+                                            <p class="text-muted">{{ ucfirst(Auth::user()->role) }}</p>
                                         </div>
                                     </div>
                                     <li>
@@ -312,16 +320,17 @@
                                         <hr class="dropdown-divider">
                                     </li>
                                     <li>
-                                        <a class="dropdown-item d-flex justify-content-between align-items-center text-danger"
-                                            href="#">
-                                            Logout
-                                            <i class="fa fa-sign-out-alt"></i>
-                                        </a>
+                                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit"
+                                                class="dropdown-item d-flex justify-content-between align-items-center text-danger">
+                                                Logout
+                                                <i class="fa fa-sign-out-alt"></i>
+                                            </button>
+                                        </form>
                                     </li>
                                 </ul>
-
                             </li>
-
                         </ul>
                     </div>
                 </nav>
@@ -337,14 +346,14 @@
                 <div class="container-fluid d-flex justify-content-end">
                     <div class="copyright">
                         Copyright &copy; 2025 by
-                        <span class="text-warning">TPK New Makassar Terminal 2</span>
+                        <span class="text-custom-blue">PT. Pelabuhan Indonesai (PERSERO)</span>
                     </div>
                 </div>
             </footer>
         </div>
 
         <!-- Custom template | don't include it in your project! -->
-        <div class="custom-template">
+        <!-- <div class="custom-template">
             <div class="title">Settings</div>
             <div class="custom-content">
                 <div class="switcher">
@@ -403,7 +412,7 @@
             <div class="custom-toggle">
                 <i class="icon-settings"></i>
             </div>
-        </div>
+        </div> -->
         <!-- End Custom template -->
     </div>
     <!--   Core JS Files   -->
@@ -448,7 +457,7 @@
         height: "70",
         width: "100%",
         lineWidth: "2",
-        lineColor: "#177dff",
+        lineColor: "#0068AC ",
         fillColor: "rgba(23, 125, 255, 0.14)",
     });
 

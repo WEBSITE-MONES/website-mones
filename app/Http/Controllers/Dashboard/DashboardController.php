@@ -11,4 +11,9 @@ class DashboardController extends Controller
     {
         return view('Dashboard.index');
     }
+    
+    public function kota()
+    {
+        return view('Dashboard.kota'); 
+    }
 }

@@ -2,6 +2,7 @@
 @section('title', 'Dashboard')
 
 @section('content')
+
 <div class="page-inner">
     <div class="row">
         <div class="row">
@@ -13,256 +14,89 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="mapcontainer">
-                                <div id="world-map" class="w-100" style="height: 300px"></div>
-                            </div>
+                        <div class="map-container" style="position: relative; width: 100%; max-width: 1200px;">
+                            <!-- Gambar peta -->
+                            <img src="{{ asset('assets/img/Wilayah Pelindo.png') }}" alt="Peta Pelindo"
+                                style="width: 100%;">
+
+                            <!-- Regional IV -->
+                            <!-- Pulau Kalimantan -->
+                            <!-- Nunukan -->
+                            <a href="#" class="marker" style="top: 25%; left: 49%;" title="Nunukan"></a>
+                            <!-- Tarakan -->
+                            <a href="#" class="marker" style="top: 27.5%; left: 48.4%" title="Tarakan"></a>
+                            <!-- Tanjung Redep -->
+                            <a href="#" class="marker" style="top: 32.2%; left: 48.7%" title="Tanjung Redep"></a>
+                            <!-- Sangatta -->
+                            <a href="#" class="marker" style="top: 38.7%; left: 49.3%" title="Sangatta"></a>
+                            <!-- Bontang -->
+                            <a href="#" class="marker" style="top: 40.5%; left: 49%" title="Bontang"></a>
+                            <!-- Samarinda -->
+                            <a href="#" class="marker" style="top: 45.6%; left: 48.5%" title="Samarinda"></a>
+                            <!-- Balikpapan -->
+                            <a href="#" class="marker" style="top: 48.3%; left: 47.8%" title="Balikpapan"></a>
+
+                            <!-- Pulau Sulawesi -->
+                            <!-- Tolitoli -->
+                            <a href="#" class="marker" style="top: 37.2%; left: 55.3%" title="Tolitoli"></a>
+                            <!-- Gorontalo -->
+                            <a href="#" class="marker" style="top: 40.5%; left: 59.9%" title="Gorontalo"></a>
+                            <!-- Manado -->
+                            <a href="#" class="marker" style="top: 34.9%; left: 63.4%" title="Manado"></a>
+                            <!-- Likupang -->
+                            <a href="#" class="marker" style="top: 34.3%; left: 63.9%" title="Likupang"></a>
+                            <!-- Bitung -->
+                            <a href="#" class="marker" style="top: 34.9%; left: 64.4%" title="Bitung"></a>
+                            <!-- Pantoloan -->
+                            <a href="#" class="marker" style="top: 44.3%; left: 53.3%" title="Pantoloan"></a>
+                            <!-- Pare Pare -->
+                            <a href="#" class="marker" style="top: 61.8%; left: 53.1%" title="Pare-pare"></a>
+                            <!-- Kendari -->
+                            <a href="#" class="marker" style="top: 60.7%; left: 59.1%" title="Kendari"></a>
+
+                            <!-- NTT atau NTB -->
+                            <!-- Maumere -->
+                            <a href="#" class="marker" style="top: 82.6%; left: 58.5%" title="Maumere"></a>
+                            <!-- Ende -->
+                            <a href="#" class="marker" style="top: 85.3%; left: 56.2%" title="Ende"></a>
+                            <!-- Waingapu -->
+                            <a href="#" class="marker" style="top: 87.1%; left: 54.6%" title="Waingapu"></a>
+                            <!-- Tenau Kupang -->
+                            <a href="#" class="marker" style="top: 89.4%; left: 61%" title="Tenau Kupang"></a>
+                            <!-- Kalabahi -->
+                            <a href="#" class="marker" style="top: 80.8%; left: 63.3%" title="Kalabahi"></a>
+
+                            <!--  -->
+                            <!-- Sorong  -->
+                            <a href="#" class="marker" style="top: 45.8%; left: 76.5%" title="Sorong"></a>
+                            <!-- Manokwari -->
+                            <a href="#" class="marker" style="top: 45.8%; left: 82.5%" title="Manokwari"></a>
+                            <!-- Biak -->
+                            <a href="#" class="marker" style="top: 46.2%; left: 86.3%" title="Biak"></a>
+                            <!-- Jayapura -->
+                            <a href="#" class="marker" style="top: 53%; left: 95.5%" title="Jayapura"></a>
+                            <!-- Merauke -->
+                            <a href="#" class="marker" style="top: 83.7%; left: 95.2%" title="Merauke"></a>
+                            <!-- Ternate -->
+                            <a href="#" class="marker" style="top: 38%; left: 68.2%" title="Ternate"></a>
+                            <a href="#" class="marker" style="top: 56%; left: 78.7%" title="Fakfak"></a>
+
+                            <!-- Kordinat -->
+                            <!-- Ambon -->
+                            <a href="{{ route('dashboard.kota') }}" class="marker" style="top: 58.2%; left: 70%"
+                                title="Ambon"></a>
+
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="row">
-            <div class="col-md-4">
-                <div class="card card-round">
-                    <div class="card-body">
-                        <div class="card-head-row card-tools-still-right">
-                            <div class="card-title">New Customers</div>
-                            <div class="card-tools">
-                                <div class="dropdown">
-                                    <button class="btn btn-icon btn-clean me-0" type="button" id="dropdownMenuButton"
-                                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-h"></i>
-                                    </button>
-                                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                        <a class="dropdown-item" href="#">Action</a>
-                                        <a class="dropdown-item" href="#">Another action</a>
-                                        <a class="dropdown-item" href="#">Something else here</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-list py-4">
-                            <div class="item-list">
-                                <div class="avatar">
-                                    <img src="assets/img/jm_denis.jpg" alt="..." class="avatar-img rounded-circle" />
-                                </div>
-                                <div class="info-user ms-3">
-                                    <div class="username">Jimmy Denis</div>
-                                    <div class="status">Graphic Designer</div>
-                                </div>
-                                <button class="btn btn-icon btn-link op-8 me-1">
-                                    <i class="far fa-envelope"></i>
-                                </button>
-                                <button class="btn btn-icon btn-link btn-danger op-8">
-                                    <i class="fas fa-ban"></i>
-                                </button>
-                            </div>
-                            <div class="item-list">
-                                <div class="avatar">
-                                    <span class="avatar-title rounded-circle border border-white">CF</span>
-                                </div>
-                                <div class="info-user ms-3">
-                                    <div class="username">Chandra Felix</div>
-                                    <div class="status">Sales Promotion</div>
-                                </div>
-                                <button class="btn btn-icon btn-link op-8 me-1">
-                                    <i class="far fa-envelope"></i>
-                                </button>
-                                <button class="btn btn-icon btn-link btn-danger op-8">
-                                    <i class="fas fa-ban"></i>
-                                </button>
-                            </div>
-                            <div class="item-list">
-                                <div class="avatar">
-                                    <img src="assets/img/talha.jpg" alt="..." class="avatar-img rounded-circle" />
-                                </div>
-                                <div class="info-user ms-3">
-                                    <div class="username">Talha</div>
-                                    <div class="status">Front End Designer</div>
-                                </div>
-                                <button class="btn btn-icon btn-link op-8 me-1">
-                                    <i class="far fa-envelope"></i>
-                                </button>
-                                <button class="btn btn-icon btn-link btn-danger op-8">
-                                    <i class="fas fa-ban"></i>
-                                </button>
-                            </div>
-                            <div class="item-list">
-                                <div class="avatar">
-                                    <img src="assets/img/chadengle.jpg" alt="..." class="avatar-img rounded-circle" />
-                                </div>
-                                <div class="info-user ms-3">
-                                    <div class="username">Chad</div>
-                                    <div class="status">CEO Zeleaf</div>
-                                </div>
-                                <button class="btn btn-icon btn-link op-8 me-1">
-                                    <i class="far fa-envelope"></i>
-                                </button>
-                                <button class="btn btn-icon btn-link btn-danger op-8">
-                                    <i class="fas fa-ban"></i>
-                                </button>
-                            </div>
-                            <div class="item-list">
-                                <div class="avatar">
-                                    <span class="avatar-title rounded-circle border border-white bg-primary">H</span>
-                                </div>
-                                <div class="info-user ms-3">
-                                    <div class="username">Hizrian</div>
-                                    <div class="status">Web Designer</div>
-                                </div>
-                                <button class="btn btn-icon btn-link op-8 me-1">
-                                    <i class="far fa-envelope"></i>
-                                </button>
-                                <button class="btn btn-icon btn-link btn-danger op-8">
-                                    <i class="fas fa-ban"></i>
-                                </button>
-                            </div>
-                            <div class="item-list">
-                                <div class="avatar">
-                                    <span class="avatar-title rounded-circle border border-white bg-secondary">F</span>
-                                </div>
-                                <div class="info-user ms-3">
-                                    <div class="username">Farrah</div>
-                                    <div class="status">Marketing</div>
-                                </div>
-                                <button class="btn btn-icon btn-link op-8 me-1">
-                                    <i class="far fa-envelope"></i>
-                                </button>
-                                <button class="btn btn-icon btn-link btn-danger op-8">
-                                    <i class="fas fa-ban"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-8">
+            <div class="col-md-12">
                 <div class="card card-round">
                     <div class="card-header">
                         <div class="card-head-row card-tools-still-right">
-                            <div class="card-title">Transaction History</div>
-                            <div class="card-tools">
-                                <div class="dropdown">
-                                    <button class="btn btn-icon btn-clean me-0" type="button" id="dropdownMenuButton"
-                                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-h"></i>
-                                    </button>
-                                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                        <a class="dropdown-item" href="#">Action</a>
-                                        <a class="dropdown-item" href="#">Another action</a>
-                                        <a class="dropdown-item" href="#">Something else here</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <!-- Projects table -->
-                            <table class="table align-items-center mb-0">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th scope="col">Payment Number</th>
-                                        <th scope="col" class="text-end">Date & Time</th>
-                                        <th scope="col" class="text-end">Amount</th>
-                                        <th scope="col" class="text-end">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <th scope="row">
-                                            <button class="btn btn-icon btn-round btn-success btn-sm me-2">
-                                                <i class="fa fa-check"></i>
-                                            </button>
-                                            Payment from #10231
-                                        </th>
-                                        <td class="text-end">Mar 19, 2020, 2.45pm</td>
-                                        <td class="text-end">$250.00</td>
-                                        <td class="text-end">
-                                            <span class="badge badge-success">Completed</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">
-                                            <button class="btn btn-icon btn-round btn-success btn-sm me-2">
-                                                <i class="fa fa-check"></i>
-                                            </button>
-                                            Payment from #10231
-                                        </th>
-                                        <td class="text-end">Mar 19, 2020, 2.45pm</td>
-                                        <td class="text-end">$250.00</td>
-                                        <td class="text-end">
-                                            <span class="badge badge-success">Completed</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">
-                                            <button class="btn btn-icon btn-round btn-success btn-sm me-2">
-                                                <i class="fa fa-check"></i>
-                                            </button>
-                                            Payment from #10231
-                                        </th>
-                                        <td class="text-end">Mar 19, 2020, 2.45pm</td>
-                                        <td class="text-end">$250.00</td>
-                                        <td class="text-end">
-                                            <span class="badge badge-success">Completed</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">
-                                            <button class="btn btn-icon btn-round btn-success btn-sm me-2">
-                                                <i class="fa fa-check"></i>
-                                            </button>
-                                            Payment from #10231
-                                        </th>
-                                        <td class="text-end">Mar 19, 2020, 2.45pm</td>
-                                        <td class="text-end">$250.00</td>
-                                        <td class="text-end">
-                                            <span class="badge badge-success">Completed</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">
-                                            <button class="btn btn-icon btn-round btn-success btn-sm me-2">
-                                                <i class="fa fa-check"></i>
-                                            </button>
-                                            Payment from #10231
-                                        </th>
-                                        <td class="text-end">Mar 19, 2020, 2.45pm</td>
-                                        <td class="text-end">$250.00</td>
-                                        <td class="text-end">
-                                            <span class="badge badge-success">Completed</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">
-                                            <button class="btn btn-icon btn-round btn-success btn-sm me-2">
-                                                <i class="fa fa-check"></i>
-                                            </button>
-                                            Payment from #10231
-                                        </th>
-                                        <td class="text-end">Mar 19, 2020, 2.45pm</td>
-                                        <td class="text-end">$250.00</td>
-                                        <td class="text-end">
-                                            <span class="badge badge-success">Completed</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">
-                                            <button class="btn btn-icon btn-round btn-success btn-sm me-2">
-                                                <i class="fa fa-check"></i>
-                                            </button>
-                                            Payment from #10231
-                                        </th>
-                                        <td class="text-end">Mar 19, 2020, 2.45pm</td>
-                                        <td class="text-end">$250.00</td>
-                                        <td class="text-end">
-                                            <span class="badge badge-success">Completed</span>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <h4 class="card-title">Statistik Investasi</h4>
                         </div>
                     </div>
                 </div>

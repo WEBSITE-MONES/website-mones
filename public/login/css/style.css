@@ -1,0 +1,309 @@
+/* ========== RESET ========== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; font-family: Arial, Helvetica, sans-serif; color: #1b2a3a; }
+
+/* ========== THEME ========== */
+:root{
+  --blue: #0a6bdc;
+  --blue-dark: #084c9e;
+  --bg-grad-top: #ffffff;
+  --bg-grad-bot: #dfeeff;
+  --card: #0b63b6;
+  --card-2: #075296;
+  --white: #fff;
+}
+
+/* HEADER */
+.site-header {
+  background: transparent; /* hilangkan background putih */
+  box-shadow: none;        /* hilangkan shadow */
+  padding: 20px 40px;
+  position: absolute;      /* biar ngambang */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 10;             /* pastikan di atas background */
+}
+
+.site-header img {
+  max-height: 40px;
+}
+
+.site-header .container {
+  display: flex;
+  justify-content: space-between; /* LOGO kiri, MENU kanan */
+  align-items: center;
+}
+
+.site-header .logo-header {
+  height: 40px;
+}
+
+.site-header nav ul {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+  gap: 25px;
+  margin: 0;
+  padding: 0;
+}
+
+.site-header nav ul li a {
+  color: #222;             /* warna gelap */
+  font-weight: 500;
+  position: relative;
+  text-decoration: none;
+  transition: color 0.3s;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.6);
+
+}
+
+.site-header nav ul li a::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: #0066cc;
+  transition: width 0.3s ease;
+}
+
+.site-header nav ul li a:hover {
+  color: #0066cc; /* biru highlight pas hover */
+}
+
+.site-header nav ul li a:hover::after {
+  width: 100%;
+}
+
+/* ========== LOGIN ========== */
+body.login-page{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(to bottom, #ffffff, #bad4f0); /* gradient putih → biru muda */
+  font-family: Arial, sans-serif;
+}
+
+.login-card{
+  background: #0066cc;
+  padding: 40px;              /* padding normal, bukan % */
+  border-radius: 12px;
+  width: 600px;               /* card memanjang */
+  max-width: 90%;
+  color: #fff;
+  text-align: center;         /* brand (logo + P-Mones) tetap center */
+  box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
+}
+
+/* Form di dalam card */
+.login-card form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;    /* rata kiri */
+  text-align: left;
+  width: 100%;
+}
+
+.login-card form label {
+  margin: 10px 0 5px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.login-card form input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+
+/* Logo + Judul */
+.login-card .brand {
+  margin-bottom: 25px;
+}
+
+.login-card .brand h1 {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 10px 0 0 0;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:20px;
+  justify-content:center;
+}
+
+.logo-img{
+  width:42px;
+  height:42px;
+  object-fit:contain;
+  border-radius:8px; /* opsional */
+  background:#fff;   /* kalau logonya transparan */
+  padding:4px;       /* kasih jarak biar rapih */
+}
+
+/* Ornamen dekorasi */
+.ornament {
+  position: absolute;
+  z-index: -1;         /* biar di belakang form */
+  pointer-events: none; /* tidak ganggu klik */
+}
+
+/* Ornamen kiri */
+.ornament-left {
+  top: 50px;
+  opacity: 0.15; /* supaya samar */
+  left: 30px;
+  width: 300px; /* ubah sesuai kebutuhan */
+}
+
+/* Ornamen kanan */
+.ornament-right {
+  bottom: 35px;
+  opacity: 0.15;
+  right: 30px;
+  width: 300px; /* ubah sesuai kebutuhan */
+}
+
+
+.brand{ display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.logo{
+  width: 42px; height: 42px; display: grid; place-items: center;
+  background: var(--white); color: var(--blue);
+  border-radius: 10px; font-weight: 800; font-size: 20px;
+}
+.brand h1{ letter-spacing: 2px; }
+
+.form label{ display:block; font-size: 13px; margin: 12px 0 6px; opacity:.9; }
+
+.form input::placeholder { color: #7a8aa6; }
+
+.btn{
+  width: 100%; margin-top: 16px; padding: 12px 14px;
+  border: none; border-radius: 999px; color: var(--white);
+  background: var(--blue-dark); font-weight: 700; cursor: pointer;
+}
+.btn:hover{ filter: brightness(1.05); }
+
+.muted{ text-align:center; margin-top:10px; font-size:12px; }
+.muted a{ color: #e8f1ff; text-decoration: none; }
+
+/* ========== DASHBOARD (MAP) ========== */
+body.dashboard-page{ background: linear-gradient(var(--bg-grad-top), var(--bg-grad-bot)); }
+
+.topbar{
+  background: var(--blue);
+  color: var(--white);
+  padding: 14px 20px;
+  display:flex; justify-content:center; align-items:center;
+  box-shadow: 0 6px 20px rgba(10,107,220,.25);
+}
+.topbar h2{ letter-spacing: 1px; }
+
+.map-wrap{
+  position: relative;
+  width: min(1200px, 95vw);
+  margin: 20px auto 60px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 14px 40px rgba(0,0,0,.12);
+}
+.map-wrap img.map{
+  width: 100%; height: auto; display: block;
+}
+
+/* Marker titik pelabuhan */
+.marker{
+  position: absolute;
+  width: 18px; height: 18px;
+  background: var(--blue);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -100%); /* posisinya nongol di atas koordinat */
+  box-shadow: 0 6px 12px rgba(0,0,0,.25);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* dot di tengah marker */
+.marker::before{
+  content: "";
+  position: absolute; inset: 4px;
+  background: #fff; border-radius: 50%;
+}
+
+/* tooltip nama lokasi */
+.marker::after{
+  content: attr(data-title);
+  position: absolute;
+  left: 50%; bottom: 140%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.78);
+  color: #fff; font-size: 12px; padding: 4px 8px;
+  border-radius: 6px; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: .15s;
+}
+.marker:hover{ transform: translate(-50%, -100%) scale(1.12); }
+.marker:hover::after{ opacity: 1; }
+
+/* FOOTER */
+.site-footer {
+  /* background: white; */
+  padding: 5px;
+  text-align: center;
+  color: #333;
+  font-size: 12px;
+  position: fixed; /* biar nempel di bawah */
+  bottom: 0;
+  left: 0;
+  right: 0;
+  /* box-shadow: 0 -2px 5px rgba(0,0,0,0.05); */
+}
+
+.site-footer span {
+  color: #0268aa; /* bisa disesuaikan warnanya */
+}
+
+/* ========== DETAIL LOKASI ========== */
+body.detail-page{ background: #f6f9ff; }
+
+.detail-header{
+  background: var(--blue);
+  color: var(--white);
+  padding: 16px 20px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(10,107,220,.25);
+}
+
+.detail-inner{
+  width: min(1100px, 94vw);
+  margin: 28px auto;
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 10px 26px rgba(0,0,0,.08);
+}
+
+.detail-inner h3{ margin-bottom: 10px; }
+.detail-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px; margin-top: 12px;
+}
+
+.card{
+  border: 1px solid #e5eefc; border-radius: 12px; padding: 14px;
+  background: #fcfdff;
+}
+.card h4{ margin-bottom: 6px; font-size: 15px; }
+.card p{ font-size: 13px; color: #43556b; }
