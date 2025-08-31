@@ -194,7 +194,7 @@ Circles.create({
 $.notify(
     {
         icon: "fa fa-check-circle",
-        title: "PT Pelabuhan Indonesia (PERSERO)",
+        title: "PT Pelabuhan Indonesia(Pelindo)",
         message: "Selamat datang di Sistem Monitoring Investasi",
     },
     {

@@ -23,12 +23,14 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
+            'username' => 'required|unique:users,username',
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed', // pakai password_confirmation
         ]);
 
         User::create([
+            'username' => $request->username,
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -51,17 +53,17 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'username' => 'required|string',
             'password' => 'required',
         ]);
 
-        if(Auth::attempt($request->only('email', 'password'))){
+        if(Auth::attempt($request->only('username', 'password'))){
     $request->session()->regenerate();
     return redirect()->route('dashboard.index'); // sesuaikan route dashboard prefix kamu
 }
 
         // login gagal, tetap di halaman login
-        return back()->withErrors(['email' => 'Email atau password salah']);
+        return back()->withErrors(['username' => 'Username atau password salah']);
     }
 
     // Proses logout
@@ -70,4 +72,11 @@ class AuthController extends Controller
         Auth::logout();
         return redirect()->route('login');
     }
+
+    // user
+    public function user()
+{
+    $users = User::all(); // ambil semua data user
+    return view('Autentikasi.user', compact('users')); 
+}
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Wilayah;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -12,8 +13,11 @@ class DashboardController extends Controller
         return view('Dashboard.index');
     }
     
-    public function kota()
+    public function kota($id)
     {
-        return view('Dashboard.kota'); 
+        $wilayah = Wilayah::with('pekerjaans')->findOrFail($id);
+        return view('Dashboard.kota', compact('wilayah'));
     }
+
+    
 }

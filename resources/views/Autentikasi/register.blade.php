@@ -59,6 +59,10 @@
 
         <form action="{{ route('register.submit') }}" method="POST" class="form">
             @csrf
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" placeholder="Masukkan username"
+                value="{{ old('username') }}" required />
+
             <label for="name">Nama Lengkap</label>
             <input id="name" name="name" type="text" placeholder="Masukkan nama lengkap" value="{{ old('name') }}"
                 required />
@@ -74,8 +78,10 @@
             <label for="password_confirmation">Konfirmasi Password</label>
             <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Ulangi password"
                 required />
+
             <button class="btn" type="submit">DAFTAR</button>
         </form>
+
 
         <!-- Link ke login -->
         <p class="text-align-center" style="margin-top: 15px;">

@@ -38,8 +38,8 @@
 
         <form action="{{ route('login.submit') }}" method="POST" class="form">
             @csrf
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" placeholder="Masukkan email" required />
+            <label for="username">Username</label>
+            <input id="username" name="username" type="username" placeholder="Masukkan username" required />
 
             <label for="password">Password</label>
             <input id="password" name="password" type="password" placeholder="Masukkan password" required />
