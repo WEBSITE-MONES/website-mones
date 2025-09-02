@@ -65,33 +65,47 @@
                                     <td>{{ $pekerjaan->tahun }}</td>
                                     <td>{{ \Carbon\Carbon::parse($pekerjaan->tanggal)->format('d-m-Y') }}</td>
                                     <td>
-                                        <div class="d-flex gap-1">
-                                            <a href="{{ route('pekerjaan.show', $pekerjaan->id) }}"
-                                                class="btn btn-info btn-sm">
-                                                <i class="fa fa-eye"></i>
-                                            </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-light btn-sm" type="button"
+                                                id="aksiDropdown{{ $pekerjaan->id }}" data-bs-toggle="dropdown"
+                                                aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu"
+                                                aria-labelledby="aksiDropdown{{ $pekerjaan->id }}">
+                                                <li>
+                                                    <a href="{{ route('pekerjaan.show', $pekerjaan->id) }}"
+                                                        class="dropdown-item">
+                                                        <i class="fa fa-eye me-2"></i> Lihat
+                                                    </a>
+                                                </li>
 
-                                            @if(auth()->user()->role === 'superadmin')
-                                            <a href="{{ route('pekerjaan.edit', $pekerjaan->id) }}"
-                                                class="btn btn-primary btn-sm">
-                                                <i class="fa fa-edit"></i>
-                                            </a>
-                                            <form action="{{ route('pekerjaan.destroy', $pekerjaan->id) }}"
-                                                method="POST" onsubmit="return confirm('Hapus pekerjaan ini?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn btn-danger btn-sm">
-                                                    <i class="fa fa-times"></i>
-                                                </button>
-                                            </form>
-                                            @endif
+                                                @if(auth()->user()->role === 'superadmin')
+                                                <li>
+                                                    <a href="{{ route('pekerjaan.edit', $pekerjaan->id) }}"
+                                                        class="dropdown-item">
+                                                        <i class="fa fa-edit me-2"></i> Edit
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <form action="{{ route('pekerjaan.destroy', $pekerjaan->id) }}"
+                                                        method="POST"
+                                                        onsubmit="return confirm('Hapus pekerjaan ini?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            <i class="fa fa-times me-2"></i> Hapus
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                @endif
+                                            </ul>
                                         </div>
                                     </td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
-
                         {{-- Pagination --}}
                         <div class="mt-3">
                             {{ $pekerjaans->withQueryString()->links() }}

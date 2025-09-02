@@ -41,34 +41,47 @@
                                     <td>{{ $pekerjaan->tahun }}</td>
                                     <td>{{ \Carbon\Carbon::parse($pekerjaan->tanggal)->format('d-m-Y') }}</td>
                                     <td>
-                                        <div class="d-flex justify-content-start gap-1">
-                                            {{-- Tombol Detail --}}
-                                            <button class="btn btn-info btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#detailModal{{ $pekerjaan->id }}">
-                                                <i class="fa fa-eye"></i>
+                                        <div class="dropdown">
+                                            <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown"
+                                                aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
                                             </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                {{-- Tombol Detail --}}
+                                                <li>
+                                                    <button class="dropdown-item" data-bs-toggle="modal"
+                                                        data-bs-target="#detailModal{{ $pekerjaan->id }}">
+                                                        <i class="fa fa-eye text-info"></i> Detail
+                                                    </button>
+                                                </li>
 
-                                            @if(auth()->user()->role === 'superadmin')
-                                            {{-- Tombol Edit --}}
-                                            <a href="{{ route('pekerjaan.edit', $pekerjaan->id) }}"
-                                                class="btn btn-primary btn-sm">
-                                                <i class="fa fa-edit"></i>
-                                            </a>
+                                                @if(auth()->user()->role === 'superadmin')
+                                                {{-- Tombol Edit --}}
+                                                <li>
+                                                    <a href="{{ route('pekerjaan.edit', $pekerjaan->id) }}"
+                                                        class="dropdown-item">
+                                                        <i class="fa fa-edit text-primary"></i> Edit
+                                                    </a>
+                                                </li>
 
-                                            {{-- Tombol Hapus --}}
-                                            <form action="{{ route('pekerjaan.destroy', $pekerjaan->id) }}"
-                                                method="POST" style="display:inline;"
-                                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus pekerjaan ini?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn btn-danger btn-sm">
-                                                    <i class="fa fa-times"></i>
-                                                </button>
-                                            </form>
-
-                                            @endif
+                                                {{-- Tombol Hapus --}}
+                                                <li>
+                                                    <form action="{{ route('pekerjaan.destroy', $pekerjaan->id) }}"
+                                                        method="POST"
+                                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus pekerjaan ini?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            <i class="fa fa-times"></i> Hapus
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                @endif
+                                            </ul>
                                         </div>
                                     </td>
+
+
                                 </tr>
                                 @endforeach
                             </tbody>

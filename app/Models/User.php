@@ -2,46 +2,30 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Profile;
-
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    // Kolom yang bisa diisi mass assignment
     protected $fillable = [
         'name',
         'username',
         'email',
         'password',
-        'role', 
+        'role',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
+    // Kolom yang disembunyikan saat serialisasi
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    // Casting kolom tertentu
     protected function casts(): array
     {
         return [
@@ -50,10 +34,24 @@ class User extends Authenticatable
         ];
     }
 
+    // Relasi ke Profile (User punya satu Profile)
     public function profile()
-{
-    return $this->hasOne(Profile::class);
-}
+    {
+        return $this->hasOne(Profile::class);
+    }
 
-    
+    // Event: saat User baru dibuat, otomatis bikin Profile kosong
+    protected static function booted()
+    {
+        static::created(function ($user) {
+            $user->profile()->create([
+                'jabatan'        => null,
+                'tanggal_lahir'  => null,
+                'agama'          => null,
+                'jenis_kelamin'  => null,
+                'nomor_telepon'  => null,
+                'alamat'         => null,
+            ]);
+        });
+    }
 }

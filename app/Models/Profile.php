@@ -9,6 +9,7 @@ class Profile extends Model
 {
     use HasFactory;
 
+    // Kolom yang boleh diisi mass assignment
     protected $fillable = [
         'user_id',
         'jabatan',
@@ -19,7 +20,7 @@ class Profile extends Model
         'alamat',
     ];
 
-    // Relasi ke User
+    // Relasi ke User (Profile dimiliki oleh User)
     public function user()
     {
         return $this->belongsTo(User::class);

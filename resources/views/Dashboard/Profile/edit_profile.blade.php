@@ -79,7 +79,8 @@
                         <div class="form-group">
                             <label>Jabatan</label>
                             <input type="text" class="form-control" name="jabatan"
-                                value="{{ old('jabatan', $profile->jabatan) }}" placeholder="Masukan jabatan..">
+                                value="{{ old('jabatan', optional($profile)->jabatan) }}"
+                                placeholder="Masukan jabatan..">
                         </div>
 
                         <div class="form-group">
