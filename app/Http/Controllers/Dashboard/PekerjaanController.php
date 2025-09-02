@@ -6,16 +6,77 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Wilayah;
 use App\Models\Pekerjaan;
+use App\Models\User;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class PekerjaanController extends Controller
 {
-    public function create()
+    /**
+     * Tampilkan daftar pekerjaan
+     *
+     * @param Request $request
+     * @return View
+     */
+    public function index(Request $request): View
     {
-        $wilayahs = Wilayah::all(); // ambil semua wilayah
+        /** @var User $user */
+        $user = auth()->user();
+
+        $query = Pekerjaan::with('wilayah');
+
+        // ✅ Superadmin bisa lihat semua, selain itu hanya wilayahnya sendiri
+        if ($user->role !== 'superadmin' && $user->wilayah_id) {
+            $query->where('wilayah_id', $user->wilayah_id);
+        }
+
+        // Filter pencarian
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_pekerjaan', 'like', "%$search%")
+                  ->orWhere('status', 'like', "%$search%");
+            })->orWhereHas('wilayah', function ($q) use ($search) {
+                $q->where('nama', 'like', "%$search%");
+            });
+        }
+
+        // Filter tahun
+        if ($request->filled('tahun')) {
+            $query->where('tahun', $request->tahun);
+        }
+
+        $pekerjaans = $query->orderBy('tahun', 'desc')->paginate(10);
+
+        // Ambil list tahun unik sesuai role
+        $tahunListQuery = Pekerjaan::query();
+        if ($user->role !== 'superadmin' && $user->wilayah_id) {
+            $tahunListQuery->where('wilayah_id', $user->wilayah_id);
+        }
+
+        $tahunList = $tahunListQuery->select('tahun')->distinct()->orderBy('tahun', 'desc')->pluck('tahun');
+
+        return view('Dashboard.rencana_pekerjaan', compact('pekerjaans', 'tahunList'));
+    }
+
+    /**
+     * Form tambah pekerjaan
+     *
+     * @return View
+     */
+    public function create(): View
+    {
+        $wilayahs = Wilayah::all();
         return view('Dashboard.Pekerjaan.create', compact('wilayahs'));
     }
 
-    public function store(Request $request)
+    /**
+     * Simpan pekerjaan baru
+     *
+     * @param Request $request
+     * @return RedirectResponse
+     */
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'wilayah_id' => 'required|exists:wilayah,id',
@@ -27,20 +88,42 @@ class PekerjaanController extends Controller
             'tanggal' => 'required|date',
         ]);
 
-        \App\Models\Pekerjaan::create($request->all());
+        Pekerjaan::create([
+            'wilayah_id'     => $request->wilayah_id,
+            'user_id'        => auth()->id(), // ✅ user login otomatis tersimpan
+            'nama_pekerjaan' => $request->nama_pekerjaan,
+            'status'         => $request->status,
+            'nilai'          => $request->nilai,
+            'kebutuhan_dana' => $request->kebutuhan_dana,
+            'tahun'          => $request->tahun,
+            'tanggal'        => $request->tanggal,
+        ]);
 
         return redirect()->route('dashboard.kota', ['id' => $request->wilayah_id])
                          ->with('success', 'Rencana kerja berhasil ditambahkan!');
     }
 
-    public function edit($id)
+    /**
+     * Form edit pekerjaan
+     *
+     * @param int $id
+     * @return View
+     */
+    public function edit(int $id): View
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
         $wilayahs = Wilayah::all();
         return view('Dashboard.Pekerjaan.edit', compact('pekerjaan', 'wilayahs'));
     }
 
-    public function update(Request $request, $id)
+    /**
+     * Update pekerjaan
+     *
+     * @param Request $request
+     * @param int $id
+     * @return RedirectResponse
+     */
+    public function update(Request $request, int $id): RedirectResponse
     {
         $request->validate([
             'wilayah_id' => 'required|exists:wilayah,id',
@@ -53,15 +136,28 @@ class PekerjaanController extends Controller
         ]);
 
         $pekerjaan = Pekerjaan::findOrFail($id);
-        $pekerjaan->update($request->all());
+        $pekerjaan->update([
+            'wilayah_id'     => $request->wilayah_id,
+            'user_id'        => auth()->id(), // ✅ update tetap catat user yang edit
+            'nama_pekerjaan' => $request->nama_pekerjaan,
+            'status'         => $request->status,
+            'nilai'          => $request->nilai,
+            'kebutuhan_dana' => $request->kebutuhan_dana,
+            'tahun'          => $request->tahun,
+            'tanggal'        => $request->tanggal,
+        ]);
 
         return redirect()->route('dashboard.kota', ['id' => $request->wilayah_id])
                          ->with('success', 'Rencana kerja berhasil diupdate!');
     }
 
-    
-    // fungsi delete
-    public function destroy($id)
+    /**
+     * Hapus pekerjaan
+     *
+     * @param int $id
+     * @return RedirectResponse
+     */
+    public function destroy(int $id): RedirectResponse
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
         $wilayah_id = $pekerjaan->wilayah_id;
@@ -70,33 +166,4 @@ class PekerjaanController extends Controller
         return redirect()->route('dashboard.kota', ['id' => $wilayah_id])
                          ->with('success', 'Rencana kerja berhasil dihapus!');
     }
-
-    public function index(Request $request)
-{
-    $query = Pekerjaan::with('wilayah');
-
-    // Search by nama pekerjaan / status / wilayah
-    if ($request->filled('search')) {
-        $search = $request->search;
-        $query->where(function($q) use ($search) {
-            $q->where('nama_pekerjaan', 'like', "%$search%")
-              ->orWhere('status', 'like', "%$search%");
-        })->orWhereHas('wilayah', function($q) use ($search) {
-            $q->where('nama', 'like', "%$search%");
-        });
-    }
-
-    // Filter tahun
-    if ($request->filled('tahun')) {
-        $query->where('tahun', $request->tahun);
-    }
-
-    $pekerjaans = $query->orderBy('tahun', 'desc')->paginate(10);
-
-    // Ambil semua tahun unik
-    $tahunList = Pekerjaan::select('tahun')->distinct()->orderBy('tahun', 'desc')->pluck('tahun');
-
-    return view('Dashboard.rencana_pekerjaan', compact('pekerjaans', 'tahunList'));
-}
-
 }

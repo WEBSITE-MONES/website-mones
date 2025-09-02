@@ -27,7 +27,6 @@
                     <h3 class="card-title">Form Edit User</h3>
                 </div>
 
-                {{-- PERBAIKAN: kasih parameter $user->id ke route --}}
                 <form action="{{ route('users.update', $user->id) }}" method="POST" class="form-horizontal"
                     enctype="multipart/form-data">
                     @csrf
@@ -40,8 +39,7 @@
                                 <div class="form-group">
                                     <label>Username <span class="text-danger">*</span></label>
                                     <input type="text" name="username" class="form-control"
-                                        value="{{ old('username', $user->username) }}" placeholder="Masukkan username"
-                                        required>
+                                        value="{{ old('username', $user->username) }}" required>
                                 </div>
                             </div>
 
@@ -50,8 +48,7 @@
                                 <div class="form-group">
                                     <label>Nama Lengkap <span class="text-danger">*</span></label>
                                     <input type="text" name="name" class="form-control"
-                                        value="{{ old('name', $user->name) }}" placeholder="Masukkan nama lengkap"
-                                        required>
+                                        value="{{ old('name', $user->name) }}" required>
                                 </div>
                             </div>
                         </div>
@@ -62,7 +59,7 @@
                                 <div class="form-group">
                                     <label>Email <span class="text-danger">*</span></label>
                                     <input type="email" name="email" class="form-control"
-                                        value="{{ old('email', $user->email) }}" placeholder="Masukkan email" required>
+                                        value="{{ old('email', $user->email) }}" required>
                                 </div>
                             </div>
 
@@ -70,7 +67,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Role <span class="text-danger">*</span></label>
-                                    <select name="role" class="form-control" required>
+                                    <select name="role" class="form-control" id="roleSelect" required>
                                         <option value="">-- Pilih Role --</option>
                                         <option value="superadmin"
                                             {{ old('role', $user->role) == 'superadmin' ? 'selected' : '' }}>Super Admin
@@ -84,14 +81,32 @@
                             </div>
                         </div>
 
+                        {{-- Wilayah (hanya untuk role admin) --}}
+                        <div class="row" id="wilayahField" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Wilayah <span class="text-danger">*</span></label>
+                                    <select name="wilayah_id" class="form-control">
+                                        <option value="">-- Pilih Wilayah --</option>
+                                        @foreach($wilayahs as $wilayah)
+                                        <option value="{{ $wilayah->id }}"
+                                            {{ old('wilayah_id', $user->wilayah_id) == $wilayah->id ? 'selected' : '' }}>
+                                            {{ $wilayah->nama }}
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row">
-                            {{-- Password (boleh kosong kalau tidak diganti) --}}
+                            {{-- Password (opsional) --}}
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Password <small class="text-muted">(kosongkan jika tidak
                                             diubah)</small></label>
                                     <input type="password" name="password" class="form-control"
-                                        placeholder="Masukkan password baru (opsional)">
+                                        placeholder="Password baru">
                                 </div>
                             </div>
                         </div>
@@ -110,4 +125,16 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+function toggleWilayahField() {
+    let role = document.getElementById('roleSelect').value;
+    document.getElementById('wilayahField').style.display = (role === 'admin') ? 'flex' : 'none';
+}
+document.getElementById('roleSelect').addEventListener('change', toggleWilayahField);
+window.onload = toggleWilayahField;
+</script>
+@endpush
+
 @endsection

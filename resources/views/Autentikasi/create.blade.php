@@ -77,13 +77,31 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Role <span class="text-danger">*</span></label>
-                                    <select name="role" class="form-control" required>
+                                    <select name="role" class="form-control" id="roleSelect" required>
                                         <option value="">-- Pilih Role --</option>
                                         <option value="superadmin" {{ old('role')=='superadmin' ? 'selected' : '' }}>
                                             Super Admin</option>
                                         <option value="admin" {{ old('role')=='admin' ? 'selected' : '' }}>Admin
                                         </option>
                                         <option value="user" {{ old('role')=='user' ? 'selected' : '' }}>User</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Wilayah (hanya untuk role admin) --}}
+                        <div class="row" id="wilayahField" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Wilayah <span class="text-danger">*</span></label>
+                                    <select name="wilayah_id" class="form-control">
+                                        <option value="">-- Pilih Wilayah --</option>
+                                        @foreach($wilayahs as $wilayah)
+                                        <option value="{{ $wilayah->id }}"
+                                            {{ old('wilayah_id') == $wilayah->id ? 'selected' : '' }}>
+                                            {{ $wilayah->nama }}
+                                        </option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -114,4 +132,16 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+function toggleWilayahField() {
+    let role = document.getElementById('roleSelect').value;
+    document.getElementById('wilayahField').style.display = (role === 'admin') ? 'flex' : 'none';
+}
+document.getElementById('roleSelect').addEventListener('change', toggleWilayahField);
+window.onload = toggleWilayahField;
+</script>
+@endpush
+
 @endsection

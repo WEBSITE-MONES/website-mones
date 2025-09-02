@@ -33,6 +33,9 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
 
     Route::get('/account', [AccountSettingController::class, 'index'])->name('account.index');
 
+    // rencana pekerjaan
+    Route::get('/pekerjaan', [PekerjaanController::class, 'index'])->name('pekerjaan.index');
+
     // update profile
     Route::get('/account/edit', [AccountSettingController::class, 'edit'])->name('account.edit');
     Route::put('/account/update', [AccountSettingController::class, 'update'])->name('account.update');
@@ -51,8 +54,7 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
         Route::put('/pekerjaan/{id}', [PekerjaanController::class, 'update'])->name('pekerjaan.update');
         Route::delete('/pekerjaan/{id}', [PekerjaanController::class, 'destroy'])->name('pekerjaan.destroy');
 
-        // rencana pekerjaan
-        Route::get('/pekerjaan', [PekerjaanController::class, 'index'])->name('pekerjaan.index');
+        
 
         // User management
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');

@@ -89,8 +89,7 @@
                                 <p>Dashboard</p>
                             </a>
                         </li>
-                        {{-- Rencana Kerja (hanya superadmin) --}}
-                        @if(auth()->user()->role === 'superadmin')
+                        @if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin')
                         <li class="nav-item">
                             <a href="{{ route('pekerjaan.index') }}">
                                 <i class="fas fa-tasks"></i>
@@ -98,6 +97,7 @@
                             </a>
                         </li>
                         @endif
+
                         {{-- Progress Investasi (admin & user) --}}
                         @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
                         <li class="nav-item">

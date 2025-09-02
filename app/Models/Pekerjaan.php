@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Pekerjaan extends Model
 {
@@ -12,11 +13,16 @@ class Pekerjaan extends Model
     protected $table = 'pekerjaan';
 
     protected $fillable = [
-        'wilayah_id', 'nama_pekerjaan', 'status', 'nilai', 'kebutuhan_dana', 'tahun', 'tanggal'
+        'wilayah_id', 'nama_pekerjaan', 'status', 'nilai', 'kebutuhan_dana', 'tahun', 'tanggal','user_id'
     ];
 
     public function wilayah()
     {
         return $this->belongsTo(Wilayah::class, 'wilayah_id', 'id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

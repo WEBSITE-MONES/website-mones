@@ -56,7 +56,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($pekerjaans as $pekerjaan)
+                                @forelse($pekerjaans as $pekerjaan)
                                 <tr>
                                     <td>{{ $pekerjaan->wilayah->nama }}</td>
                                     <td>{{ $pekerjaan->nama_pekerjaan }}</td>
@@ -103,8 +103,13 @@
                                         </div>
                                     </td>
                                 </tr>
-                                @endforeach
+                                @empty
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">Belum ada rencana kerja</td>
+                                </tr>
+                                @endforelse
                             </tbody>
+
                         </table>
                         {{-- Pagination --}}
                         <div class="mt-3">
