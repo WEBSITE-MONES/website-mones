@@ -25,6 +25,9 @@
     color: #0068AC !important;
 }
 
+.avatar-margin {
+    margin-right: 15px; /* Atur jarak sesuai kebutuhan */
+}
 .alert-custom {
     border-left: 5px solid #0068AC !important; 
 }

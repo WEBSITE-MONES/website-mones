@@ -69,8 +69,6 @@
                                             @endif
                                         </div>
                                     </td>
-
-
                                 </tr>
                                 @endforeach
                             </tbody>

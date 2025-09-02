@@ -37,7 +37,7 @@
                     <h4 class="card-title">Rencana Kerja</h4>
                     @if(auth()->user()->role === 'superadmin')
                     <a href="{{ route('pekerjaan.create') }}" class="btn btn-primary btn-round ms-auto">
-                        <i class="fa fa-plus"></i> Tambah Rencana Kerja
+                        <i class="fa fa-plus"></i> Input Rencana Kerja
                     </a>
                     @endif
                 </div>

@@ -115,7 +115,6 @@
                             <!-- Makassar -->
                             <a href="{{ route('dashboard.kota', ['id' => 2]) }}" class="marker"
                                 style="top: 65.3%; left: 52.6%" title="Makassar"></a>
-
                         </div>
                     </div>
                 </div>
