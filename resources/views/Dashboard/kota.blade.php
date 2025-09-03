@@ -25,8 +25,8 @@
                             <thead>
                                 <tr>
                                     <th>Nama Pekerjaan</th>
-                                    <th>Status Pekerjaan</th>
-                                    <th>Kebutuhan Dana</th>
+                                    <th style="vertical-align: middle; white-space: nowrap;">Status Pekerjaan</th>
+                                    <th style="vertical-align: middle; white-space: nowrap;">Kebutuhan Dana</th>
                                     <th>Tahun</th>
                                     <th>Tanggal Pekerjaan</th>
                                     <th style="width: 10%">Action</th>
