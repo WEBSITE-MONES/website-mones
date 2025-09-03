@@ -53,9 +53,9 @@
                             <thead>
                                 <tr>
                                     <th>Wilayah</th>
-                                    <th>Nama Pekerjaan</th>
+                                    <th style="vertical-align: middle; white-space: nowrap;">Nama Pekerjaan</th>
                                     <th>Status</th>
-                                    <th>Kebutuhan Dana</th>
+                                    <th style="vertical-align: middle; white-space: nowrap;">Kebutuhan Dana</th>
                                     <th>Tahun</th>
                                     <th>Tanggal</th>
                                     <th style="width: 10%">Action</th>
