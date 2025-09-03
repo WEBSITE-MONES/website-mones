@@ -190,22 +190,22 @@ Circles.create({
     styleText: true,
 });
 
-//Notify
-$.notify(
-    {
-        icon: "fa fa-check-circle",
-        title: "PT Pelabuhan Indonesia(Pelindo)",
-        message: "Selamat datang di Sistem Monitoring Investasi",
-    },
-    {
-        type: "primary",
-        placement: {
-            from: "bottom",
-            align: "right",
-        },
-        time: 1000,
-    }
-);
+// Notify
+// $.notify(
+//     {
+//         icon: "fa fa-check-circle",
+//         title: "PT Pelabuhan Indonesia(Pelindo)",
+//         message: "Selamat datang di Sistem Monitoring Investasi",
+//     },
+//     {
+//         type: "primary",
+//         placement: {
+//             from: "bottom",
+//             align: "right",
+//         },
+//         time: 1000,
+//     }
+// );
 
 // Jsvectormap
 var world_map = new jsVectorMap({
@@ -500,3 +500,4 @@ $("#activeUsersChart").sparkline(
         barColor: "rgba(255,255,255,.3)",
     }
 );
+

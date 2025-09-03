@@ -6,6 +6,7 @@ use App\Http\Controllers\Autentikasi\AuthController;
 use App\Http\Controllers\Autentikasi\UserController;
 use App\Http\Controllers\Autentikasi\AccountSettingController;
 use App\Http\Controllers\Dashboard\PekerjaanController;
+use App\Http\Controllers\Dashboard\SettingAplikasiController;
 use App\Http\Middleware\RoleMiddleware;
 
 
@@ -62,6 +63,11 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
         Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        //setting aplikasi
+        Route::get('setting-aplikasi', [SettingAplikasiController::class, 'index'])->name('setting_aplikasi.index');
+    Route::get('setting-aplikasi/{id}/edit', [SettingAplikasiController::class, 'edit'])->name('setting_aplikasi.edit');
+    Route::put('setting-aplikasi/{id}', [SettingAplikasiController::class, 'update'])->name('setting_aplikasi.update');
 
     });
 

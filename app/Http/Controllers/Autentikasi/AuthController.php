@@ -59,7 +59,7 @@ class AuthController extends Controller
 
         if(Auth::attempt($request->only('username', 'password'))){
     $request->session()->regenerate();
-    return redirect()->route('dashboard.index'); // sesuaikan route dashboard prefix kamu
+    return redirect()->route('dashboard.index'); 
 }
 
         // login gagal, tetap di halaman login

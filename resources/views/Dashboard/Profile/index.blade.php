@@ -27,7 +27,7 @@
                                     <td>{{ $profile->jabatan ?? '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td>Tgl. Lahir</td>
+                                    <td style="vertical-align: middle; white-space: nowrap;">Tanggal Lahir</td>
                                     <td>:</td>
                                     <td>
                                         {{ $profile && $profile->tanggal_lahir 
@@ -41,7 +41,7 @@
                                     <td>{{ $profile->agama ?? '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td>Jenis Kelamin</td>
+                                    <td style="vertical-align: middle; white-space: nowrap;">Jenis Kelamin</td>
                                     <td>:</td>
                                     <td>
                                         @if($profile && $profile->jenis_kelamin === 'L')

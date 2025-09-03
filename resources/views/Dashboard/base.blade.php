@@ -3,9 +3,16 @@
 
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>P-Mones</title>
+    @php
+    $setting = \App\Models\SettingAplikasi::first(); // ambil data setting
+    @endphp
+
+    <title>{{ $setting->nama_aplikasi ?? 'P-Mones' }}</title>
+
     <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
-    <link rel="icon" href="{{ asset("http://36.95.192.170:2028/e-report/public/img/mnp/pelindo.png") }}"
+
+    <link rel="icon"
+        href="{{ $setting && $setting->logo ? asset('img/mnp/'.$setting->logo) : asset('img/mnp/pelindo.png') }}"
         type="image/x-icon" />
 
     <!-- Fonts and icons -->
@@ -150,7 +157,11 @@
                             </a>
                             <div class="collapse" id="pengaturan">
                                 <ul class="nav nav-collapse">
-                                    <li><a href="#"><span class="sub-item">Judul Aplikasi</span></a></li>
+                                    <li>
+                                        <a href="{{ route('setting_aplikasi.index') }}">
+                                            <span class="sub-item">Judul Aplikasi</span>
+                                        </a>
+                                    </li>
                                     <li><a href="#"><span class="sub-item">Approval Laporan</span></a></li>
                                 </ul>
                             </div>
@@ -202,11 +213,17 @@
                 <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
                     <div class="container-fluid">
                         <!--  selamat datang -->
+                        @php
+                        $setting = \App\Models\SettingAplikasi::first();
+                        @endphp
+
                         <div class="text-blue d-none d-lg-block">
-                            Selamat Datang di Aplikasi Monitoring Investasi <span class="text-custom-blue">PT Pelabuhan
-                                Indonesia (Pelindo)
+                            {{ $setting->ucapan ?? 'Selamat Datang di Aplikasi' }}
+                            <span class="text-custom-blue">
+                                {{ $setting->nama_perusahaan ?? 'PT Pelabuhan Indonesia (Pelindo)' }}
                             </span>
                         </div>
+
                         <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
                             <li class="nav-item topbar-icon dropdown hidden-caret d-flex d-lg-none">
                                 <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"

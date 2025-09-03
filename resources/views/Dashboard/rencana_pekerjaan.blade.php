@@ -7,21 +7,27 @@
     <div class="page-header d-flex justify-content-between align-items-center">
         <h4 class="page-title">Daftar Semua Rencana Kerja {{ request('tahun') ?? date('Y') }}</h4>
 
-        {{-- Search & Filter Tahun --}}
-        <form method="GET" action="{{ route('pekerjaan.index') }}" class="d-flex">
-            <input type="text" name="search" value="{{ request('search') }}" class="form-control me-2"
-                placeholder="Pencarian..">
+        <form id="filterForm" method="GET" action="{{ route('pekerjaan.index') }}" class="d-flex align-items-center">
+            {{-- Search --}}
+            <div class="form-outline me-3 flex-grow-1 position-relative">
+                <input type="text" name="search" value="{{ request('search') }}" class="form-control ps-5"
+                    placeholder="Search ...">
+                <i class="fas fa-search"
+                    style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999;"></i>
+            </div>
 
-            <select name="tahun" class="form-control me-2">
-                <option value="">-- Semua Tahun --</option>
-                @foreach($tahunList as $thn)
-                <option value="{{ $thn }}" {{ request('tahun') == $thn ? 'selected' : '' }}>
-                    {{ $thn }}
-                </option>
-                @endforeach
-            </select>
-
-            <button class="btn btn-primary" type="submit">Filter</button>
+            {{-- Filter Tahun --}}
+            <div class="input-group me-2" style="width: 150px;">
+                <span class="input-group-text"><i class="fas fa-filter"></i></span>
+                <select name="tahun" class="form-control">
+                    <option value="">-- Semua Tahun --</option>
+                    @foreach($tahunList as $thn)
+                    <option value="{{ $thn }}" {{ request('tahun') == $thn ? 'selected' : '' }}>
+                        {{ $thn }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
         </form>
     </div>
 
@@ -60,10 +66,13 @@
                                 <tr>
                                     <td>{{ $pekerjaan->wilayah->nama }}</td>
                                     <td>{{ $pekerjaan->nama_pekerjaan }}</td>
-                                    <td>{{ $pekerjaan->status }}</td>
-                                    <td>Rp {{ number_format($pekerjaan->kebutuhan_dana, 0, ',', '.') }}</td>
+                                    <td style="vertical-align: middle; white-space: nowrap;">{{ $pekerjaan->status }}
+                                    </td>
+                                    <td style="vertical-align: middle; white-space: nowrap;">Rp
+                                        {{ number_format($pekerjaan->kebutuhan_dana, 0, ',', '.') }}</td>
                                     <td>{{ $pekerjaan->tahun }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($pekerjaan->tanggal)->format('d-m-Y') }}</td>
+                                    <td style="vertical-align: middle; white-space: nowrap;">
+                                        {{ \Carbon\Carbon::parse($pekerjaan->tanggal)->format('d-m-Y') }}</td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="btn btn-light btn-sm" type="button"
@@ -76,7 +85,7 @@
                                                 <li>
                                                     <a href="{{ route('pekerjaan.show', $pekerjaan->id) }}"
                                                         class="dropdown-item">
-                                                        <i class="fa fa-eye me-2"></i> Lihat
+                                                        <i class="fa fa-eye me-2"></i> Detail
                                                     </a>
                                                 </li>
 
@@ -121,4 +130,25 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filterForm');
+    const searchInput = form.querySelector('input[name="search"]');
+    const tahunSelect = form.querySelector('select[name="tahun"]');
+
+    // Submit otomatis saat memilih tahun
+    tahunSelect.addEventListener('change', function() {
+        form.submit();
+    });
+
+    // Submit otomatis saat mengetik pencarian (enter)
+    searchInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') {
+            form.submit();
+        }
+    });
+});
+</script>
+
 @endsection

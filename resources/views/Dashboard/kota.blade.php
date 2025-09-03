@@ -37,9 +37,11 @@
                                 <tr>
                                     <td>{{ $pekerjaan->nama_pekerjaan }}</td>
                                     <td>{{ $pekerjaan->status }}</td>
-                                    <td>Rp {{ number_format($pekerjaan->kebutuhan_dana, 0, ',', '.') }}</td>
+                                    <td style="vertical-align: middle; white-space: nowrap;">Rp
+                                        {{ number_format($pekerjaan->kebutuhan_dana, 0, ',', '.') }}</td>
                                     <td>{{ $pekerjaan->tahun }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($pekerjaan->tanggal)->format('d-m-Y') }}</td>
+                                    <td style="vertical-align: middle; white-space: nowrap;">
+                                        {{ \Carbon\Carbon::parse($pekerjaan->tanggal)->format('d-m-Y') }}</td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown"
@@ -80,8 +82,6 @@
                                             </ul>
                                         </div>
                                     </td>
-
-
                                 </tr>
                                 @endforeach
                             </tbody>
