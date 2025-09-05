@@ -49,32 +49,31 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     Route::get('/pekerjaan/{id}/detail', [PekerjaanDetailController::class, 'index'])
         ->name('pekerjaan.detail');
     });
-
+    
     // DETAIL PEKERJAAN
     Route::prefix('pekerjaan/{id}')->group(function () {
     Route::get('/detail', [PekerjaanDetailController::class, 'index'])->name('pekerjaan.detail');
 
     // PROGRES INVESTASI
     Route::get('/progres-fisik', [PekerjaanDetailController::class, 'progresFisik'])->name('pekerjaan.progres.fisik');
-    Route::get('/penyerapan-rkap', [PekerjaanDetailController::class, 'penyerapanRkap'])->name('pekerjaan.progres.rkap');
-    Route::get('/pembayaran', [PekerjaanDetailController::class, 'pembayaran'])->name('pekerjaan.progres.pembayaran');
+    Route::get('/progres-rkap', [PekerjaanDetailController::class, 'penyerapanRkap'])->name('pekerjaan.rkap');
+    Route::get('/progres-pembayaran', [PekerjaanDetailController::class, 'pembayaran'])->name('pekerjaan.pembayaran');
 
     // DATA INVESTASI
-    Route::get('/kontrak', [PekerjaanDetailController::class, 'kontrak'])->name('pekerjaan.data.kontrak');
-    Route::get('/gambar', [PekerjaanDetailController::class, 'gambar'])->name('pekerjaan.data.gambar');
-    Route::get('/laporan', [PekerjaanDetailController::class, 'laporan'])->name('pekerjaan.data.laporan');
-    Route::get('/korespondensi', [PekerjaanDetailController::class, 'korespondensi'])->name('pekerjaan.data.korespondensi');
+    Route::get('/data-kontrak', [PekerjaanDetailController::class, 'kontrak'])->name('pekerjaan.data.kontrak');
+    Route::get('/data-gambar', [PekerjaanDetailController::class, 'gambar'])->name('pekerjaan.data.gambar');
+    Route::get('/data-laporan', [PekerjaanDetailController::class, 'laporan'])->name('pekerjaan.data.laporan');
+    Route::get('/data-korespondensi', [PekerjaanDetailController::class, 'korespondensi'])->name('pekerjaan.data.korespondensi');
 
     // STATUS INVESTASI
-    Route::get('/perencanaan', [PekerjaanDetailController::class, 'perencanaan'])->name('pekerjaan.status.perencanaan');
-    Route::get('/pelelangan', [PekerjaanDetailController::class, 'pelelangan'])->name('pekerjaan.status.pelelangan');
-    Route::get('/pelaksanaan', [PekerjaanDetailController::class, 'pelaksanaan'])->name('pekerjaan.status.pelaksanaan');
-    Route::get('/selesai', [PekerjaanDetailController::class, 'selesai'])->name('pekerjaan.status.selesai');
-    });
+    Route::get('/status-perencanaan', [PekerjaanDetailController::class, 'perencanaan'])->name('pekerjaan.status.perencanaan');
+    Route::get('/status-pelelangan', [PekerjaanDetailController::class, 'pelelangan'])->name('pekerjaan.status.pelelangan');
+    Route::get('/status-pelaksanaan', [PekerjaanDetailController::class, 'pelaksanaan'])->name('pekerjaan.status.pelaksanaan');
+    Route::get('/status-selesai', [PekerjaanDetailController::class, 'selesai'])->name('pekerjaan.status.selesai');
+});
+
     
-    // -----------------------
     // Superadmin only
-    // -----------------------
     Route::middleware(['role:superadmin'])->group(function() {
 
         // Pekerjaan
@@ -83,8 +82,6 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
         Route::get('/pekerjaan/{id}/edit', [PekerjaanController::class, 'edit'])->name('pekerjaan.edit');
         Route::put('/pekerjaan/{id}', [PekerjaanController::class, 'update'])->name('pekerjaan.update');
         Route::delete('/pekerjaan/{id}', [PekerjaanController::class, 'destroy'])->name('pekerjaan.destroy');
-
-        
 
         // User management
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
@@ -99,17 +96,14 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     Route::put('setting-aplikasi/{id}', [SettingAplikasiController::class, 'update'])->name('setting_aplikasi.update');
 
     });
-
-    // -----------------------
+    
     // Admin only
-    // -----------------------
     Route::middleware(['role:admin,superadmin'])->group(function() {
         // Admin bisa approve progress pekerjaan
         Route::post('/pekerjaan/{id}/approve', [PekerjaanController::class, 'approve'])->name('pekerjaan.approve');
     });
 
-    // -----------------------
+    
     // Semua role bisa lihat detail pekerjaan
-    // -----------------------
     Route::get('/pekerjaan/{id}', [PekerjaanController::class, 'show'])->name('pekerjaan.show');
 });

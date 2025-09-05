@@ -33,12 +33,11 @@
                                                     </div>
                                                 </div>
                                                 <span>
-                                                    <i
-                                                        class="fa-solid fa-angle-right text-primary text-xl font-bold"></i>
+                                                    <i class="fas fa-angle-right text-primary text-xl font-bold"></i>
                                                 </span>
                                             </div>
                                         </a>
-                                        <a href="{{ route('pekerjaan.progres.rkap', $pekerjaan->id) }}">
+                                        <a href="{{ route('pekerjaan.rkap', $pekerjaan->id) }}">
                                             <div
                                                 class="d-flex align-items-center justify-content-between border p-2 mb-2 rounded">
                                                 <div class="d-flex align-items-center">
@@ -49,12 +48,11 @@
                                                     </div>
                                                 </div>
                                                 <span>
-                                                    <i
-                                                        class="fa-solid fa-angle-right text-primary text-xl font-bold"></i>
+                                                    <i class="fas fa-angle-right text-primary text-xl font-bold"></i>
                                                 </span>
                                             </div>
                                         </a>
-                                        <a href="{{ route('pekerjaan.progres.pembayaran', $pekerjaan->id) }}">
+                                        <a href="{{ route('pekerjaan.pembayaran', $pekerjaan->id) }}">
                                             <div
                                                 class="d-flex align-items-center justify-content-between border p-2 rounded">
                                                 <div class="d-flex align-items-center">
@@ -65,8 +63,7 @@
                                                     </div>
                                                 </div>
                                                 <span>
-                                                    <i
-                                                        class="fa-solid fa-angle-right text-primary text-xl font-bold"></i>
+                                                    <i class="fas fa-angle-right text-primary text-xl font-bold"></i>
                                                 </span>
                                             </div>
                                         </a>
@@ -92,8 +89,7 @@
                                                     </div>
                                                 </div>
                                                 <span>
-                                                    <i
-                                                        class="fa-solid fa-angle-right text-primary text-xl font-bold"></i>
+                                                    <i class="fas fa-angle-right text-primary text-xl font-bold"></i>
                                                 </span>
                                             </div>
                                         </a>
@@ -108,8 +104,7 @@
                                                     </div>
                                                 </div>
                                                 <span>
-                                                    <i
-                                                        class="fa-solid fa-angle-right text-primary text-xl font-bold"></i>
+                                                    <i class="fas fa-angle-right text-primary text-xl font-bold"></i>
                                                 </span>
                                             </div>
                                         </a>
@@ -124,8 +119,7 @@
                                                     </div>
                                                 </div>
                                                 <span>
-                                                    <i
-                                                        class="fa-solid fa-angle-right text-primary text-xl font-bold"></i>
+                                                    <i class="fas fa-angle-right text-primary text-xl font-bold"></i>
                                                 </span>
                                             </div>
                                         </a>
@@ -140,8 +134,7 @@
                                                     </div>
                                                 </div>
                                                 <span>
-                                                    <i
-                                                        class="fa-solid fa-angle-right text-primary text-xl font-bold"></i>
+                                                    <i class="fas fa-angle-right text-primary text-xl font-bold"></i>
                                                 </span>
                                             </div>
                                         </a>
@@ -167,8 +160,7 @@
                                                     </div>
                                                 </div>
                                                 <span>
-                                                    <i
-                                                        class="fa-solid fa-angle-right text-primary text-xl font-bold"></i>
+                                                    <i class="fas fa-angle-right text-primary text-xl font-bold"></i>
                                                 </span>
                                             </div>
                                         </a>
@@ -183,8 +175,7 @@
                                                     </div>
                                                 </div>
                                                 <span>
-                                                    <i
-                                                        class="fa-solid fa-angle-right text-primary text-xl font-bold"></i>
+                                                    <i class="fas fa-angle-right text-primary text-xl font-bold"></i>
                                                 </span>
                                             </div>
                                         </a>
@@ -199,8 +190,7 @@
                                                     </div>
                                                 </div>
                                                 <span>
-                                                    <i
-                                                        class="fa-solid fa-angle-right text-primary text-xl font-bold"></i>
+                                                    <i class="fas fa-angle-right text-primary text-xl font-bold"></i>
                                                 </span>
                                             </div>
                                         </a>
@@ -215,8 +205,7 @@
                                                     </div>
                                                 </div>
                                                 <span>
-                                                    <i
-                                                        class="fa-solid fa-angle-right text-primary text-xl font-bold"></i>
+                                                    <i class="fas fa-angle-right text-primary text-xl font-bold"></i>
                                                 </span>
                                             </div>
                                         </a>

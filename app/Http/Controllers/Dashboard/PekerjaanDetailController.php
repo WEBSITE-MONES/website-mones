@@ -24,19 +24,19 @@ class PekerjaanDetailController extends Controller
     public function progresFisik($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        return view('Dashboard.PekerjaanDetail.Progres.fisik', compact('pekerjaan'));
+        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik', compact('pekerjaan'));
     }
 
     public function penyerapanRkap($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        return view('Dashboard.PekerjaanDetail.Progres.rkap', compact('pekerjaan'));
+        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.rkap', compact('pekerjaan'));
     }
 
     public function pembayaran($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        return view('Dashboard.PekerjaanDetail.Progres.pembayaran', compact('pekerjaan'));
+        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.pembayaran', compact('pekerjaan'));
     }
 
     // =======================
@@ -45,25 +45,25 @@ class PekerjaanDetailController extends Controller
     public function kontrak($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        return view('Dashboard.PekerjaanDetail.Data.kontrak', compact('pekerjaan'));
+        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.data.kontrak', compact('pekerjaan'));
     }
 
     public function gambar($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        return view('Dashboard.PekerjaanDetail.Data.gambar', compact('pekerjaan'));
+        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.data.gambar', compact('pekerjaan'));
     }
 
     public function laporan($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        return view('Dashboard.PekerjaanDetail.Data.laporan', compact('pekerjaan'));
+        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.data.laporan', compact('pekerjaan'));
     }
 
     public function korespondensi($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        return view('Dashboard.PekerjaanDetail.Data.korespondensi', compact('pekerjaan'));
+        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.data.korespondensi', compact('pekerjaan'));
     }
 
     // =======================
@@ -72,24 +72,24 @@ class PekerjaanDetailController extends Controller
     public function perencanaan($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        return view('Dashboard.PekerjaanDetail.Status.perencanaan', compact('pekerjaan'));
+        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.status.perencanaan', compact('pekerjaan'));
     }
 
     public function pelelangan($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        return view('Dashboard.PekerjaanDetail.Status.pelelangan', compact('pekerjaan'));
+        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.status.pelelangan', compact('pekerjaan'));
     }
 
     public function pelaksanaan($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        return view('Dashboard.PekerjaanDetail.Status.pelaksanaan', compact('pekerjaan'));
+        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.status.pelaksanaan', compact('pekerjaan'));
     }
 
     public function selesai($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        return view('Dashboard.PekerjaanDetail.Status.selesai', compact('pekerjaan'));
+        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.status.selesai', compact('pekerjaan'));
     }
 }
