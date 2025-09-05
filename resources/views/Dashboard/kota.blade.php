@@ -51,10 +51,10 @@
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 {{-- Tombol Detail --}}
                                                 <li>
-                                                    <button class="dropdown-item" data-bs-toggle="modal"
-                                                        data-bs-target="#detailModal{{ $pekerjaan->id }}">
+                                                    <a href="{{ route('pekerjaan.detail', $pekerjaan->id) }}"
+                                                        class="dropdown-item">
                                                         <i class="fa fa-eye text-info"></i> Detail
-                                                    </button>
+                                                    </a>
                                                 </li>
 
                                                 @if(auth()->user()->role === 'superadmin')

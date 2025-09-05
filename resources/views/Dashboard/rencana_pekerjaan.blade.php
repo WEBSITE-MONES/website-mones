@@ -83,9 +83,9 @@
                                             <ul class="dropdown-menu"
                                                 aria-labelledby="aksiDropdown{{ $pekerjaan->id }}">
                                                 <li>
-                                                    <a href="{{ route('pekerjaan.show', $pekerjaan->id) }}"
+                                                    <a href="{{ route('pekerjaan.detail', $pekerjaan->id) }}"
                                                         class="dropdown-item">
-                                                        <i class="fa fa-eye me-2"></i> Detail
+                                                        <i class="fa fa-eye text-info"></i> Detail
                                                     </a>
                                                 </li>
 

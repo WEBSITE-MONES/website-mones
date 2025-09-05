@@ -7,6 +7,7 @@ use App\Http\Controllers\Autentikasi\UserController;
 use App\Http\Controllers\Autentikasi\AccountSettingController;
 use App\Http\Controllers\Dashboard\PekerjaanController;
 use App\Http\Controllers\Dashboard\SettingAplikasiController;
+use App\Http\Controllers\Dashboard\PekerjaanDetailController;
 use App\Http\Middleware\RoleMiddleware;
 
 
@@ -43,6 +44,34 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
 
     Route::get('/account/setting', [AccountSettingController::class, 'accountSetting'])->name('account.setting');
     Route::post('/account/setting/update', [AccountSettingController::class, 'updateAccountSetting'])->name('account.setting.update');
+
+    Route::prefix('dashboard')->group(function () {
+    Route::get('/pekerjaan/{id}/detail', [PekerjaanDetailController::class, 'index'])
+        ->name('pekerjaan.detail');
+    });
+
+    // DETAIL PEKERJAAN
+    Route::prefix('pekerjaan/{id}')->group(function () {
+    Route::get('/detail', [PekerjaanDetailController::class, 'index'])->name('pekerjaan.detail');
+
+    // PROGRES INVESTASI
+    Route::get('/progres-fisik', [PekerjaanDetailController::class, 'progresFisik'])->name('pekerjaan.progres.fisik');
+    Route::get('/penyerapan-rkap', [PekerjaanDetailController::class, 'penyerapanRkap'])->name('pekerjaan.progres.rkap');
+    Route::get('/pembayaran', [PekerjaanDetailController::class, 'pembayaran'])->name('pekerjaan.progres.pembayaran');
+
+    // DATA INVESTASI
+    Route::get('/kontrak', [PekerjaanDetailController::class, 'kontrak'])->name('pekerjaan.data.kontrak');
+    Route::get('/gambar', [PekerjaanDetailController::class, 'gambar'])->name('pekerjaan.data.gambar');
+    Route::get('/laporan', [PekerjaanDetailController::class, 'laporan'])->name('pekerjaan.data.laporan');
+    Route::get('/korespondensi', [PekerjaanDetailController::class, 'korespondensi'])->name('pekerjaan.data.korespondensi');
+
+    // STATUS INVESTASI
+    Route::get('/perencanaan', [PekerjaanDetailController::class, 'perencanaan'])->name('pekerjaan.status.perencanaan');
+    Route::get('/pelelangan', [PekerjaanDetailController::class, 'pelelangan'])->name('pekerjaan.status.pelelangan');
+    Route::get('/pelaksanaan', [PekerjaanDetailController::class, 'pelaksanaan'])->name('pekerjaan.status.pelaksanaan');
+    Route::get('/selesai', [PekerjaanDetailController::class, 'selesai'])->name('pekerjaan.status.selesai');
+    });
+    
     // -----------------------
     // Superadmin only
     // -----------------------
