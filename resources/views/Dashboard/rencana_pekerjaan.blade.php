@@ -38,7 +38,7 @@
                         <table id="rencanaTable" class="display table table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>Wilayah</th>
+                                    <th>Entitas/Terminal</th>
                                     <th>Nama Pekerjaan</th>
                                     <th>Status</th>
                                     <th>Kebutuhan Dana</th>

@@ -32,7 +32,7 @@
                     {{-- Wilayah --}}
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label>Wilayah <span class="text-danger">*</span></label>
+                            <label>Entitas/Terminal <span class="text-danger">*</span></label>
                             <select name="wilayah_id" class="form-control" required>
                                 <option value="">-- Pilih Wilayah --</option>
                                 @foreach ($wilayahs as $wilayah)
@@ -109,7 +109,7 @@
                     {{-- Tanggal --}}
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label>Tanggal Pekerjaan <span class="text-danger">*</span></label>
+                            <label>Waktu Pekerjaan <span class="text-danger">*</span></label>
                             <input type="date" name="tanggal" class="form-control"
                                 value="{{ old('tanggal', $pekerjaan->tanggal) }}" required>
                         </div>
