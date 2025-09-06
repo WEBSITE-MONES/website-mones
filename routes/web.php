@@ -50,6 +50,14 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
         // PROGRES INVESTASI
         Route::get('/progres-fisik', [PekerjaanDetailController::class, 'progresFisik'])->name('pekerjaan.progres.fisik');
         Route::post('/progress/store', [PekerjaanDetailController::class, 'storeProgress'])->name('pekerjaan.progress.store');
+        Route::get('/pekerjaan/progress/create', [PekerjaanDetailController::class, 'createProgress'])
+        ->name('pekerjaan.progress.create');
+        Route::get('/progress/{progress}/edit', [PekerjaanDetailController::class, 'editProgress'])
+        ->name('pekerjaan.progress.edit');
+        Route::put('/progress/{progress}', [PekerjaanDetailController::class, 'updateProgress'])->name('pekerjaan.progress.update');
+        Route::delete('/progress/{progress}', [PekerjaanDetailController::class, 'destroyProgress'])
+        ->name('pekerjaan.progress.destroy');
+
 
         Route::get('/progres-rkap', [PekerjaanDetailController::class, 'penyerapanRkap'])->name('pekerjaan.rkap');
         Route::get('/progres-pembayaran', [PekerjaanDetailController::class, 'pembayaran'])->name('pekerjaan.pembayaran');

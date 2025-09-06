@@ -1,46 +1,32 @@
 @extends('Dashboard.base')
 
-@section('title', 'Daftar Rencana Kerja')
+@section('title', 'Progress Fisik Pekerjaan')
 
 @section('content')
 <div class="page-inner">
-    <div class="page-header d-flex justify-content-between align-items-center">
-        <h4 class="page-title">Daftar Semua Rencana Kerja {{ request('tahun') ?? date('Y') }}</h4>
+    {{-- Alert --}}
+    @if(session('success'))
+    <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
 
-        <form id="filterForm" method="GET" action="{{ route('pekerjaan.index') }}" class="d-flex align-items-center">
-            {{-- Search --}}
-            <div class="form-outline me-3 flex-grow-1 position-relative">
-                <input type="text" name="search" value="{{ request('search') }}" class="form-control ps-5"
-                    placeholder="Search ...">
-                <i class="fas fa-search"
-                    style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999;"></i>
-            </div>
-
-            {{-- Filter Tahun --}}
-            <div class="input-group me-2" style="width: 150px;">
-                <span class="input-group-text"><i class="fas fa-filter"></i></span>
-                <select name="tahun" class="form-control">
-                    <option value="">-- Semua Tahun --</option>
-                    @foreach($tahunList as $thn)
-                    <option value="{{ $thn }}" {{ request('tahun') == $thn ? 'selected' : '' }}>
-                        {{ $thn }}
-                    </option>
-                    @endforeach
+    <div class="row mb-3">
+        <!-- <div class="col-md-3 ms-auto">
+            <form method="GET" action="{{ route('pekerjaan.index') }}">
+                <select class="form-select" name="tahun" onchange="this.form.submit()">
+                    <option value="">-- Pilih Tahun --</option>
+                    @for($i = date('Y'); $i >= 2020; $i--)
+                    <option value="{{ $i }}" {{ request('tahun') == $i ? 'selected' : '' }}>{{ $i }}</option>
+                    @endfor
                 </select>
-            </div>
-        </form>
+            </form>
+        </div> -->
     </div>
 
-    <div class="row mt-3">
+    <div class="row">
         <div class="col-md-12">
-
-            @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
-
             <div class="card">
                 <div class="card-header d-flex align-items-center">
-                    <h4 class="card-title">Rencana Kerja</h4>
+                    <h4 class="card-title">Daftar Rencana Kerja</h4>
                     @if(auth()->user()->role === 'superadmin')
                     <a href="{{ route('pekerjaan.create') }}" class="btn btn-primary btn-round ms-auto">
                         <i class="fa fa-plus"></i> Input Rencana Kerja
@@ -49,39 +35,39 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table id="add-row" class="display table table-striped table-hover">
+                        <table id="rencanaTable" class="display table table-striped table-hover">
                             <thead>
                                 <tr>
                                     <th>Wilayah</th>
-                                    <th style="vertical-align: middle; white-space: nowrap;">Nama Pekerjaan</th>
+                                    <th>Nama Pekerjaan</th>
                                     <th>Status</th>
-                                    <th style="vertical-align: middle; white-space: nowrap;">Kebutuhan Dana</th>
+                                    <th>Kebutuhan Dana</th>
                                     <th>Tahun</th>
                                     <th>Tanggal</th>
-                                    <th style="width: 10%">Action</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($pekerjaans as $pekerjaan)
+                                @foreach($pekerjaans as $pekerjaan)
                                 <tr>
                                     <td>{{ $pekerjaan->wilayah->nama }}</td>
                                     <td>{{ $pekerjaan->nama_pekerjaan }}</td>
-                                    <td style="vertical-align: middle; white-space: nowrap;">{{ $pekerjaan->status }}
-                                    </td>
-                                    <td style="vertical-align: middle; white-space: nowrap;">Rp
-                                        {{ number_format($pekerjaan->kebutuhan_dana, 0, ',', '.') }}</td>
+                                    <td>{{ $pekerjaan->status }}</td>
+                                    <td>Rp {{ number_format($pekerjaan->kebutuhan_dana,0,',','.') }}</td>
                                     <td>{{ $pekerjaan->tahun }}</td>
-                                    <td style="vertical-align: middle; white-space: nowrap;">
-                                        {{ \Carbon\Carbon::parse($pekerjaan->tanggal)->format('d-m-Y') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($pekerjaan->tanggal)->format('d-m-Y') }}</td>
                                     <td>
-                                        <div class="dropdown">
+                                        <div class="dropdown dropend">
+                                            <!-- Tombol dropdown -->
                                             <button class="btn btn-light btn-sm" type="button"
                                                 id="aksiDropdown{{ $pekerjaan->id }}" data-bs-toggle="dropdown"
                                                 aria-expanded="false">
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </button>
+
                                             <ul class="dropdown-menu"
                                                 aria-labelledby="aksiDropdown{{ $pekerjaan->id }}">
+                                                <!-- Tombol Detail tetap ada -->
                                                 <li>
                                                     <a href="{{ route('pekerjaan.detail', $pekerjaan->id) }}"
                                                         class="dropdown-item">
@@ -90,20 +76,23 @@
                                                 </li>
 
                                                 @if(auth()->user()->role === 'superadmin')
+                                                <!-- Tombol Edit -->
                                                 <li>
                                                     <a href="{{ route('pekerjaan.edit', $pekerjaan->id) }}"
                                                         class="dropdown-item">
-                                                        <i class="fa fa-edit me-2"></i> Edit
+                                                        <i class="fa fa-edit text-primary"></i> Edit
                                                     </a>
                                                 </li>
+
+                                                <!-- Tombol Hapus -->
                                                 <li>
                                                     <form action="{{ route('pekerjaan.destroy', $pekerjaan->id) }}"
                                                         method="POST"
-                                                        onsubmit="return confirm('Hapus pekerjaan ini?');">
+                                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus pekerjaan ini?');">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="fa fa-times me-2"></i> Hapus
+                                                            <i class="fa fa-times"></i> Hapus
                                                         </button>
                                                     </form>
                                                 </li>
@@ -111,19 +100,22 @@
                                             </ul>
                                         </div>
                                     </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="7" class="text-center text-muted">Belum ada rencana kerja</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
 
+                                </tr>
+                                @endforeach
+                            </tbody>
+                            <!-- <tfoot>
+                                <tr>
+                                    <th>Wilayah</th>
+                                    <th>Nama Pekerjaan</th>
+                                    <th>Status</th>
+                                    <th>Kebutuhan Dana</th>
+                                    <th>Tahun</th>
+                                    <th>Tanggal</th>
+                                    <th>Action</th>
+                                </tr>
+                            </tfoot> -->
                         </table>
-                        {{-- Pagination --}}
-                        <div class="mt-3">
-                            {{ $pekerjaans->withQueryString()->links() }}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -131,24 +123,22 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('filterForm');
-    const searchInput = form.querySelector('input[name="search"]');
-    const tahunSelect = form.querySelector('select[name="tahun"]');
-
-    // Submit otomatis saat memilih tahun
-    tahunSelect.addEventListener('change', function() {
-        form.submit();
-    });
-
-    // Submit otomatis saat mengetik pencarian (enter)
-    searchInput.addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') {
-            form.submit();
-        }
-    });
+$('#rencanaTable').DataTable({
+    pageLength: 5,
+    responsive: true,
+    language: {
+        paginate: {
+            previous: "Previous",
+            next: "Next"
+        },
+        info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+        search: "_INPUT_",
+        searchPlaceholder: "Search...",
+        lengthMenu: "Tampilkan _MENU_ data"
+    }
 });
 </script>
-
+@endpush
 @endsection

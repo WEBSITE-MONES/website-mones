@@ -22,18 +22,16 @@ class PekerjaanDetailController extends Controller
 
     // Bagian PROGRES INVESTASI
     // Progress Fisik
-public function progresFisik($id)
+    public function progresFisik($id)
 {
     $pekerjaan = Pekerjaan::with('progress')->findOrFail($id);
 
-    // Ambil progress + buat label bulan
     $progress = $pekerjaan->progress->map(function ($item) {
         $item->bulan_label = \Carbon\Carbon::parse($item->bulan . '-01')->format('M Y');
-        $item->deviasi = $item->realisasi - $item->rencana;
+        $item->defiasi = $item->realisasi - $item->rencana;
         return $item;
     });
 
-    // Data untuk chart
     $labels   = $progress->pluck('bulan_label');
     $rencana  = $progress->pluck('rencana');
     $realisasi = $progress->pluck('realisasi');
@@ -58,7 +56,11 @@ public function progresFisik($id)
     ));
 }
 
-
+public function createProgress($pekerjaanId)
+{
+    $pekerjaan = Pekerjaan::findOrFail($pekerjaanId);
+    return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.create_progres', compact('pekerjaan'));
+}
 public function storeProgress(Request $request, $id)
 {
     $request->validate([
@@ -77,7 +79,46 @@ public function storeProgress(Request $request, $id)
         'defiasi' => $defiasi,
     ]);
 
-    return back()->with('success', 'Progress berhasil ditambahkan');
+    // Redirect ke halaman progress fisik setelah berhasil disimpan
+    return redirect()->route('pekerjaan.progres.fisik', $id)
+                     ->with('success', 'Progress berhasil ditambahkan');
+}
+
+public function editProgress($pekerjaanId, $progressId)
+{
+    $pekerjaan = Pekerjaan::findOrFail($pekerjaanId);
+    $progress  = ProgressFisik::findOrFail($progressId);
+
+    return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.edit_progress', compact('pekerjaan', 'progress'));
+}
+// Update progress
+public function updateProgress(Request $request, $pekerjaanId, $progressId)
+{
+    $request->validate([
+        'bulan' => 'required|date',
+        'rencana' => 'required|numeric|min:0|max:100',
+        'realisasi' => 'required|numeric|min:0|max:100',
+    ]);
+
+    $progress = ProgressFisik::findOrFail($progressId);
+    $progress->update([
+        'bulan' => $request->bulan,
+        'rencana' => $request->rencana,
+        'realisasi' => $request->realisasi,
+        'defiasi' => $request->realisasi - $request->rencana,
+    ]);
+
+    return redirect()->route('pekerjaan.progres.fisik', $pekerjaanId)
+                     ->with('success', 'Progress berhasil diperbarui');
+}
+
+public function destroyProgress($pekerjaanId, $progressId)
+{
+    $progress = ProgressFisik::findOrFail($progressId);
+    $progress->delete();
+
+    return redirect()->route('pekerjaan.progres.fisik', $pekerjaanId)
+                     ->with('success', 'Progress berhasil dihapus');
 }
 
 
