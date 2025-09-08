@@ -75,7 +75,7 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
         Route::get('/status-selesai', [PekerjaanDetailController::class, 'selesai'])->name('pekerjaan.status.selesai');
     });
 
-    // ================= SUPERADMIN ONLY =================
+    // SUPERADMIN ONLY 
     Route::middleware(['role:superadmin'])->group(function() {
 
         // CRUD Pekerjaan

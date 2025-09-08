@@ -28,7 +28,8 @@ class Pekerjaan extends Model
 
     public function progress()
 {
-    return $this->hasMany(ProgressFisik::class, 'pekerjaan_id');
+    return $this->hasMany(ProgressFisik::class, 'pekerjaan_id')
+                ->orderBy('bulan', 'asc'); 
 }
 
 }

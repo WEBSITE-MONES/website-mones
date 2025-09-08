@@ -26,7 +26,7 @@ class PekerjaanDetailController extends Controller
 {
     $pekerjaan = Pekerjaan::with('progress')->findOrFail($id);
 
-    $progress = $pekerjaan->progress->map(function ($item) {
+    $progress = $pekerjaan->progress->sortBy('bulan')->values()->map(function ($item) {
         $item->bulan_label = \Carbon\Carbon::parse($item->bulan . '-01')->format('M Y');
         $item->defiasi = $item->realisasi - $item->rencana;
         return $item;

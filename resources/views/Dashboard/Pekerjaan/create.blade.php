@@ -25,7 +25,19 @@
 
         <form action="{{ route('pekerjaan.store') }}" method="POST">
             @csrf
+            <div class="col-md-12 mt-3">
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle fa-x5"></i>
+                    <small>
+                        <cite title="Source Title">
+                            Inputan yang ditanda bintang merah (<span class="text-danger">*</span>) harus
+                            diisi!
+                        </cite>
+                    </small>
+                </div>
+            </div>
             <div class="card-body">
+
 
                 <div class="row">
                     {{-- Kode --}}
@@ -122,7 +134,7 @@
             </div>
 
             <div class="card-footer text-right">
-                <a href="{{ route('dashboard.index') }}" class="btn btn-sm btn-danger">
+                <a href="{{ route('pekerjaan.index') }}" class="btn btn-sm btn-danger">
                     <i class="fas fa-undo mr-1"></i> Batal
                 </a>
                 <button type="submit" class="btn btn-sm btn-primary">

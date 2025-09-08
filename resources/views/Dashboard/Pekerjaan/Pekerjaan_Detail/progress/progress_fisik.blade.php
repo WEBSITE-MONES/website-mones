@@ -52,7 +52,9 @@
                 <tbody>
                     @forelse($progress as $index => $p)
                     <tr>
-                        <td>{{ \Carbon\Carbon::parse($p->bulan.'-01')->format('M Y') }}</td>
+                        <td data-order="{{ $p->bulan }}">
+                            {{ \Carbon\Carbon::parse($p->bulan.'-01')->format('M Y') }}
+                        </td>
                         <td>{{ number_format($p->rencana ?? 0,2) }}</td>
                         <td>{{ number_format($p->realisasi ?? 0,2) }}</td>
                         <td>{{ number_format($p->defiasi ?? 0,2) }}</td>
@@ -108,6 +110,9 @@
 $('#progressTable').DataTable({
     pageLength: 5,
     responsive: true,
+    order: [
+        [0, 'asc']
+    ], // urutkan kolom pertama (bulan) ASC
     language: {
         paginate: {
             previous: "Previous",

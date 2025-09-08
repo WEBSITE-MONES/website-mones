@@ -23,4 +23,6 @@ class ProgressFisik extends Model
     {
         return $this->belongsTo(Pekerjaan::class, 'pekerjaan_id');
     }
+
+    
 }
