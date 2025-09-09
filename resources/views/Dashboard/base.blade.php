@@ -106,40 +106,23 @@
                         @endif
 
                         {{-- Progress Investasi (admin & user) --}}
-                        @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
+                        <!-- @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
                         <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#progress" class="collapsed" aria-expanded="false">
+                            <a href="#">
                                 <i class="fas fa-chart-line"></i>
                                 <p>Progress Investasi</p>
-                                <span class="caret"></span>
                             </a>
-                            <div class="collapse" id="progress">
-                                <ul class="nav nav-collapse">
-                                    <li><a href="#"><span class="sub-item">Progress Fisik Pekerjaan</span></a></li>
-                                    <li><a href="#"><span class="sub-item">Penyerapan RKAP</span></a></li>
-                                    <li><a href="#"><span class="sub-item">Pembayaran</span></a></li>
-                                </ul>
-                            </div>
                         </li>
-                        @endif
+                        @endif -->
                         {{-- Data Investasi (admin & user) --}}
-                        @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
+                        <!-- @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
                         <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#datainvestasi" class="collapsed" aria-expanded="false">
+                            <a href="#">
                                 <i class="fas fa-database"></i>
                                 <p>Data Investasi</p>
-                                <span class="caret"></span>
                             </a>
-                            <div class="collapse" id="datainvestasi">
-                                <ul class="nav nav-collapse">
-                                    <li><a href="#"><span class="sub-item">Kontrak</span></a></li>
-                                    <li><a href="#"><span class="sub-item">Gambar</span></a></li>
-                                    <li><a href="#"><span class="sub-item">Laporan</span></a></li>
-                                    <li><a href="#"><span class="sub-item">Korespondensi</span></a></li>
-                                </ul>
-                            </div>
                         </li>
-                        @endif
+                        @endif -->
 
                         {{-- Pengaturan (hanya superadmin) --}}
                         @if(auth()->user()->role === 'superadmin')

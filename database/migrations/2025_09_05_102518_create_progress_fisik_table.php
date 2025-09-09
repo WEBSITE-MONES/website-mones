@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('progress_fisik', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('pekerjaan_id');  // relasi ke pekerjaan
-            $table->date('bulan');                       // contoh format: 2025-07-01
+            $table->date('bulan');                      
             $table->decimal('rencana', 5, 2)->nullable();
             $table->decimal('realisasi', 5, 2)->nullable();
             $table->decimal('defiasi', 5, 2)->nullable(); //  realisasi - rencana

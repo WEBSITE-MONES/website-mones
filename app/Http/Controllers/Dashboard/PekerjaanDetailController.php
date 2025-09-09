@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Imports\ProgressFisikImport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use App\Models\Pekerjaan;
 use App\Models\ProgressFisik;
@@ -27,7 +29,7 @@ class PekerjaanDetailController extends Controller
     $pekerjaan = Pekerjaan::with('progress')->findOrFail($id);
 
     $progress = $pekerjaan->progress->sortBy('bulan')->values()->map(function ($item) {
-        $item->bulan_label = \Carbon\Carbon::parse($item->bulan . '-01')->format('M Y');
+        $item->bulan_label = \Carbon\Carbon::parse($item->bulan)->format('M Y');
         $item->defiasi = $item->realisasi - $item->rencana;
         return $item;
     });
@@ -69,11 +71,12 @@ public function storeProgress(Request $request, $id)
         'realisasi' => 'required|numeric|min:0|max:100',
     ]);
 
+    $bulan = $request->bulan . '-01';
     $defiasi = $request->realisasi - $request->rencana;
 
     ProgressFisik::create([
         'pekerjaan_id' => $id,
-        'bulan' => $request->bulan,
+        'bulan' => $bulan,
         'rencana' => $request->rencana,
         'realisasi' => $request->realisasi,
         'defiasi' => $defiasi,
@@ -100,9 +103,11 @@ public function updateProgress(Request $request, $pekerjaanId, $progressId)
         'realisasi' => 'required|numeric|min:0|max:100',
     ]);
 
+    $bulan = $request->bulan . '-01';
+
     $progress = ProgressFisik::findOrFail($progressId);
     $progress->update([
-        'bulan' => $request->bulan,
+        'bulan' => $bulan,
         'rencana' => $request->rencana,
         'realisasi' => $request->realisasi,
         'defiasi' => $request->realisasi - $request->rencana,
@@ -121,6 +126,20 @@ public function destroyProgress($pekerjaanId, $progressId)
                      ->with('success', 'Progress berhasil dihapus');
 }
 
+// Import Progress dari Excel
+public function importProgress(Request $request, $id)
+{
+    $request->validate([
+        'file_excel' => 'required|mimes:xlsx,xls',
+    ]);
+
+    try {
+        Excel::import(new ProgressFisikImport($id), $request->file('file_excel'));
+        return redirect()->back()->with('success', 'Data berhasil diimport!');
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'Import gagal: ' . $e->getMessage());
+    }
+}
 
     // Progress RKAP
     public function penyerapanRkap($id)

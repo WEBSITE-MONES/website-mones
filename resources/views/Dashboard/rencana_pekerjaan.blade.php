@@ -126,7 +126,7 @@
 @push('scripts')
 <script>
 $('#rencanaTable').DataTable({
-    pageLength: 5,
+    pageLength: -1,
     responsive: true,
     language: {
         paginate: {

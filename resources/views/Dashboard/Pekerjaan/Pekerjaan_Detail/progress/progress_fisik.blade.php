@@ -35,6 +35,10 @@
                 class="btn btn-primary btn-round ms-auto">
                 <i class="fa fa-plus"></i> Input Progress Bulanan
             </a>
+            <a href="#" class="btn btn-success btn-round ms-2" data-bs-toggle="modal"
+                data-bs-target="#importExcelModal">
+                <i class="fa fa-file-excel"></i> Import dari Excel
+            </a>
         </div>
         <div class="card-body table-responsive">
             <table id="progressTable" class="display table table-striped table-hover">
@@ -99,20 +103,41 @@
             </table>
         </div>
     </div>
+    <div class="modal fade" id="importExcelModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Progress Bulanan dari Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ route('pekerjaan.progress.import', $pekerjaan->id) }}" method="POST"
+                        enctype="multipart/form-data">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label">Pilih File Excel</label>
+                            <input type="file" class="form-control" name="file_excel" accept=".xlsx,.xls" required>
+                        </div>
+                        <div class="mb-3">
+                            <a href="{{ asset('assets/template/template_progress.xlsx') }}" class="btn btn-link">
+                                <i class="fa fa-download"></i> Download Template Excel
+                            </a>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fa fa-upload"></i> Import Data
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-{{-- DataTables --}}
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-
+@push('scripts')
 <script>
 $('#progressTable').DataTable({
-    pageLength: 5,
+    pageLength: -1,
     responsive: true,
-    order: [
-        [0, 'asc']
-    ], // urutkan kolom pertama (bulan) ASC
     language: {
         paginate: {
             previous: "Previous",
@@ -129,6 +154,8 @@ $('#progressTable').DataTable({
     }]
 });
 </script>
+@endpush
+
 
 {{-- Chart KaiAdmin HTML Legend --}}
 <script src="{{ asset('assets/js/plugin/chart.js/chart.min.js') }}"></script>

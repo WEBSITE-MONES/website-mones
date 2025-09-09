@@ -16,6 +16,7 @@
                     <a href="{{ route('pekerjaan.create') }}" class="btn btn-primary btn-round ms-auto">
                         <i class="fa fa-plus"></i> Input Rencana Kerja
                     </a>
+
                     @endif
                 </div>
                 <div class="card-body">
@@ -95,7 +96,7 @@
 @push('scripts')
 <script>
 $('#rencanaTable').DataTable({
-    pageLength: 5,
+    pageLength: -1,
     responsive: true,
     language: {
         paginate: {

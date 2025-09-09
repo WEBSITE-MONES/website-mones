@@ -57,6 +57,8 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
         Route::put('/progress/{progress}', [PekerjaanDetailController::class, 'updateProgress'])->name('pekerjaan.progress.update');
         Route::delete('/progress/{progress}', [PekerjaanDetailController::class, 'destroyProgress'])
         ->name('pekerjaan.progress.destroy');
+        Route::post('/progress/import', [PekerjaanDetailController::class, 'importProgress'])
+        ->name('pekerjaan.progress.import');
 
 
         Route::get('/progres-rkap', [PekerjaanDetailController::class, 'penyerapanRkap'])->name('pekerjaan.rkap');
