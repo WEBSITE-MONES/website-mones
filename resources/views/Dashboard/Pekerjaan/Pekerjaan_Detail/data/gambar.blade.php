@@ -137,7 +137,7 @@
 @push('scripts')
 <script>
 $('#gambarTable').DataTable({
-    pageLength: 5,
+    pageLength: -1,
     responsive: true,
     language: {
         paginate: {

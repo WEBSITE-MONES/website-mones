@@ -10,16 +10,6 @@
     @endif
 
     <div class="row mb-3">
-        <!-- <div class="col-md-3 ms-auto">
-            <form method="GET" action="{{ route('pekerjaan.index') }}">
-                <select class="form-select" name="tahun" onchange="this.form.submit()">
-                    <option value="">-- Pilih Tahun --</option>
-                    @for($i = date('Y'); $i >= 2020; $i--)
-                    <option value="{{ $i }}" {{ request('tahun') == $i ? 'selected' : '' }}>{{ $i }}</option>
-                    @endfor
-                </select>
-            </form>
-        </div> -->
     </div>
 
     <div class="row">
@@ -38,24 +28,30 @@
                         <table id="rencanaTable" class="display table table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>Entitas/Terminal</th>
-                                    <th>Nama Pekerjaan</th>
-                                    <th>Status</th>
+                                    <th>Unit Cabang</th>
+                                    <th>COA</th>
+                                    <th>Program Investasi</th>
+                                    <th>Tipe Investasi</th>
+                                    <th>Tahun Usulan</th>
+                                    <th>Nomor Prodef SAP</th>
+                                    <th>Nama Investasi</th>
                                     <th>Kebutuhan Dana</th>
-                                    <th>Tahun</th>
-                                    <th>Tanggal</th>
+                                    <th>RKAP</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($pekerjaans as $pekerjaan)
                                 <tr>
-                                    <td>{{ $pekerjaan->wilayah->nama }}</td>
-                                    <td>{{ $pekerjaan->nama_pekerjaan }}</td>
-                                    <td>{{ $pekerjaan->status }}</td>
-                                    <td>Rp {{ number_format($pekerjaan->kebutuhan_dana,0,',','.') }}</td>
-                                    <td>{{ $pekerjaan->tahun }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($pekerjaan->tanggal)->format('d-m-Y') }}</td>
+                                    <td>{{ $pekerjaan->wilayah?->nama ?? '-' }}</td>
+                                    <td>{{ $pekerjaan->coa }}</td>
+                                    <td>{{ $pekerjaan->program_investasi }}</td>
+                                    <td>{{ $pekerjaan->tipe_investasi }}</td>
+                                    <td>{{ $pekerjaan->tahun_usulan ?? '-' }}</td>
+                                    <td>{{ $pekerjaan->nomor_prodef_sap }}</td>
+                                    <td>{{ $pekerjaan->nama_investasi }}</td>
+                                    <td>Rp {{ number_format($pekerjaan->kebutuhan_dana ?? 0,0,',','.') }}</td>
+                                    <td>Rp {{ number_format($pekerjaan->rkap ?? 0,0,',','.') }}</td>
                                     <td>
                                         <div class="dropdown dropend">
                                             <!-- Tombol dropdown -->
@@ -67,11 +63,18 @@
 
                                             <ul class="dropdown-menu"
                                                 aria-labelledby="aksiDropdown{{ $pekerjaan->id }}">
-                                                <!-- Tombol Detail tetap ada -->
+                                                <!-- Tombol Detail -->
                                                 <li>
                                                     <a href="{{ route('pekerjaan.detail', $pekerjaan->id) }}"
                                                         class="dropdown-item">
                                                         <i class="fa fa-eye text-info"></i> Detail
+                                                    </a>
+                                                </li>
+
+                                                <!-- Tombol Rincian -->
+                                                <li>
+                                                    <a href="#" class="dropdown-item">
+                                                        <i class="fa fa-list text-warning"></i> Rincian
                                                     </a>
                                                 </li>
 
@@ -104,17 +107,6 @@
                                 </tr>
                                 @endforeach
                             </tbody>
-                            <!-- <tfoot>
-                                <tr>
-                                    <th>Wilayah</th>
-                                    <th>Nama Pekerjaan</th>
-                                    <th>Status</th>
-                                    <th>Kebutuhan Dana</th>
-                                    <th>Tahun</th>
-                                    <th>Tanggal</th>
-                                    <th>Action</th>
-                                </tr>
-                            </tfoot> -->
                         </table>
                     </div>
                 </div>
@@ -127,7 +119,7 @@
 <script>
 $('#rencanaTable').DataTable({
     pageLength: -1,
-    responsive: true,
+    scrollX: true,
     language: {
         paginate: {
             previous: "Previous",

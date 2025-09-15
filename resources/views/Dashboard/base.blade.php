@@ -4,7 +4,7 @@
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     @php
-    $setting = \App\Models\SettingAplikasi::first(); // ambil data setting
+    $setting = \App\Models\SettingAplikasi::first();
     @endphp
 
     <title>{{ $setting->nama_aplikasi ?? 'P-Mones' }}</title>
@@ -106,23 +106,33 @@
                         @endif
 
                         {{-- Progress Investasi (admin & user) --}}
-                        <!-- @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
+                        @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
                         <li class="nav-item">
                             <a href="#">
-                                <i class="fas fa-chart-line"></i>
-                                <p>Progress Investasi</p>
+                                <i class="fas fa-money-bill-alt"></i>
+                                <p>Anggaran</p>
                             </a>
                         </li>
-                        @endif -->
+                        @endif
                         {{-- Data Investasi (admin & user) --}}
-                        <!-- @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
+                        @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
                         <li class="nav-item">
-                            <a href="#">
-                                <i class="fas fa-database"></i>
-                                <p>Data Investasi</p>
+                            <a data-bs-toggle="collapse" href="#realisasi" class="collapsed" aria-expanded="false">
+                                <i class="fas fa-handshake"></i>
+                                <p>Realisasi</p>
+                                <span class="caret"></span>
                             </a>
+                            <div class="collapse" id="realisasi">
+                                <ul class="nav nav-collapse">
+                                    <li>
+                                        <a href="{{ route('realisasi.index') }}">
+                                            <span class="sub-item">Investasi</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </li>
-                        @endif -->
+                        @endif
 
                         {{-- Pengaturan (hanya superadmin) --}}
                         @if(auth()->user()->role === 'superadmin')

@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+       Schema::table('pekerjaan', function (Blueprint $table) {
+            if (Schema::hasColumn('pekerjaan', 'status_realisasi')) {
+                $table->dropColumn('status_realisasi');
+            }
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('pekerjaan', function (Blueprint $table) {
+            $table->enum('status_realisasi', ['PR', 'PO', 'GR', 'Payment'])->nullable();
+        });
+    }
+};

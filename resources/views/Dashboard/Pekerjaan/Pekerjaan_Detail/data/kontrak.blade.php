@@ -9,7 +9,7 @@
             <div class="card card-round">
                 <div class="card-header d-flex align-items-center">
                     <h4 class="card-title">Daftar Kontrak</h4>
-                    @if(auth()->user()->role === 'superadmin')
+                    @if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'user')
                     <button class="btn btn-primary btn-round ms-auto" data-bs-toggle="modal"
                         data-bs-target="#modalKontrak">
                         <i class="fa fa-plus"></i> Tambah Kontrak
@@ -103,7 +103,7 @@
                             </tbody>
                         </table>
                     </div>
-                </div> {{-- card-body --}}
+                </div>
             </div>
         </div>
     </div>
@@ -147,7 +147,7 @@
 @push('scripts')
 <script>
 $('#kontrakTable').DataTable({
-    pageLength: 5,
+    pageLength: -1,
     responsive: true,
     language: {
         paginate: {

@@ -16,7 +16,6 @@
                     <a href="{{ route('pekerjaan.create') }}" class="btn btn-primary btn-round ms-auto">
                         <i class="fa fa-plus"></i> Input Rencana Kerja
                     </a>
-
                     @endif
                 </div>
                 <div class="card-body">
@@ -24,22 +23,28 @@
                         <table id="rencanaTable" class="display table table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>Nama Pekerjaan</th>
-                                    <th>Status</th>
-                                    <th>Kebutuhan Dana</th>
-                                    <th>Tahun</th>
-                                    <th>Tanggal</th>
+                                    <th>Unit Cabang</th>
+                                    <th>COA</th>
+                                    <th>Program Investasi</th>
+                                    <th>Tipe Investasi</th>
+                                    <th>Nomor Prodef SAP</th>
+                                    <th>Nama Investasi</th>
+                                    <th>Kebutuhan Dana 2025</th>
+                                    <th>RKAP 2025</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($wilayah->pekerjaans as $pekerjaan)
                                 <tr>
-                                    <td>{{ $pekerjaan->nama_pekerjaan }}</td>
-                                    <td>{{ $pekerjaan->status }}</td>
-                                    <td>Rp {{ number_format($pekerjaan->kebutuhan_dana,0,',','.') }}</td>
-                                    <td>{{ $pekerjaan->tahun }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($pekerjaan->tanggal)->format('d-m-Y') }}</td>
+                                    <td>{{ $pekerjaan->wilayah?->nama ?? '-' }}</td>
+                                    <td>{{ $pekerjaan->coa }}</td>
+                                    <td>{{ $pekerjaan->program_investasi }}</td>
+                                    <td>{{ $pekerjaan->tipe_investasi }}</td>
+                                    <td>{{ $pekerjaan->nomor_prodef_sap }}</td>
+                                    <td>{{ $pekerjaan->nama_investasi }}</td>
+                                    <td>Rp {{ number_format($pekerjaan->kebutuhan_dana_2025,0,',','.') }}</td>
+                                    <td>Rp {{ number_format($pekerjaan->rkap_2025,0,',','.') }}</td>
                                     <td>
                                         <div class="dropdown dropend">
                                             <!-- Tombol dropdown -->
@@ -50,7 +55,7 @@
                                             </button>
                                             <ul class="dropdown-menu"
                                                 aria-labelledby="aksiDropdown{{ $pekerjaan->id }}">
-                                                <!-- Tombol Detail tetap ada -->
+                                                <!-- Tombol Detail -->
                                                 <li>
                                                     <a href="{{ route('pekerjaan.detail', $pekerjaan->id) }}"
                                                         class="dropdown-item">
@@ -81,13 +86,13 @@
                                             </ul>
                                         </div>
                                     </td>
-
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>

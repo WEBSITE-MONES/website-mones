@@ -12,7 +12,7 @@ use App\Models\ProgressFisik;
 class PekerjaanDetailController extends Controller
 {
     /**
-     * Halaman utama detail pekerjaan (3 kolom: Progress, Data, Status)
+     * Halaman utama detail pekerjaan (Progress, Data, Status)
      */
     public function index($id)
     {

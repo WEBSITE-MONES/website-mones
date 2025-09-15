@@ -8,6 +8,7 @@ use App\Http\Controllers\Autentikasi\AccountSettingController;
 use App\Http\Controllers\Dashboard\PekerjaanController;
 use App\Http\Controllers\Dashboard\SettingAplikasiController;
 use App\Http\Controllers\Dashboard\PekerjaanDetailController;
+use App\Http\Controllers\Dashboard\RealisasiController;
 use App\Http\Middleware\RoleMiddleware;
 
 
@@ -29,55 +30,93 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
 
     // Semua role bisa lihat dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
-
     Route::get('/kota/{id}', [DashboardController::class, 'kota'])->name('dashboard.kota');
     Route::get('/user', [AuthController::class, 'user'])->name('dashboard.user');
 
-    // Account
-    Route::get('/account', [AccountSettingController::class, 'index'])->name('account.index');
-    Route::get('/account/edit', [AccountSettingController::class, 'edit'])->name('account.edit');
-    Route::put('/account/update', [AccountSettingController::class, 'update'])->name('account.update');
-    Route::get('/account/setting', [AccountSettingController::class, 'accountSetting'])->name('account.setting');
-    Route::post('/account/setting/update', [AccountSettingController::class, 'updateAccountSetting'])->name('account.setting.update');
+    // ====================== ACCOUNT ======================
+    Route::prefix('account')->group(function() {
+        Route::get('/', [AccountSettingController::class, 'index'])->name('account.index');
+        Route::get('/edit', [AccountSettingController::class, 'edit'])->name('account.edit');
+        Route::put('/update', [AccountSettingController::class, 'update'])->name('account.update');
+        Route::get('/setting', [AccountSettingController::class, 'accountSetting'])->name('account.setting');
+        Route::post('/setting/update', [AccountSettingController::class, 'updateAccountSetting'])->name('account.setting.update');
+    });
 
-    // Rencana Pekerjaan
+    // ====================== REALISASI ======================
+    Route::prefix('realisasi')->group(function() {
+
+    // Daftar PR
+    Route::get('/', [RealisasiController::class, 'index'])->name('realisasi.index');
+
+    // Input PR
+    Route::get('/create-pr', [RealisasiController::class, 'createPR'])->name('realisasi.createPR');
+    Route::post('/store-pr', [RealisasiController::class, 'storePR'])->name('realisasi.storePR');
+    Route::get('/{pr}/edit', [RealisasiController::class, 'editPR'])->name('realisasi.editPR');
+    Route::put('/{pr}/update', [RealisasiController::class, 'updatePR'])->name('realisasi.updatePR');
+
+    // Kontrak (PO)
+    Route::get('/create-po/{pr}', [RealisasiController::class, 'createPO'])->name('realisasi.createPO');
+    Route::post('/store-po/{pr}', [RealisasiController::class, 'storePO'])->name('realisasi.storePO');
+    Route::get('/po/{po}/edit', [RealisasiController::class, 'editPO'])->name('realisasi.editPO');
+    Route::put('/po/{po}/update', [RealisasiController::class, 'updatePO'])->name('realisasi.updatePO');
+
+    // (Progress)
+    Route::get('/edit-progress/{po}', [RealisasiController::class, 'editProgress'])->name('realisasi.editProgress');
+    Route::put('/update-progress/{po}', [RealisasiController::class, 'updateProgress'])->name('realisasi.updateProgress');
+
+    // GR
+    Route::get('/create-gr/{pr}', [RealisasiController::class, 'createGR'])->name('realisasi.createGR');
+    Route::post('/store-gr/{pr}', [RealisasiController::class, 'storeGR'])->name('realisasi.storeGR');
+    Route::get('/edit-gr/{pr}', [RealisasiController::class, 'editGR'])->name('realisasi.editGR');
+    Route::put('/update-gr/{pr}/{gr}', [RealisasiController::class, 'updateGR'])->name('realisasi.updateGR');
+
+    // Payment Request
+    Route::get('/create-payment/{pr}', [RealisasiController::class, 'createPayment'])->name('realisasi.createPayment');
+    Route::post('/store-payment/{pr}', [RealisasiController::class, 'storePayment'])->name('realisasi.storePayment');
+
+
+    // Update status bertahap (PR → PO → GR → Payment)
+    Route::get('/update-status/{pr}/{status}', [RealisasiController::class, 'updateStatus'])->name('realisasi.updateStatus');
+
+    // Hapus PR
+    Route::delete('/{pr}/destroy', [RealisasiController::class, 'destroy'])->name('realisasi.destroy');
+});
+
+
+    // ====================== RENCANA PEKERJAAN ======================
     Route::get('/pekerjaan', [PekerjaanController::class, 'index'])->name('pekerjaan.index');
 
     // DETAIL PEKERJAAN (prefix pekerjaan/{id})
     Route::prefix('pekerjaan/{id}')->group(function () {
+
         Route::get('/detail', [PekerjaanDetailController::class, 'index'])->name('pekerjaan.detail');
 
-        // PROGRES INVESTASI
+        // ---------- PROGRES INVESTASI ----------
         Route::get('/progres-fisik', [PekerjaanDetailController::class, 'progresFisik'])->name('pekerjaan.progres.fisik');
         Route::post('/progress/store', [PekerjaanDetailController::class, 'storeProgress'])->name('pekerjaan.progress.store');
-        Route::get('/pekerjaan/progress/create', [PekerjaanDetailController::class, 'createProgress'])
-        ->name('pekerjaan.progress.create');
-        Route::get('/progress/{progress}/edit', [PekerjaanDetailController::class, 'editProgress'])
-        ->name('pekerjaan.progress.edit');
+        Route::get('/progress/create', [PekerjaanDetailController::class, 'createProgress'])->name('pekerjaan.progress.create');
+        Route::get('/progress/{progress}/edit', [PekerjaanDetailController::class, 'editProgress'])->name('pekerjaan.progress.edit');
         Route::put('/progress/{progress}', [PekerjaanDetailController::class, 'updateProgress'])->name('pekerjaan.progress.update');
-        Route::delete('/progress/{progress}', [PekerjaanDetailController::class, 'destroyProgress'])
-        ->name('pekerjaan.progress.destroy');
-        Route::post('/progress/import', [PekerjaanDetailController::class, 'importProgress'])
-        ->name('pekerjaan.progress.import');
-
+        Route::delete('/progress/{progress}', [PekerjaanDetailController::class, 'destroyProgress'])->name('pekerjaan.progress.destroy');
+        Route::post('/progress/import', [PekerjaanDetailController::class, 'importProgress'])->name('pekerjaan.progress.import');
 
         Route::get('/progres-rkap', [PekerjaanDetailController::class, 'penyerapanRkap'])->name('pekerjaan.rkap');
         Route::get('/progres-pembayaran', [PekerjaanDetailController::class, 'pembayaran'])->name('pekerjaan.pembayaran');
 
-        // DATA INVESTASI
+        // ---------- DATA INVESTASI ----------
         Route::get('/data-kontrak', [PekerjaanDetailController::class, 'kontrak'])->name('pekerjaan.data.kontrak');
         Route::get('/data-gambar', [PekerjaanDetailController::class, 'gambar'])->name('pekerjaan.data.gambar');
         Route::get('/data-laporan', [PekerjaanDetailController::class, 'laporan'])->name('pekerjaan.data.laporan');
         Route::get('/data-korespondensi', [PekerjaanDetailController::class, 'korespondensi'])->name('pekerjaan.data.korespondensi');
 
-        // STATUS INVESTASI
+        // ---------- STATUS INVESTASI ----------
         Route::get('/status-perencanaan', [PekerjaanDetailController::class, 'perencanaan'])->name('pekerjaan.status.perencanaan');
         Route::get('/status-pelelangan', [PekerjaanDetailController::class, 'pelelangan'])->name('pekerjaan.status.pelelangan');
         Route::get('/status-pelaksanaan', [PekerjaanDetailController::class, 'pelaksanaan'])->name('pekerjaan.status.pelaksanaan');
         Route::get('/status-selesai', [PekerjaanDetailController::class, 'selesai'])->name('pekerjaan.status.selesai');
     });
 
-    // SUPERADMIN ONLY 
+    // ====================== SUPERADMIN ONLY ======================
     Route::middleware(['role:superadmin'])->group(function() {
 
         // CRUD Pekerjaan
@@ -100,7 +139,7 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
         Route::put('/setting-aplikasi/{id}', [SettingAplikasiController::class, 'update'])->name('setting_aplikasi.update');
     });
 
-    // ================= ADMIN + SUPERADMIN =================
+    // ====================== ADMIN + SUPERADMIN ======================
     Route::middleware(['role:admin,superadmin'])->group(function() {
         Route::post('/pekerjaan/{id}/approve', [PekerjaanController::class, 'approve'])->name('pekerjaan.approve');
     });

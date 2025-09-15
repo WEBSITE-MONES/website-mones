@@ -99,7 +99,6 @@
                     </tr>
                     @endforelse
                 </tbody>
-
             </table>
         </div>
     </div>
@@ -245,7 +244,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // Render HTML Legend
     document.getElementById("myChartLegend").innerHTML = myHtmlLegendsChart.generateLegend();
 });
 </script>

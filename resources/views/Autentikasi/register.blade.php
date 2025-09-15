@@ -25,9 +25,7 @@
         </div>
     </header>
 
-    <!-- Ornamen kiri -->
     <img src="{{ asset('login/assets/Pattern 3.png') }}" alt="ornamen kiri" class="ornament ornament-left">
-    <!-- Ornamen kanan -->
     <img src="{{ asset('login/assets/pattern.png') }}" alt="ornamen kanan" class="ornament ornament-right">
 
     <!-- Card Register -->

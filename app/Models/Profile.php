@@ -9,7 +9,6 @@ class Profile extends Model
 {
     use HasFactory;
 
-    // Kolom yang boleh diisi mass assignment
     protected $fillable = [
         'user_id',
         'jabatan',

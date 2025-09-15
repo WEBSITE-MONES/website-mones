@@ -20,7 +20,7 @@ class ProgressFisikImport implements ToModel, WithHeadingRow
 
     public function headingRow(): int
     {
-        return 1; // baris pertama jadi heading
+        return 1;
     }
 
     public function model(array $row)

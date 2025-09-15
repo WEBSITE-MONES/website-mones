@@ -212,9 +212,9 @@
                                     </div>
                                 </div>
                             </div>
-                        </div> {{-- row --}}
-                    </div> {{-- container --}}
-                </div> {{-- card-body --}}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
