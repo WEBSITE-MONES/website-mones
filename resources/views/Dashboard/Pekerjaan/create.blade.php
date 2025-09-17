@@ -96,10 +96,13 @@
                             <option value="">-- Pilih Tahun --</option>
                             @php
                             $currentYear = date('Y');
-                            for ($i = $currentYear; $i <= $currentYear + 5; $i++) {
-                                echo "<option value='$i'>$i</option>" ; } @endphp </select>
+                            $startYear = 2000; // tahun awal
+                            $endYear = $currentYear + 15; // tahun akhir
+                            for ($i = $startYear; $i <= $endYear; $i++) { echo "<option value='$i'>$i</option>" ; }
+                                @endphp </select>
                     </div>
                 </div>
+
                 {{-- Kebutuhan Dana & RKAP --}}
                 <div class="row mt-2">
                     <div class="col-md-6">

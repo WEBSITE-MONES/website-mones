@@ -28,7 +28,7 @@
                         <table id="rencanaTable" class="display table table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>Unit Cabang</th>
+                                    <th>Entitas/Terminal</th>
                                     <th>COA</th>
                                     <th>Program Investasi</th>
                                     <th>Tipe Investasi</th>

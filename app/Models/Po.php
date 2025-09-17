@@ -14,9 +14,11 @@ class Po extends Model
     'estimated',
     'waktu_pelaksanaan',
     'pelaksana',
-    'mekanisme_pembayaran',
     'tanggal_po',
+    'mekanisme_pembayaran',
 ];
+
+
 
     public function pr()
     {
@@ -32,6 +34,12 @@ public function getRouteKeyName()
 {
     return 'id';
 }
+
+public function termins()
+{
+    return $this->hasMany(Termin::class);
+}
+
 
 public function pekerjaan()
     {

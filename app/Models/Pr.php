@@ -22,7 +22,6 @@ class Pr extends Model
 
     protected $casts = [
         'tanggal_pr' => 'date',
-        'jenis_pekerjaan' => 'array',
     ];
 
     // Relasi ke Pekerjaan

@@ -55,8 +55,8 @@
                     </tbody>
                 </table>
 
-                <div class="text-end mt-4">
-                    <a href="{{ route('realisasi.index') }}" class="btn btn-secondary me-2">Kembali</a>
+                <div class="card-footer text-end">
+                    <a href="{{ url()->previous() }}" class="btn btn-danger">Batal</a>
                     <button type="submit" class="btn btn-primary">Update GR</button>
                 </div>
             </form>

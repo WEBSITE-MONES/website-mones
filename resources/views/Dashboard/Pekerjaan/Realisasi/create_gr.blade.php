@@ -32,24 +32,25 @@
 
                 {{-- Attachment (tampilan saja) --}}
                 <h5 class="mt-4">Attachment</h5>
-                <table class="table table-bordered">
-                    <thead class="table-light">
-                        <tr>
-                            <th>BA Pemeriksaan Pekerjaan Selesai</th>
-                            <th>BA Serah Terima Pekerjaan</th>
-                            <th>BA Pembayaran</th>
-                            <th>Laporan / Dokumentasi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><input type="file" name="ba_pemeriksaan" class="form-control"></td>
-                            <td><input type="file" name="ba_serah_terima" class="form-control"></td>
-                            <td><input type="file" name="ba_pembayaran" class="form-control"></td>
-                            <td><input type="file" name="laporan_dokumentasi" class="form-control"></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">BA Pemeriksaan Pekerjaan Selesai</label>
+                    <input type="file" name="ba_pemeriksaan" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">BA Serah Terima Pekerjaan</label>
+                    <input type="file" name="ba_serah_terima" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">BA Pembayaran</label>
+                    <input type="file" name="ba_pembayaran" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Laporan / Dokumentasi</label>
+                    <input type="file" name="laporan_dokumentasi" class="form-control">
+                </div>
 
                 {{-- Biaya Langsung GR --}}
                 <h5 class="mt-4">Biaya Langsung GR</h5>
@@ -95,8 +96,8 @@
                     </tfoot>
                 </table>
 
-                <div class="text-end mt-4">
-                    <a href="{{ route('realisasi.index') }}" class="btn btn-secondary me-2">Kembali</a>
+                <div class="card-footer text-end">
+                    <a href="{{ url()->previous() }}" class="btn btn-danger">Batal</a>
                     <button type="submit" class="btn btn-primary">Simpan GR</button>
                 </div>
             </form>

@@ -19,27 +19,29 @@
     </div>
     @endif
 
-    <div class="card">
+    <div class="card shadow-sm border-0">
         <div class="card-header text-center text-white">
-            <h3 class="card-title mb-0">FORM PR</h3>
+            <h3 class="card-title mb-0">FORM INPUT PR</h3>
         </div>
 
         <form action="{{ route('realisasi.storePR') }}" method="POST">
             @csrf
             <div class="card-body">
+
                 {{-- Jenis Pekerjaan & Nama Pekerjaan --}}
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label>Jenis Pekerjaan <span class="text-danger">*</span></label>
-                        <select name="jenis_pekerjaan[]" class="form-select" multiple required>
+                        <label class="form-label">Jenis Pekerjaan <span class="text-danger">*</span></label>
+                        <select name="jenis_pekerjaan" class="form-select" required>
+                            <option value="">-- Pilih Jenis Pekerjaan --</option>
                             <option value="Konsultan Perencana">Konsultan Perencana</option>
                             <option value="Pelaksanaan Fisik">Pelaksanaan Fisik</option>
                             <option value="Konsultan Pengawas">Konsultan Pengawas</option>
                         </select>
-                        <small class="text-muted">Tekan Ctrl (Windows) / Cmd (Mac) untuk pilih lebih dari satu</small>
                     </div>
+
                     <div class="col-md-6">
-                        <label>Nama Pekerjaan <span class="text-danger">*</span></label>
+                        <label class="form-label">Nama Pekerjaan <span class="text-danger">*</span></label>
                         <select name="pekerjaan_id" class="form-select" required>
                             <option value="">-- Pilih Pekerjaan --</option>
                             @foreach($pekerjaans as $p)
@@ -52,14 +54,16 @@
                 {{-- Nilai PR & Nomor PR --}}
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label>Nilai PR <span class="text-danger">*</span></label>
+                        <label class="form-label">Nilai PR <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="number" name="nilai_pr" class="form-control" required>
+                            <input type="text" id="nilai_pr_display" class="form-control"
+                                placeholder="Misal: 10.000.000" required>
+                            <input type="hidden" name="nilai_pr" id="nilai_pr">
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label>Nomor PR <span class="text-danger">*</span></label>
+                        <label class="form-label">Nomor PR <span class="text-danger">*</span></label>
                         <input type="text" name="nomor_pr" class="form-control" required>
                     </div>
                 </div>
@@ -67,16 +71,23 @@
                 {{-- Tanggal PR & Tahun Anggaran --}}
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label>Tanggal PR <span class="text-danger">*</span></label>
+                        <label class="form-label">Tanggal PR <span class="text-danger">*</span></label>
                         <input type="date" name="tanggal_pr" class="form-control" value="{{ date('Y-m-d') }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label>Tahun Anggaran <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" value="{{ date('Y') }}" readonly>
+                        <label class="form-label">Tahun Anggaran <span class="text-danger">*</span></label>
+                        <select name="tahun_anggaran" class="form-select" required>
+                            <option value="">-- Pilih Tahun --</option>
+                            @php
+                            $currentYear = date('Y');
+                            $startYear = $currentYear - 20;
+                            $endYear = $currentYear + 15;
+                            for ($i = $startYear; $i <= $endYear; $i++) { $selected=($i==$currentYear) ? 'selected' : ''
+                                ; echo "<option value='$i' $selected>$i</option>" ; } @endphp </select>
                     </div>
                 </div>
 
-                {{-- Total Dana (opsional) --}}
+                {{-- Total Dana --}}
                 <div class="row mb-3">
                     <div class="col-md-12 text-end">
                         <strong>Total PR: </strong>
@@ -90,26 +101,33 @@
             {{-- Footer --}}
             <div class="card-footer text-end">
                 <a href="{{ url()->previous() }}" class="btn btn-danger">Batal</a>
-                <button type="submit" class="btn btn-primary">Simpan</button>
+                <button type="submit" class="btn btn-primary">Simpan PR</button>
             </div>
-
         </form>
     </div>
 </div>
 
 @push('scripts')
 <script>
-$(document).ready(function() {
-    // Hitung total PR otomatis (jika perlu)
+$(function() {
+    const displayInput = $('#nilai_pr_display');
+    const hiddenInput = $('#nilai_pr');
+
+    displayInput.on('input', function() {
+        let value = this.value.replace(/\D/g, '');
+        this.value = new Intl.NumberFormat('id-ID').format(value);
+        hiddenInput.val(value);
+        hitungTotal();
+    });
+
     function hitungTotal() {
-        let nilai = parseFloat($('input[name="nilai_pr"]').val()) || 0;
-        $('#total-pr').text('Rp ' + nilai.toLocaleString('id-ID'));
+        let nilai = parseInt(hiddenInput.val()) || 0;
+        $('#total-pr').text('Rp ' + new Intl.NumberFormat('id-ID').format(nilai));
         $('#total-pr-hidden').val(nilai);
     }
-    $('input[name="nilai_pr"]').on('input', hitungTotal);
+
     hitungTotal();
 });
 </script>
 @endpush
-
 @endsection

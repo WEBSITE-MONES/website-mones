@@ -106,7 +106,7 @@
                         @endif
 
                         {{-- Progress Investasi (admin & user) --}}
-                        @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
+                        @if(in_array(auth()->user()->role, ['superadmin','admin']))
                         <li class="nav-item">
                             <a href="#">
                                 <i class="fas fa-money-bill-alt"></i>
@@ -114,12 +114,20 @@
                             </a>
                         </li>
                         @endif
+                        @if(in_array(auth()->user()->role, ['superadmin','admin']))
+                        <li class="nav-item">
+                            <a href="{{ route('realisasi.index') }}">
+                                <i class="fas fa-handshake"></i>
+                                <p>Realisasi Investasi</p>
+                            </a>
+                        </li>
+                        @endif
                         {{-- Data Investasi (admin & user) --}}
-                        @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
+                        <!-- @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
                         <li class="nav-item">
                             <a data-bs-toggle="collapse" href="#realisasi" class="collapsed" aria-expanded="false">
                                 <i class="fas fa-handshake"></i>
-                                <p>Realisasi</p>
+                                <p>Realisasi Investasi</p>
                                 <span class="caret"></span>
                             </a>
                             <div class="collapse" id="realisasi">
@@ -132,7 +140,7 @@
                                 </ul>
                             </div>
                         </li>
-                        @endif
+                        @endif -->
 
                         {{-- Pengaturan (hanya superadmin) --}}
                         @if(auth()->user()->role === 'superadmin')

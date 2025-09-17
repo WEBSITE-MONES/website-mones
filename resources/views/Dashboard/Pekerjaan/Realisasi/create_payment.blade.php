@@ -87,9 +87,9 @@
                     </tfoot>
                 </table>
 
-                <div class="text-end mt-4">
-                    <a href="{{ route('realisasi.index') }}" class="btn btn-secondary me-2">Kembali</a>
-                    <button type="submit" class="btn btn-success">Simpan Payment</button>
+                <div class="card-footer text-end">
+                    <a href="{{ url()->previous() }}" class="btn btn-danger">Batal</a>
+                    <button type="submit" class="btn btn-primary">Simpan Payment</button>
                 </div>
             </form>
         </div>
