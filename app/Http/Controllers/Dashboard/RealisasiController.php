@@ -1,8 +1,10 @@
 <?php
 
 namespace App\Http\Controllers\Dashboard;
+use Illuminate\Support\Facades\Log;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB; //GEGARA LUPA TAMBAH INI ERRORKU 2 JAM SIELLL
 use Illuminate\Http\Request;
 use App\Models\Pekerjaan;
 use App\Models\Pr;
@@ -10,6 +12,9 @@ use App\Models\Po;
 use App\Models\Gr;
 use App\Models\Payment;
 use App\Models\Termin;
+use App\Models\Progress;
+use App\Models\ProgressSub;
+use App\Models\ProgressDetail;
 
 class RealisasiController extends Controller
 {
@@ -76,8 +81,6 @@ class RealisasiController extends Controller
                      ->with('success', 'Data PR berhasil ditambahkan.');
 }
 
-
-
     // Update status PR → PO → GR → Payment
     public function updateStatus(Pr $pr, $status)
     {
@@ -131,7 +134,6 @@ public function updatePR(Request $request, Pr $pr)
 
 // PO
 // CREATE
-// CREATE (tidak diubah)
 public function createPO(Pr $pr)
 {
     return view('Dashboard.Pekerjaan.Realisasi.create_po', compact('pr'));
@@ -353,44 +355,136 @@ public function updatePO(Request $request, Po $po)
     return redirect()->route('realisasi.index')->with('success', 'PO berhasil diperbarui.');
 }
 
-
-
 // PROGRES
-// FORM EDIT
-public function editProgress(Po $po)
+    // EDIT
+    public function editProgress(Po $po)
 {
-    $progresses = $po->progresses()->orderBy('bulan')->get();
-
-    return view('Dashboard.Pekerjaan.Realisasi.edit_progress', compact('po', 'progresses'));
+    $po->load('progresses.subs.details'); // supaya eager load
+    return view('Dashboard.Pekerjaan.Realisasi.edit_progress', compact('po'));
 }
 
-// UPDATE / SIMPAN
+
 public function updateProgress(Request $request, Po $po)
 {
     $request->validate([
-        'progress' => 'required|integer|min:0|max:100',
-        'bulan' => 'required|integer|min:1|max:12', // pastikan 1-12
-        'nomor_ba_mulai_kerja' => 'nullable|string|max:100',
-        'tanggal_ba_mulai_kerja' => 'nullable|date',
+        'nomor_ba_mulai_kerja'     => 'nullable|string|max:255',
+        'tanggal_ba_mulai_kerja'   => 'nullable|date',
+        'file_ba'                  => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+
+        'progress.*.jenis_pekerjaan'   => 'nullable|string|max:255',
+        'subs.*.sub_pekerjaan'         => 'nullable|string|max:255',
+        'subs.*.volume'                => 'nullable|numeric',
+        'subs.*.satuan'                => 'nullable|string|max:50',
+        'subs.*.bobot'                 => 'nullable|numeric',
+        'details.*.minggu'             => 'nullable|integer',
+        'details.*.tanggal_awal_minggu'=> 'nullable|date',
+        'details.*.tanggal_akhir_minggu'=> 'nullable|date',
+        'details.*.rencana'            => 'nullable|numeric',
+        'details.*.realisasi'          => 'nullable|numeric',
     ]);
 
-    $data = $request->only(['progress','bulan','nomor_ba_mulai_kerja','tanggal_ba_mulai_kerja']);
+    /** ---------------- HEADER ---------------- **/
+    $progressHeader = $po->progresses()->firstOrCreate([], []);
+    $progressHeader->update([
+        'nomor_ba_mulai_kerja'   => $request->nomor_ba_mulai_kerja,
+        'tanggal_ba_mulai_kerja' => $request->tanggal_ba_mulai_kerja,
+    ]);
 
-    
-
-    // cek apakah progress untuk bulan tsb sudah ada
-    $progress = $po->progresses()->where('bulan', $request->bulan)->first();
-
-    if ($progress) {
-        // update progress bulan tsb
-        $progress->update($data);
-    } else {
-        // buat progress baru untuk bulan tsb
-        $po->progresses()->create($data);
+    if ($request->hasFile('file_ba')) {
+        $filePath = $request->file('file_ba')->store('ba_files', 'public');
+        $progressHeader->update(['file_ba' => $filePath]);
     }
 
-    return redirect()->route('realisasi.index')->with('success', 'Progress bulan '.$request->bulan.' berhasil disimpan.');
+    /** ---------------- UPDATE DATA LAMA ---------------- **/
+    foreach ($request->input('progress', []) as $id => $data) {
+        Progress::where('id', $id)->update([
+            'jenis_pekerjaan' => $data['jenis_pekerjaan'] ?? null,
+        ]);
+    }
+
+    foreach ($request->input('subs', []) as $id => $data) {
+        ProgressSub::where('id', $id)->update([
+            'sub_pekerjaan' => $data['sub_pekerjaan'] ?? null,
+            'volume'        => $data['volume'] ?? null,
+            'satuan'        => $data['satuan'] ?? null,
+            'bobot'         => $data['bobot'] ?? null,
+        ]);
+    }
+
+    foreach ($request->input('details', []) as $id => $data) {
+        ProgressDetail::where('id', $id)->update([
+            'minggu'              => $data['minggu'] ?? null,
+            'tanggal_awal_minggu' => $data['tanggal_awal_minggu'] ?? null,
+            'tanggal_akhir_minggu'=> $data['tanggal_akhir_minggu'] ?? null,
+            'rencana'             => $data['rencana'] ?? null,
+            'realisasi'           => $data['realisasi'] ?? null,
+        ]);
+    }
+
+    /** ---------------- INSERT BARU ---------------- **/
+    $progressMap = []; // mapping progress baru
+    foreach ($request->input('new_progress', []) as $idx => $data) {
+        $progress = $po->progresses()->create([
+            'jenis_pekerjaan' => $data['jenis_pekerjaan'] ?? null,
+        ]);
+        $progressMap["new_{$idx}"] = $progress->id;
+    }
+
+    $subMap = []; // mapping sub baru
+    foreach ($request->input('new_subs', []) as $progressKey => $subs) {
+        $realProgressId = $progressMap[$progressKey] ?? (is_numeric($progressKey) ? $progressKey : null);
+        if (!$realProgressId) continue;
+
+        foreach ($subs as $subIdx => $data) {
+            $sub = ProgressSub::create([
+                'progress_id'   => $realProgressId,
+                'sub_pekerjaan' => $data['sub_pekerjaan'] ?? null,
+                'volume'        => $data['volume'] ?? null,
+                'satuan'        => $data['satuan'] ?? null,
+                'bobot'         => $data['bobot'] ?? null,
+            ]);
+
+            // simpan mapping sub baru
+            $subMap["{$progressKey}_{$subIdx}"] = $sub->id;
+        }
+    }
+
+    /** ---------------- INSERT DETAIL BARU ---------------- **/
+    foreach ($request->input('new_details', []) as $subKey => $details) {
+        // kalau sub baru → ambil dari mapping
+        $realSubId = $subMap[$subKey] ?? null;
+
+        // kalau sub lama → key numeric langsung id sub
+        if (!$realSubId && is_numeric($subKey)) {
+            $realSubId = $subKey;
+        }
+
+        if (!$realSubId) continue;
+
+        foreach ($details as $detail) {
+            ProgressDetail::create([
+                'sub_id'              => $realSubId,
+                'minggu'              => $detail['minggu'] ?? null,
+                'tanggal_awal_minggu' => $detail['tanggal_awal_minggu'] ?? null,
+                'tanggal_akhir_minggu'=> $detail['tanggal_akhir_minggu'] ?? null,
+                'rencana'             => $detail['rencana'] ?? null,
+                'realisasi'           => $detail['realisasi'] ?? null,
+            ]);
+        }
+    }
+
+    /** ---------------- DELETE ---------------- **/
+    ProgressDetail::destroy($request->input('delete_details', []));
+    ProgressSub::destroy($request->input('delete_subs', []));
+    Progress::destroy($request->input('delete_progress', []));
+
+    return redirect()
+        ->route('realisasi.editProgress', $po->id)
+        ->with('success', 'Progress berhasil diperbarui.');
 }
+
+
+
 
 
 // GR

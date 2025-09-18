@@ -41,6 +41,18 @@ public function termins()
 }
 
 
+public function progressSubs()
+{
+    return $this->hasManyThrough(
+        ProgressSub::class,
+        Progress::class,
+        'po_id',       // Foreign key di tabel Progress
+        'progress_id', // Foreign key di tabel ProgressSub
+        'id',          // Local key di tabel Po
+        'id'           // Local key di tabel Progress
+    );
+}
+
 public function pekerjaan()
     {
         return $this->pr->pekerjaan(); 
