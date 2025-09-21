@@ -118,7 +118,7 @@
                         <li class="nav-item">
                             <a href="{{ route('realisasi.index') }}">
                                 <i class="fas fa-handshake"></i>
-                                <p>Realisasi Investasi</p>
+                                <p>Rencana Investasi</p>
                             </a>
                         </li>
                         @endif

@@ -25,10 +25,15 @@ class Po extends Model
         return $this->belongsTo(Pr::class);
     }
 
-    public function progresses()
-{
-    return $this->hasMany(Progress::class);
-}
+//     public function progresses()
+// {
+//     return $this->hasMany(Progress::class);
+// }
+
+public function progresses()
+    {
+        return $this->hasMany(Progress::class, 'po_id');
+    }
 
 public function getRouteKeyName()
 {
@@ -40,18 +45,12 @@ public function termins()
     return $this->hasMany(Termin::class);
 }
 
+public function pekerjaanItems()
+    {
+        return $this->hasMany(PekerjaanItem::class, 'po_id');
+    }
 
-public function progressSubs()
-{
-    return $this->hasManyThrough(
-        ProgressSub::class,
-        Progress::class,
-        'po_id',       // Foreign key di tabel Progress
-        'progress_id', // Foreign key di tabel ProgressSub
-        'id',          // Local key di tabel Po
-        'id'           // Local key di tabel Progress
-    );
-}
+
 
 public function pekerjaan()
     {

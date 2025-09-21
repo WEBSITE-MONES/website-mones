@@ -63,6 +63,11 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     // (Progress)
     Route::get('/edit-progress/{po}', [RealisasiController::class, 'editProgress'])->name('realisasi.editProgress');
     Route::put('/update-progress/{po}', [RealisasiController::class, 'updateProgress'])->name('realisasi.updateProgress');
+    Route::post('/{po}/import-excel', [RealisasiController::class, 'importExcel'])->name('realisasi.importExcel');
+    Route::get('/download-template', [RealisasiController::class, 'downloadTemplate'])
+    ->name('realisasi.downloadTemplate');
+    Route::get('/realisasi/modal-data/{item}', [RealisasiController::class, 'getModalData']);
+
 
     // GR
     Route::get('/create-gr/{pr}', [RealisasiController::class, 'createGR'])->name('realisasi.createGR');

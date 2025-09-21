@@ -14,7 +14,7 @@ class Progress extends Model
 
     protected $fillable = [
         'po_id',
-        'jenis_pekerjaan',
+        'pekerjaan_item_id', 
         'nomor_ba_mulai_kerja',
         'tanggal_ba_mulai_kerja',
         'file_ba',
@@ -22,34 +22,29 @@ class Progress extends Model
 
     public function po()
     {
-        return $this->belongsTo(Po::class);
+        return $this->belongsTo(Po::class, 'po_id');
     }
 
-    public function getDeviasiAttribute()
+    public function pekerjaanItem()
     {
-        $rencana = $this->details->sum('rencana');
-        $realisasi = $this->details->sum('realisasi');
-        return $realisasi - $rencana;
+        return $this->belongsTo(PekerjaanItem::class, 'pekerjaan_item_id');
     }
 
-    
-    public function subs()
+    public function details()
     {
-        return $this->hasMany(ProgressSub::class, 'progress_id');
-    }
-    
-public function details()
-    {
-        // (target, through, foreignKeyOnThrough, foreignKeyOnFinal, localKey, localKeyOnThrough)
-        return $this->hasManyThrough(
-            ProgressDetail::class,
-            ProgressSub::class,
-            'progress_id', // foreign key on progress_sub -> progress.id
-            'sub_id',      // foreign key on progress_details -> progress_sub.id
-            'id',          // local key on progress
-            'id'           // local key on progress_sub
-        );
+        return $this->hasMany(ProgressDetail::class, 'progress_id');
     }
 
+    // // Relasi ke PO
+    // public function po()
+    // {
+    //     return $this->belongsTo(Po::class);
+    // }
+
+    // // Relasi ke sub-pekerjaan
+    // public function subs()
+    // {
+    //     return $this->hasMany(ProgressSub::class, 'progress_id');
+    // }
 
 }

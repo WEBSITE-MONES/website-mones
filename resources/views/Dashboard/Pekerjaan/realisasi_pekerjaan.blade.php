@@ -5,7 +5,7 @@
 @section('content')
 <div class="page-inner">
     <div class="page-header d-flex justify-content-between align-items-center">
-        <h4 class="page-title">Realisasi Anggaran Tahun {{ date('Y') }}</h4>
+        <h4 class="page-title">Rencana Anggaran Tahun {{ date('Y') }}</h4>
 
         <div class="d-flex">
             <select class="form-select me-2" style="width:120px">

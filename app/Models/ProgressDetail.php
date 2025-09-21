@@ -12,23 +12,21 @@ class ProgressDetail extends Model
     protected $table = 'progress_details';
 
     protected $fillable = [
-        'sub_id',
-        'minggu',
-        'tanggal_awal_minggu',
-        'tanggal_akhir_minggu',
-        'rencana',
-        'realisasi',
+        'progress_id',
+        'minggu_id',
+        'bobot_rencana',
+        'bobot_realisasi',
+        'keterangan',
     ];
 
-    public function sub()
+    public function progress()
     {
-        return $this->belongsTo(ProgressSub::class, 'sub_id');
-    }
-    public function getDeviasiAttribute()
-    {
-        return $this->realisasi - $this->rencana;
+        return $this->belongsTo(Progress::class, 'progress_id');
     }
 
-    
+    public function minggu()
+    {
+        return $this->belongsTo(MasterMinggu::class, 'minggu_id');
+    }
 
 }
