@@ -25,7 +25,7 @@ class PekerjaanItem extends Model
         'bobot',
     ];
 
-    
+
     public function po()
     {
         return $this->belongsTo(Po::class, 'po_id');
