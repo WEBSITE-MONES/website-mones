@@ -16,6 +16,7 @@ class ProgressDetail extends Model
         'minggu_id',
         'bobot_rencana',
         'bobot_realisasi',
+        'volume_realisasi',
         'keterangan',
     ];
 

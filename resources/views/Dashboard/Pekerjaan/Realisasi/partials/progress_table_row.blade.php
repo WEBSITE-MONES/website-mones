@@ -3,103 +3,96 @@
 $GLOBALS['rowNo'] = ($GLOBALS['rowNo'] ?? 0) + 1;
 $no = $GLOBALS['rowNo'];
 
-// Ambil progress terkait item ini
 $progress = $po->progresses->firstWhere('pekerjaan_item_id', $item->id);
 
-// Variabel kumulatif untuk item ini
-$rencanaCum = 0;
-$realisasiCum = 0;
-$hasAnyDetailSoFar = false; // untuk menentukan kapan kumulatif mulai tampil
+// Kelas baris untuk hirarki visual
+$rowClass = match($level) {
+0 => 'table-active text-dark',
+1 => 'bg-light-subtle text-muted',
+default => '',
+};
+
+// Logika untuk indentasi dan teks yang ditampilkan
+$indent_size = $level * 1.5;
+$style = "padding-left: {$indent_size}rem;";
+$display_text = $item->sub_sub_pekerjaan ?: ($item->sub_pekerjaan ?: $item->jenis_pekerjaan_utama);
+$text_class = ($level == 0) ? 'fw-bold' : '';
+
+// Cek apakah item ini memiliki anak
+$hasChildren = $item->children && $item->children->isNotEmpty();
+
+// Siapkan atribut data untuk JavaScript
+$dataAttributes = 'data-id="' . $item->id . '"';
+if ($item->parent_id) {
+// Tambahkan atribut data-parent-id jika ini adalah item anak
+$dataAttributes .= ' data-parent-id="' . $item->parent_id . '"';
+}
 @endphp
 
-<tr>
-    {{-- 1) No (sesuai header) --}}
-    <td class="text-center">{{ $no }}</td>
+<tr class="{{ $rowClass }}" {!! $dataAttributes !!}>
+    {{-- 1) No --}}
+    <td class="text-center small">{{ $no }}</td>
 
-    {{-- 2) Jenis Pekerjaan --}}
-    <td>{{ $item->jenis_pekerjaan_utama }}</td>
+    {{-- 2) Jenis Pekerjaan (KOLOM GABUNGAN YANG DISEMPURNAKAN) --}}
+    <td class="{{ $text_class }}">
+        <div class="d-flex align-items-center" style="padding-left: {{ $level * 1.5 }}rem;">
+            @if ($hasChildren)
+            <a href="#" class="tree-toggle text-decoration-none me-2 text-dark">
+                {{-- Ganti ikon ini jika menggunakan FontAwesome atau library lain --}}
+                <i class="bi bi-chevron-down"></i>
+            </a>
+            @else
+            <span style="width: 1.2rem; display: inline-block;"></span>
+            @endif
 
-    {{-- 3) Sub Pekerjaan --}}
-    <td>{{ $item->sub_pekerjaan }}</td>
+            {{-- Teks Pekerjaan --}}
+            <span>{{ $display_text }}</span>
+        </div>
+    </td>
 
-    {{-- 4) Sub-Sub Pekerjaan --}}
-    <td>{{ $item->sub_sub_pekerjaan }}</td>
+    {{-- 3) Volume --}}
+    <td class="text-end fw-semibold">{{ number_format((float) $item->volume, 2) }}</td>
 
-    {{-- 5) Volume --}}
-    <td class="text-end">{{ number_format((float) $item->volume, 2) }}</td>
-
-    {{-- 6) Satuan --}}
-    <td>{{ $item->sat }}</td>
-
-    {{-- 7) Harga Satuan --}}
+    <td class="text-center">{{ $item->sat }}</td>
     <td class="text-end">{{ number_format($item->harga_satuan ?? 0, 0, ',', '.') }}</td>
+    <td class="text-end fw-bold">{{ number_format($item->jumlah_harga ?? 0, 0, ',', '.') }}</td>
+    <td class="text-end fw-bold text-primary">{{ number_format($item->bobot ?? $item->bobot_total ?? 0, 2) }}</td>
+    <td class="text-end fw-bold text-primary">{{ number_format($item->bobot ?? $item->bobot_total ?? 0, 2) }}%</td>
 
-    {{-- 8) Jumlah Harga --}}
-    <td class="text-end">{{ number_format($item->jumlah_harga ?? 0, 0, ',', '.') }}</td>
+    {{-- Kolom dinamis per minggu --}}
 
-    {{-- 9) Bobot Total (angka) --}}
-    <td class="text-end">{{ number_format($item->bobot ?? $item->bobot_total ?? 0, 2) }}</td>
-
-    {{-- 10) Bobot (%) (tampilkan sama seperti angka, header punya kolom ini juga) --}}
-    <td class="text-end">{{ number_format($item->bobot ?? $item->bobot_total ?? 0, 2) }}%</td>
-
-    {{-- Dinamis: 5 kolom per minggu (Rencana, Rencana Cum, Realisasi, Realisasi Cum, Deviasi) --}}
     @foreach ($masterMinggu as $minggu)
     @php
     $detail = $progress?->details?->firstWhere('minggu_id', $minggu->id);
     $hasDetailThisWeek = (bool) $detail && ((float) $detail->bobot_rencana !== 0 || (float) $detail->bobot_realisasi !==
     0);
-
-    // Ambil nilai hanya kalau ada detail
     $rencana = $hasDetailThisWeek ? (float) $detail->bobot_rencana : 0;
     $realisasi = $hasDetailThisWeek ? (float) $detail->bobot_realisasi : 0;
-
-    // kalau ada detail minggu ini, tambahkan ke kumulatif
-    if ($hasDetailThisWeek) {
-    $rencanaCum += $rencana;
-    $realisasiCum += $realisasi;
-    $hasAnyDetailSoFar = true;
-    }
-
-    $deviasi = $realisasiCum - $rencanaCum;
+    $rencanaData = $rencana > 0 ? number_format($rencana, 2) . '%' : '-';
+    //$isInputEditable = $hasDetailThisWeek;
     @endphp
 
-    {{-- Rencana (per minggu) --}}
-    <td class="text-end">
-        {{ $hasDetailThisWeek ? number_format($rencana, 2) . '%' : '-' }}
+    {{-- Rencana --}}
+    <td class="text-end bg-warning-subtle small text-dark" data-minggu-id="{{ $minggu->id }}"
+        data-item-id="{{ $item->id }}">
+        {{ $rencanaData }}
     </td>
 
-    {{-- Rencana Kumulatif --}}
-    <td class="text-end">
-        {{ $hasAnyDetailSoFar ? number_format($rencanaCum, 2) . '%' : '-' }}
-    </td>
-
-    {{-- Realisasi (per minggu) --}}
-    <td class="text-end">
-        @if ($progress)
-        <input type="number" name="progress[{{ $progress->id }}][detail][{{ $minggu->id }}][bobot_realisasi]"
-            class="form-control form-control-sm text-end" style="min-width:70px;" step="0.01"
-            value="{{ $realisasi > 0 ? $realisasi : '' }}">
+    {{-- Realisasi (Tampilan Saja) --}}
+    <td class="text-end small text-success fw-bold" data-minggu-id="{{ $minggu->id }}" data-item-id="{{ $item->id }}">
+        @if (!empty($realisasi))
+        {{ number_format($realisasi, 2) }}
         @else
-        -
+        {{-- biarin kosong --}}
         @endif
     </td>
 
 
-    {{-- Realisasi Kumulatif --}}
-    <td class="text-end">
-        {{ $hasAnyDetailSoFar ? number_format($realisasiCum, 2) . '%' : '-' }}
-    </td>
-
-    {{-- Deviasi (kumulatif) --}}
-    <td class="text-end {{ $deviasi < 0 ? 'text-danger' : 'text-success' }}">
-        {{ $hasAnyDetailSoFar ? number_format($deviasi, 2) . '%' : '-' }}
-    </td>
     @endforeach
 </tr>
 
-{{-- Rekursif untuk children --}}
-@if ($item->children && $item->children->isNotEmpty())
+{{-- Rekursif untuk item anak --}}
+@if ($hasChildren)
 @foreach ($item->children as $child)
 @include('Dashboard.Pekerjaan.Realisasi.partials.progress_table_row', [
 'item' => $child,

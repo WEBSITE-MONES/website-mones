@@ -4,70 +4,117 @@
 
 @section('content')
 <div class="page-inner">
-    <div class="page-header">
-        <h4 class="page-title">Edit User</h4>
+    {{-- Header Halaman Ditingkatkan --}}
+    <div class="page-header d-flex justify-content-between align-items-center mb-3">
+        <h4 class="page-title fw-bold">
+            <i class="fas fa-user-edit me-2 text-primary"></i> Edit Pengguna: <span
+                class="text-secondary">{{ $user->username }}</span>
+        </h4>
+        <a href="{{ route('dashboard.user') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Kembali ke Daftar User
+        </a>
     </div>
 
-    <div class="row">
+    ---
+
+    <div class="row justify-content-center">
         <div class="col-md-12">
-
-            {{-- tampilkan error kalau validasi gagal --}}
-            @if ($errors->any())
-            <div class="alert alert-danger">
-                <ul class="mb-0">
-                    @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            @endif
-
-            <div class="card">
-                <div class="card-header text-center">
-                    <h3 class="card-title">Form Edit User</h3>
+            {{-- Kartu Utama Form --}}
+            <div class="card shadow-lg border-0 rounded-3">
+                <div class="card-header bg-primary text-white p-3 rounded-top-3">
+                    <h4 class="card-title mb-0 text-center fw-bolder">
+                        FORM EDIT DATA PENGGUNA
+                    </h4>
                 </div>
 
-                <form action="{{ route('users.update', $user->id) }}" method="POST" class="form-horizontal"
-                    enctype="multipart/form-data">
+                <form action="{{ route('users.update', $user->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
-                    <div class="card-body">
-                        <div class="row">
-                            {{-- Username --}}
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Username <span class="text-danger">*</span></label>
-                                    <input type="text" name="username" class="form-control"
-                                        value="{{ old('username', $user->username) }}" required>
-                                </div>
-                            </div>
+                    <div class="card-body p-4">
 
-                            {{-- Nama Lengkap --}}
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Nama Lengkap <span class="text-danger">*</span></label>
-                                    <input type="text" name="name" class="form-control"
-                                        value="{{ old('name', $user->name) }}" required>
-                                </div>
-                            </div>
+                        {{-- Alert Validasi Error (Ditingkatkan) --}}
+                        @if ($errors->any())
+                        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                            <h5 class="alert-heading fs-6 fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>
+                                Kesalahan Input!</h5>
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        @endif
+
+                        {{-- Info Wajib Isi --}}
+                        <div class="alert alert-info border-info shadow-sm p-2 mb-4">
+                            <small class="d-flex align-items-center">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Bidang yang ditanda bintang merah (<span class="text-danger">*</span>) **wajib diisi**.
+                            </small>
                         </div>
 
-                        <div class="row">
-                            {{-- Email --}}
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Email <span class="text-danger">*</span></label>
-                                    <input type="email" name="email" class="form-control"
-                                        value="{{ old('email', $user->email) }}" required>
+                        {{-- Grup Input Dasar User --}}
+                        <fieldset class="border p-3 mb-4 rounded-3">
+                            <legend class="float-none w-auto px-2 fs-6 fw-semibold text-primary">
+                                <i class="fas fa-id-card me-1"></i> Informasi Akun
+                            </legend>
+
+                            <div class="row g-3">
+                                {{-- Username --}}
+                                <div class="col-md-6">
+                                    <label for="username" class="form-label fw-semibold">Username <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" name="username" id="username"
+                                        class="form-control form-control-sm @error('username') is-invalid @enderror"
+                                        value="{{ old('username', $user->username) }}"
+                                        placeholder="Masukkan username unik" required>
+                                    @error('username')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                {{-- Nama Lengkap --}}
+                                <div class="col-md-6">
+                                    <label for="name" class="form-label fw-semibold">Nama Lengkap <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" name="name" id="name"
+                                        class="form-control form-control-sm @error('name') is-invalid @enderror"
+                                        value="{{ old('name', $user->name) }}" placeholder="Masukkan nama lengkap"
+                                        required>
+                                    @error('name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                {{-- Email --}}
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label fw-semibold">Email <span
+                                            class="text-danger">*</span></label>
+                                    <input type="email" name="email" id="email"
+                                        class="form-control form-control-sm @error('email') is-invalid @enderror"
+                                        value="{{ old('email', $user->email) }}" placeholder="Masukkan email" required>
+                                    @error('email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
+                        </fieldset>
 
-                            {{-- Role --}}
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Role <span class="text-danger">*</span></label>
-                                    <select name="role" class="form-control" id="roleSelect" required>
+                        {{-- Grup Input Role & Wilayah --}}
+                        <fieldset class="border p-3 rounded-3">
+                            <legend class="float-none w-auto px-2 fs-6 fw-semibold text-primary">
+                                <i class="fas fa-lock me-1"></i> Hak Akses & Password
+                            </legend>
+                            <div class="row g-3">
+                                {{-- Role --}}
+                                <div class="col-md-6">
+                                    <label for="roleSelect" class="form-label fw-semibold">Role <span
+                                            class="text-danger">*</span></label>
+                                    <select name="role"
+                                        class="form-select form-select-sm @error('role') is-invalid @enderror"
+                                        id="roleSelect" required>
                                         <option value="">-- Pilih Role --</option>
                                         <option value="superadmin"
                                             {{ old('role', $user->role) == 'superadmin' ? 'selected' : '' }}>Super Admin
@@ -77,16 +124,17 @@
                                         <option value="user" {{ old('role', $user->role) == 'user' ? 'selected' : '' }}>
                                             User</option>
                                     </select>
+                                    @error('role')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                            </div>
-                        </div>
 
-                        {{-- Wilayah (hanya untuk role admin) --}}
-                        <div class="row" id="wilayahField" style="display: none;">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Wilayah <span class="text-danger">*</span></label>
-                                    <select name="wilayah_id" class="form-control">
+                                {{-- Wilayah (hanya untuk role admin) --}}
+                                <div class="col-md-6" id="wilayahField" style="display: none;">
+                                    <label for="wilayah_id" class="form-label fw-semibold">Wilayah <span
+                                            class="text-danger">*</span></label>
+                                    <select name="wilayah_id" id="wilayah_id"
+                                        class="form-select form-select-sm @error('wilayah_id') is-invalid @enderror">
                                         <option value="">-- Pilih Wilayah --</option>
                                         @foreach($wilayahs as $wilayah)
                                         <option value="{{ $wilayah->id }}"
@@ -95,29 +143,33 @@
                                         </option>
                                         @endforeach
                                     </select>
+                                    @error('wilayah_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            {{-- Password (opsional) --}}
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Password <small class="text-muted">(kosongkan jika tidak
-                                            diubah)</small></label>
-                                    <input type="password" name="password" class="form-control"
-                                        placeholder="Password baru">
+                                {{-- Password (opsional) --}}
+                                <div class="col-md-6">
+                                    <label for="password" class="form-label fw-semibold">Password <small
+                                            class="text-muted fst-italic">(kosongkan jika tidak diubah)</small></label>
+                                    <input type="password" name="password" id="password"
+                                        class="form-control form-control-sm @error('password') is-invalid @enderror"
+                                        placeholder="Masukkan password baru">
+                                    @error('password')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
-                        </div>
+                        </fieldset>
                     </div>
 
-                    <div class="card-footer text-right">
-                        <a href="{{ route('dashboard.user') }}" class="btn btn-sm btn-danger">
-                            <i class="fas fa-undo mr-1"></i> Batal
+                    {{-- Card Footer Aksi --}}
+                    <div class="card-footer d-flex justify-content-end p-3 bg-light border-top">
+                        <a href="{{ route('dashboard.user') }}" class="btn btn-outline-danger me-2 px-4 shadow-sm">
+                            <i class="fas fa-times me-1"></i> Batal
                         </a>
-                        <button type="submit" class="btn btn-sm btn-primary">
-                            <i class="fas fa-check mr-1"></i> Update
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <i class="fas fa-save me-1"></i> Update User
                         </button>
                     </div>
                 </form>
@@ -130,7 +182,8 @@
 <script>
 function toggleWilayahField() {
     let role = document.getElementById('roleSelect').value;
-    document.getElementById('wilayahField').style.display = (role === 'admin') ? 'flex' : 'none';
+    // Menggunakan 'block' agar elemen col-md-6 tetap berfungsi sebagai blok kolom di grid.
+    document.getElementById('wilayahField').style.display = (role === 'admin') ? 'block' : 'none';
 }
 document.getElementById('roleSelect').addEventListener('change', toggleWilayahField);
 window.onload = toggleWilayahField;

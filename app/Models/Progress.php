@@ -18,6 +18,9 @@ class Progress extends Model
         'nomor_ba_mulai_kerja',
         'tanggal_ba_mulai_kerja',
         'file_ba',
+        'nomor_pcm_mulai_kerja',
+        'tanggal_pcm_mulai_kerja',
+        'file_pcm',
     ];
 
     public function po()

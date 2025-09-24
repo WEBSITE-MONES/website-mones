@@ -16,7 +16,7 @@
         type="image/x-icon" />
 
     <!-- Fonts and icons -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <script src="{{ asset('assets/js/plugin/webfont/webfont.min.js') }}"></script>
     <script>
     WebFont.load({

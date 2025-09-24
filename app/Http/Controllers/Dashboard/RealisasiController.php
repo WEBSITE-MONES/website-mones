@@ -13,14 +13,12 @@ use App\Models\Po;
 use App\Models\Gr;
 use App\Models\Payment;
 use App\Models\Termin;
-use App\Models\Progress;
+use Carbon\Carbon;
 use App\Models\MasterMinggu;
 use App\Models\PekerjaanItem;
-use App\Models\ProgressDetail;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ProgressImport;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Response;
+use App\Models\Progress;
 
 class RealisasiController extends Controller
 {
@@ -230,33 +228,6 @@ class RealisasiController extends Controller
 
             $nilaiPO = $validated['nilai_po'];
 
-            /// === AUTO GENERATE MASTER MINGGU === 
-
-            if ($validated['estimated_start'] && $validated['estimated_end']) {
-                $start = \Carbon\Carbon::parse($validated['estimated_start'])->startOfWeek(\Carbon\Carbon::MONDAY);
-                $end   = \Carbon\Carbon::parse($validated['estimated_end']);
-                $i = 1;
-
-                while ($start->lessThanOrEqualTo($end)) {
-                    $mingguStart = $start->copy();
-                    $mingguEnd   = $start->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
-                    if ($mingguEnd->greaterThan($end)) {
-                        $mingguEnd = $end->copy();
-                    }
-
-                    \App\Models\MasterMinggu::create([
-                        'po_id'        => $po->id,
-                        'kode_minggu'  => 'M' . $i,
-                        'tanggal_awal' => $mingguStart->format('Y-m-d'),
-                        'tanggal_akhir' => $mingguEnd->format('Y-m-d'),
-                    ]);
-
-                    $start->addWeek();
-                    $i++;
-                }
-            }
-            // === END AUTO GENERATE MASTER MINGGU ===
-
             foreach ($validated['termins'] as $termin) {
                 $persen = $termin['persentase'];
                 $nilai  = ($persen / 100) * $nilaiPO;
@@ -393,18 +364,23 @@ class RealisasiController extends Controller
 
     // PROGRES
     // EDIT
-    public function editProgress(Po $po)
+     public function editProgress(Po $po)
     {
+        // Load progress beserta detail dan pekerjaan item
         $po->load(['progresses.details', 'progresses.pekerjaanItem']);
 
-
+        // Ambil item pekerjaan top-level
         $items = PekerjaanItem::where('po_id', $po->id)
             ->with(['children.children'])
             ->whereNull('parent_id')
             ->orderBy('id')
             ->get();
 
-        $masterMinggu = MasterMinggu::where('po_id', $po->id)
+        // Ambil progress pertama
+        $progress = $po->progresses()->first();
+
+        // Ambil MasterMinggu berdasarkan progress_id
+        $masterMinggu = MasterMinggu::where('progress_id', $progress->id ?? 0)
             ->orderBy('tanggal_awal')
             ->get();
 
@@ -413,26 +389,23 @@ class RealisasiController extends Controller
         foreach ($masterMinggu as $minggu) {
             $monthName = $minggu->tanggal_awal->translatedFormat('F Y');
             if (!isset($monthMap[$monthName])) {
-                $monthMap[$monthName] = ['colspan' => 0];
+                $monthMap[$monthName] = ['colspan' => 0, 'minggus' => []];
             }
-            $monthMap[$monthName]['colspan'] += 5;
+            $monthMap[$monthName]['colspan'] += 5; 
+            $monthMap[$monthName]['minggus'][] = $minggu;
         }
 
         // Range tanggal
-        $dateRanges = $masterMinggu->map(
-            fn($m) =>
-            $m->tanggal_awal->format('d M') . ' - ' . $m->tanggal_akhir->format('d M')
-        );
+        $dateRanges = $masterMinggu->map(fn($m) => $m->tanggal_awal->format('d M') . ' - ' . $m->tanggal_akhir->format('d M'));
 
-        // Map progress
+        // Map progress per pekerjaan item
         $progressMap = $po->progresses->keyBy('pekerjaan_item_id');
 
-        // Hitung kumulatif
+        // Hitung kumulatif rencana & realisasi per minggu
         $totalRencanaPerMinggu = [];
         $totalRealisasiPerMinggu = [];
         foreach ($masterMinggu as $minggu) {
-            $r = 0;
-            $re = 0;
+            $r = 0; $re = 0;
             foreach ($po->progresses as $p) {
                 $d = $p->details->firstWhere('minggu_id', $minggu->id);
                 if ($d) {
@@ -448,23 +421,14 @@ class RealisasiController extends Controller
         $realisasiPct = round(array_sum($totalRealisasiPerMinggu), 2);
         $deviasiPct = round($realisasiPct - $rencanaPct, 2);
 
-        // Map detail (item+minggu)
-
+        // Map detail (item + minggu)
         $progressDetailsMap = [];
-    foreach ($po->progresses as $progress) {
-    foreach ($progress->details as $detail) {
-        $progressDetailsMap[$progress->pekerjaan_item_id][$detail->minggu_id] = $detail;
-    }
-}
+        foreach ($po->progresses as $progress) {
+            foreach ($progress->details as $detail) {
+                $progressDetailsMap[$progress->pekerjaan_item_id][$detail->minggu_id] = $detail;
+            }
+        }
 
-        // $progressDetailsMap = collect();
-        // foreach ($po->progresses as $progress) {
-        //     foreach ($progress->details as $detail) {
-        //         $progressDetailsMap[$progress->pekerjaan_item_id][$detail->minggu_id] = $detail;
-        //     }
-        // }
-
-        
         return view('Dashboard.Pekerjaan.Realisasi.edit_progress', compact(
             'po',
             'items',
@@ -478,90 +442,79 @@ class RealisasiController extends Controller
             'deviasiPct'
         ));
     }
+    // UPDATE PROGRESS BA DAN PCM
+public function updateProgress(Request $request, Po $po)
+{
+    $rules = [
+        // BA
+        'nomor_ba_mulai_kerja'   => 'nullable|string|max:255',
+        'tanggal_ba_mulai_kerja' => 'nullable|date',
+        'file_ba'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
 
-    // UPDATE PROGRESS
-    public function updateProgress(Request $request, Po $po)
-    {
-        // Validasi input
-        $rules = [
-            'nomor_ba_mulai_kerja'   => 'nullable|string|max:255',
-            'tanggal_ba_mulai_kerja' => 'nullable|date',
-            'file_ba'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        // PCM
+        'nomor_pcm_mulai_kerja'   => 'nullable|string|max:255',
+        'tanggal_pcm_mulai_kerja' => 'nullable|date',
+        'file_pcm'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+    ];
 
-            // Validasi untuk array input progress
-            'progress'                           => 'nullable|array',
-            'progress.*.id'                      => 'nullable|integer|exists:progress,id',
-            'progress.*.pekerjaan_item_id'       => 'required|integer|exists:pekerjaan_items,id',
-            'progress.*.details'                 => 'nullable|array',
-            'progress.*.details.*.bobot_realisasi' => 'nullable|numeric|between:0,100',
-        ];
+    $validated = $request->validate($rules);
 
-        // Menggunakan validate() yang akan melempar error jika gagal
-        $validated = $request->validate($rules);
-        // dd($request->all());
+    try {
+        DB::transaction(function () use ($validated, $po, $request) {
 
+            // ✅ Ambil atau buat progress utama (1 record per PO, tanpa pekerjaan_item_id)
+            $progress = $po->progresses()->firstOrCreate(
+                ['po_id' => $po->id, 'pekerjaan_item_id' => null]
+            );
 
-        try {
-            DB::transaction(function () use ($validated, $po, $request) {
+            // ✅ Update BA
+            $progress->nomor_ba_mulai_kerja   = $validated['nomor_ba_mulai_kerja'] ?? $progress->nomor_ba_mulai_kerja;
+            $progress->tanggal_ba_mulai_kerja = $validated['tanggal_ba_mulai_kerja'] ?? $progress->tanggal_ba_mulai_kerja;
 
-                // Menangani data BA dan file
-                $baData = [
-                    'nomor_ba_mulai_kerja'   => $validated['nomor_ba_mulai_kerja'] ?? null,
-                    'tanggal_ba_mulai_kerja' => $validated['tanggal_ba_mulai_kerja'] ?? null,
-                ];
+            if ($request->hasFile('file_ba')) {
+                $fileBa = $request->file('file_ba')->store('ba_files', 'public');
+                $progress->file_ba = $fileBa;
+            }
 
-                if ($request->hasFile('file_ba')) {
-                    // Hapus file lama jika ada
-                    $existingProgress = $po->progresses->firstWhere('pekerjaan_item_id', $validated['progress'][array_key_first($validated['progress'])]['pekerjaan_item_id'] ?? null);
-                    if ($existingProgress && $existingProgress->file_ba) {
-                        Storage::disk('public')->delete($existingProgress->file_ba);
-                    }
-                    $filePath = $request->file('file_ba')->store('ba_files', 'public');
-                    $baData['file_ba'] = $filePath;
+            // ✅ Update PCM
+            $progress->nomor_pcm_mulai_kerja   = $validated['nomor_pcm_mulai_kerja'] ?? $progress->nomor_pcm_mulai_kerja;
+            $progress->tanggal_pcm_mulai_kerja = $validated['tanggal_pcm_mulai_kerja'] ?? $progress->tanggal_pcm_mulai_kerja;
+
+            if ($request->hasFile('file_pcm')) {
+                $filePcm = $request->file('file_pcm')->store('pcm_files', 'public');
+                $progress->file_pcm = $filePcm;
+            }
+
+            $progress->save();
+
+            // ✅ Generate minggu pertama (M1) hanya sekali
+            if (!empty($progress->tanggal_ba_mulai_kerja)) {
+                $existing = MasterMinggu::where('progress_id', $progress->id)->count();
+
+                if ($existing == 0) {
+                    $start = Carbon::parse($progress->tanggal_ba_mulai_kerja);
+                    $awal = $start->copy();
+                    $akhir = $awal->copy()->endOfWeek();
+
+                    MasterMinggu::create([
+                        'progress_id'   => $progress->id,
+                        'kode_minggu'   => 'M1',
+                        'tanggal_awal'  => $awal,
+                        'tanggal_akhir' => $akhir,
+                    ]);
                 }
+            }
+        });
 
-                // Loop untuk setiap item progress yang dikirim dari form
-                foreach ($validated['progress'] ?? [] as $progressData) {
-                    // Cari atau buat entri progress
-                    $progress = Progress::updateOrCreate(
-                        [
-                            'po_id'             => $po->id,
-                            'pekerjaan_item_id' => $progressData['pekerjaan_item_id'],
-                        ],
-                        // Hanya update data BA pada progress item pertama
-                        (isset($firstProgressItem) ? [] : $baData)
-                    );
-                    $firstProgressItem = true; // Flag untuk memastikan hanya update BA sekali
-
-                    // Looping untuk detail mingguan
-                    foreach ($progressData['details'] ?? [] as $mingguId => $detailData) {
-                        ProgressDetail::updateOrCreate(
-                            [
-                                'progress_id' => $progress->id,
-                                'minggu_id'   => $mingguId,
-                            ],
-                            [
-                                'bobot_realisasi' => $detailData['bobot_realisasi'] ?? 0,
-                                'keterangan'      => $detailData['keterangan'] ?? null,
-                            ]
-                        );
-                    }
-                }
-
-                // Hapus progress yang tidak ada lagi (opsional, tergantung logic Anda)
-                // $po->progresses()->whereNotIn('pekerjaan_item_id', array_column($validated['progress'], 'pekerjaan_item_id'))->delete();
-
-            });
-
-            return redirect()->route('realisasi.editProgress', $po->id)->with('success', 'Progress berhasil diperbarui.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Tangkap error validasi dan kembali ke halaman sebelumnya dengan error
-            return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Throwable $e) {
-            // Tangkap error lainnya dan berikan pesan yang lebih informatif
-            return redirect()->route('realisasi.editProgress', $po->id)->with('error', 'Gagal memperbarui progress. Pesan error: ' . $e->getMessage());
-        }
+        return redirect()->route('realisasi.editProgress', $po->id)
+            ->with('success', 'Progress berhasil diperbarui.');
+    } catch (\Throwable $e) {
+        return redirect()->route('realisasi.editProgress', $po->id)
+            ->with('error', 'Gagal memperbarui progress. Pesan error: ' . $e->getMessage());
     }
+}
+
+
 
     public function importExcel(Request $request, Po $po)
 {

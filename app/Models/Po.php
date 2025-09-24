@@ -25,15 +25,20 @@ class Po extends Model
         return $this->belongsTo(Pr::class);
     }
 
-//     public function progresses()
-// {
-//     return $this->hasMany(Progress::class);
-// }
+    public function progresses()
+{
+    return $this->hasMany(Progress::class);
+}
 
-public function progresses()
-    {
-        return $this->hasMany(Progress::class, 'po_id');
-    }
+// public function progresses()
+//     {
+//         return $this->hasMany(Progress::class, 'po_id');
+//     }
+
+    public function progress()
+{
+    return $this->hasOne(Progress::class, 'po_id');
+}
 
 public function getRouteKeyName()
 {

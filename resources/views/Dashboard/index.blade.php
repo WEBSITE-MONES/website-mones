@@ -4,21 +4,113 @@
 @section('content')
 <div class="page-inner">
 
-    <!-- Lokasi Investasi -->
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <h4 class="page-title fw-bold">
+            <i class="fas fa-chart-line me-2 text-primary"></i> Dashboard
+        </h4>
+        {{-- Anda bisa menambahkan tombol lain di sini jika diperlukan --}}
+    </div>
+
+    ---
+
     <div class="row">
-        <div class="col-md-12">
-            <div class="card card-round">
-                <div class="card-header">
-                    <div class="card-head-row card-tools-still-right">
-                        <h4 class="card-title">Lokasi Investasi</h4>
+        {{-- Contoh Info-Card: Anda bisa mengisi data dari backend di sini --}}
+        <div class="col-md-3">
+            <div class="card card-stats card-round shadow-sm">
+                <div class="card-body p-3">
+                    <div class="row align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-primary bubble-shadow-small">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                        <div class="col-stats">
+                            <div class="numbers">
+                                <p class="card-category text-muted mb-1">Total Nilai Investasi</p>
+                                <h4 class="card-title fw-bold">Rp {{ number_format(123456789000, 0, ',', '.') }}</h4>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="map-container" style="position: relative; width: 100%; max-width: 1200px;">
-                        <!-- Gambar peta -->
-                        <img src="{{ asset('assets/img/Wilayah Pelindo.png') }}" alt="Peta Pelindo"
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stats card-round shadow-sm">
+                <div class="card-body p-3">
+                    <div class="row align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-success bubble-shadow-small">
+                                <i class="fas fa-project-diagram"></i>
+                            </div>
+                        </div>
+                        <div class="col-stats">
+                            <div class="numbers">
+                                <p class="card-category text-muted mb-1">Jumlah Proyek</p>
+                                <h4 class="card-title fw-bold">25 Proyek</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stats card-round shadow-sm">
+                <div class="card-body p-3">
+                    <div class="row align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-warning bubble-shadow-small">
+                                <i class="fas fa-sync-alt"></i>
+                            </div>
+                        </div>
+                        <div class="col-stats">
+                            <div class="numbers">
+                                <p class="card-category text-muted mb-1">Realisasi Anggaran</p>
+                                <h4 class="card-title fw-bold">75%</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stats card-round shadow-sm">
+                <div class="card-body p-3">
+                    <div class="row align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-info bubble-shadow-small">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                        <div class="col-stats">
+                            <div class="numbers">
+                                <p class="card-category text-muted mb-1">Proyek Selesai</p>
+                                <h4 class="card-title fw-bold">15 Proyek</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    ---
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card card-round shadow-lg">
+                <div class="card-header bg-primary text-white p-3 rounded-top-3">
+                    <div class="card-head-row">
+                        <h4 class="card-title fw-bold">
+                            <i class="fas fa-map-marked-alt me-2"></i> Lokasi Investasi
+                        </h4>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="map-container position-relative overflow-hidden" style="width: 100%;">
+                        <img src="{{ asset('assets/img/Wilayah Pelindo.png') }}" alt="Peta Pelindo" class="img-fluid"
                             style="width: 100%;">
 
+                        {{-- Logika PHP dan koordinat dipertahankan --}}
                         @php
                         $kotas = [
                         1 => ['title' => 'Ambon', 'top' => '58.2%', 'left' => '70%'],
@@ -55,19 +147,20 @@
 
                         @foreach($kotas as $id => $kota)
                         @if(auth()->user()->role === 'admin')
-                        @if(auth()->user()->wilayah_id == $id)
-                        <a href="{{ route('dashboard.kota', ['id' => $id]) }}" class="marker"
-                            style="top: {{ $kota['top'] }}; left: {{ $kota['left'] }};"
-                            title="{{ $kota['title'] }}"></a>
+                        <a href="{{ route('dashboard.kota', ['id' => $id]) }}"
+                            class="marker {{ auth()->user()->wilayah_id == $id ? '' : 'disabled' }}"
+                            style="top: {{ $kota['top'] }}; left: {{ $kota['left'] }};" title="{{ $kota['title'] }}">
+                            @if(auth()->user()->wilayah_id == $id)
+                            <i class="fas fa-map-marker-alt text-primary"></i>
+                            @else
+                            <i class="fas fa-map-pin text-secondary"></i>
+                            @endif
+                        </a>
                         @else
-                        <span class="marker disabled" style="top: {{ $kota['top'] }}; left: {{ $kota['left'] }};"
-                            title="{{ $kota['title'] }}"></span>
-                        @endif
-                        @else
-                        <!-- superadmin dan user biasa bisa lihat semua -->
                         <a href="{{ route('dashboard.kota', ['id' => $id]) }}" class="marker"
-                            style="top: {{ $kota['top'] }}; left: {{ $kota['left'] }};"
-                            title="{{ $kota['title'] }}"></a>
+                            style="top: {{ $kota['top'] }}; left: {{ $kota['left'] }};" title="{{ $kota['title'] }}">
+                            <i></i>
+                        </a>
                         @endif
                         @endforeach
                     </div>
@@ -76,21 +169,47 @@
         </div>
     </div>
 
-    <!-- Statistik Investasi -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card card-round">
-                <div class="card-header">
-                    <div class="card-head-row card-tools-still-right">
-                        <h4 class="card-title">Statistik Investasi</h4>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <!-- Konten statistik bisa ditambahkan di sini -->
-                </div>
-            </div>
-        </div>
-    </div>
-
 </div>
+
+<style>
+.map-container {
+    padding-bottom: 56.25%;
+    /* 16:9 Aspect Ratio */
+    position: relative;
+    height: 0;
+}
+
+.map-container img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+    font-size: 24px;
+    /* Ukuran ikon */
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.marker:hover {
+    transform: translate(-50%, -50%) scale(1.3);
+}
+
+.marker.disabled {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.4;
+}
+
+.marker i.fas.fa-map-marker-alt,
+.marker i.fas.fa-map-pin {
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.4));
+}
+</style>
 @endsection

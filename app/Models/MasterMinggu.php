@@ -13,7 +13,7 @@ class MasterMinggu extends Model
     protected $table = 'master_minggu';
 
     protected $fillable = [
-        'po_id', 
+        'progress_id', 
         'kode_minggu',
         'tanggal_awal',
         'tanggal_akhir',
@@ -31,8 +31,8 @@ class MasterMinggu extends Model
     {
         return $this->hasMany(ProgressDetail::class, 'minggu_id');
     }
-    public function po()
+    public function progress()
     {
-        return $this->belongsTo(Po::class);
+        return $this->belongsTo(Progress::class, 'progress_id');
     }
 }
