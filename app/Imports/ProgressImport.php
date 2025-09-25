@@ -48,7 +48,6 @@ class ProgressImport implements ToCollection
         // --- Pastikan minggu dari Excel ada di MasterMinggu
         foreach ($mingguColumns as $col) {
             $mingguKode = strtoupper($col);
-
             $existing = MasterMinggu::where('progress_id', $progressUtama->id)
                 ->where('kode_minggu', $mingguKode)
                 ->first();
@@ -67,14 +66,12 @@ class ProgressImport implements ToCollection
             }
         }
 
-        // --- Loop isi baris pekerjaan
+        // --- Loop baris pekerjaan
         foreach ($rows as $row) {
             $rowArray = $row->toArray();
 
             // skip baris kosong
-            if (count(array_filter($rowArray, fn($v) => $v !== null && $v !== '')) === 0) {
-                continue;
-            }
+            if (count(array_filter($rowArray, fn($v) => $v !== null && $v !== '')) === 0) continue;
 
             $kodePekerjaan       = trim($row[0] ?? '');
             $jenisPekerjaanUtama = trim($row[2] ?? '');
@@ -87,9 +84,10 @@ class ProgressImport implements ToCollection
             $bobotTotal          = is_numeric($row[9] ?? null) ? (float)$row[9] : 0;
             $volumeRealisasi     = is_numeric($row[10] ?? null) ? (float)$row[10] : 0;
 
-            if ($kodePekerjaan === '') continue;
+            // skip baris total/subtotal
+            if ($kodePekerjaan === '' || preg_match('/^(Jumlah|Total)/i', $kodePekerjaan)) continue;
 
-            // --- Cari parent_id kalau ada kode bercabang
+            // --- Cari parent_id
             $parentId = null;
             if (str_contains($kodePekerjaan, '.')) {
                 $parentKode = substr($kodePekerjaan, 0, strrpos($kodePekerjaan, '.'));
@@ -126,12 +124,25 @@ class ProgressImport implements ToCollection
                 'pekerjaan_item_id' => $item->id,
             ]);
 
-            // --- Loop tiap kolom untuk mapping ke minggu
+            // --- Loop tiap kolom minggu
             foreach ($rowArray as $colIndex => $value) {
                 $headerName = $this->header[$colIndex] ?? null;
                 if ($headerName && preg_match('/^M(\d+)$/i', $headerName)) {
                     $mingguKode = strtoupper($headerName);
-                    $bobotRencana = is_numeric($value) ? (float)$value : null;
+                    $value = str_replace('%', '', $value);
+
+                    // --- Normalisasi bobot rencana
+                    $bobotRencana = null;
+                    if (is_numeric($value)) {
+                        $floatVal = (float)$value;
+                        if ($floatVal > 1) {
+                            $bobotRencana = $floatVal / 100;
+                        } elseif ($floatVal < 0.01 && $floatVal > 0) {
+                            $bobotRencana = $floatVal * 100;
+                        } else {
+                            $bobotRencana = $floatVal;
+                        }
+                    }
 
                     if ($bobotRencana !== null) {
                         $minggu = MasterMinggu::where('kode_minggu', $mingguKode)
@@ -141,7 +152,7 @@ class ProgressImport implements ToCollection
                         if ($minggu) {
                             // --- Hitung bobot realisasi
                             $bobotRealisasi = 0;
-                            if ($volume > 0 && $volumeRealisasi > 0) {
+                            if ($volume > 0 && $volumeRealisasi > 0 && $bobotRencana > 0) {
                                 $bobotRealisasi = ($volumeRealisasi / $volume) * $bobotRencana;
                             }
 

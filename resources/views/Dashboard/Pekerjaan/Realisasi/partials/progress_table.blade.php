@@ -24,7 +24,7 @@
                 <th rowspan="4" class="align-middle" style="width:120px;">Harga Satuan (Rp)</th>
                 <th rowspan="4" class="align-middle" style="width:150px;">Jumlah Harga (Rp)</th>
                 <th rowspan="4" class="align-middle" style="width:100px;">Bobot(%)</th>
-                <th rowspan="4" class="align-middle" style="width:100px;">Volume Realisasi</th>
+                <th rowspan="4" class="align-middle" style="width:120px;">Volume Realisasi</th>
                 <th colspan="{{ $totalDynamicColspan }}">JADWAL PELAKSANAAN PEKERJAAN</th>
             </tr>
 
@@ -35,7 +35,7 @@
                 @endforeach
             </tr>
 
-            {{-- Baris 3: Kode Minggu (M1, M2, dst) --}}
+            {{-- Baris 3: Minggu --}}
             <tr>
                 @foreach ($monthMap as $data)
                 @foreach ($data['minggus'] as $minggu)
@@ -70,75 +70,75 @@
         <tfoot>
             {{-- 1. Rencana per minggu --}}
             <tr class="fw-bold table-primary text-primary">
-                <td colspan="10" class="text-center">RENCANA PEKERJAAN</td>
+                <td colspan="8" class="text-center">RENCANA PEKERJAAN</td>
                 @foreach ($masterMinggu as $minggu)
                 @php
-                $totalRencana = $po->progresses->sum(function($p) use ($minggu) {
+                $totalRencana = $po->progresses->sum(function ($p) use ($minggu) {
                 $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
                 return (float) ($detail?->bobot_rencana ?? 0);
                 });
                 @endphp
-                <td colspan="2" class="text-end text-primary">{{ number_format($totalRencana, 2) }}%</td>
+                <td colspan="2" class="text-end">{{ number_format($totalRencana, 2) }}%</td>
                 @endforeach
             </tr>
 
             {{-- 2. Kumulatif rencana --}}
             <tr class="fw-bold table-primary text-primary">
-                <td colspan="10" class="text-center">KUMULATIF RENCANA PEKERJAAN</td>
+                <td colspan="8" class="text-center">KUMULATIF RENCANA</td>
                 @php $cumRencana = 0; @endphp
                 @foreach ($masterMinggu as $minggu)
                 @php
-                $totalRencana = $po->progresses->sum(function($p) use ($minggu) {
+                $totalRencana = $po->progresses->sum(function ($p) use ($minggu) {
                 $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
                 return (float) ($detail?->bobot_rencana ?? 0);
                 });
                 $cumRencana += $totalRencana;
                 @endphp
-                <td colspan="2" class="text-end text-primary">{{ number_format($cumRencana, 2) }}%</td>
+                <td colspan="2" class="text-end">{{ number_format($cumRencana, 2) }}%</td>
                 @endforeach
             </tr>
 
             {{-- 3. Realisasi per minggu --}}
             <tr class="fw-bold table-success text-success">
-                <td colspan="10" class="text-center">REALISASI PEKERJAAN</td>
+                <td colspan="8" class="text-center">REALISASI PEKERJAAN</td>
                 @foreach ($masterMinggu as $minggu)
                 @php
-                $totalRealisasi = $po->progresses->sum(function($p) use ($minggu) {
+                $totalRealisasi = $po->progresses->sum(function ($p) use ($minggu) {
                 $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
                 return (float) ($detail?->bobot_realisasi ?? 0);
                 });
                 @endphp
-                <td colspan="2" class="text-end text-success">{{ number_format($totalRealisasi, 2) }}%</td>
+                <td colspan="2" class="text-end">{{ number_format($totalRealisasi, 2) }}%</td>
                 @endforeach
             </tr>
 
             {{-- 4. Kumulatif realisasi --}}
             <tr class="fw-bold table-success text-success">
-                <td colspan="10" class="text-center">KUMULATIF REALISASI PEKERJAAN</td>
+                <td colspan="8" class="text-center">KUMULATIF REALISASI</td>
                 @php $cumRealisasi = 0; @endphp
                 @foreach ($masterMinggu as $minggu)
                 @php
-                $totalRealisasi = $po->progresses->sum(function($p) use ($minggu) {
+                $totalRealisasi = $po->progresses->sum(function ($p) use ($minggu) {
                 $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
                 return (float) ($detail?->bobot_realisasi ?? 0);
                 });
                 $cumRealisasi += $totalRealisasi;
                 @endphp
-                <td colspan="2" class="text-end text-success">{{ number_format($cumRealisasi, 2) }}%</td>
+                <td colspan="2" class="text-end">{{ number_format($cumRealisasi, 2) }}%</td>
                 @endforeach
             </tr>
 
             {{-- 5. Deviasi --}}
             <tr class="fw-bold table-warning">
-                <td colspan="10" class="text-center">DEVIASI PEKERJAAN</td>
+                <td colspan="8" class="text-center">DEVIASI</td>
                 @php $cumRencana = $cumRealisasi = 0; @endphp
                 @foreach ($masterMinggu as $minggu)
                 @php
-                $totalRencana = $po->progresses->sum(function($p) use ($minggu) {
+                $totalRencana = $po->progresses->sum(function ($p) use ($minggu) {
                 $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
                 return (float) ($detail?->bobot_rencana ?? 0);
                 });
-                $totalRealisasi = $po->progresses->sum(function($p) use ($minggu) {
+                $totalRealisasi = $po->progresses->sum(function ($p) use ($minggu) {
                 $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
                 return (float) ($detail?->bobot_realisasi ?? 0);
                 });
@@ -147,13 +147,13 @@
                 $deviasi = $cumRealisasi - $cumRencana;
                 $deviasiClass = $deviasi >= 0 ? 'text-info' : 'text-danger';
                 @endphp
-                <td colspan="2" class="text-end {{ $deviasiClass }}">
-                    {{ number_format($deviasi, 2) }}%</td>
+                <td colspan="2" class="text-end {{ $deviasiClass }}">{{ number_format($deviasi, 2) }}%</td>
                 @endforeach
             </tr>
         </tfoot>
     </table>
 </div>
+
 
 <!-- {{-- Wrapper untuk informasi dan paginasi DataTables --}}
 <div class="p-4">
