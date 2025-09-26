@@ -43,16 +43,17 @@
         {{-- Tabs for Navigation --}}
         <ul class="nav nav-pills nav-fill mb-3 bg-white p-2 rounded-3 shadow-sm" id="progressTab" role="tablist">
             <li class="nav-item">
-                <button class="nav-link active fw-bold text-gray" id="form-progress-tab" data-bs-toggle="tab"
-                    data-bs-target="#formProgress" type="button" role="tab" aria-controls="formProgress"
-                    aria-selected="true">
+                <button
+                    class="nav-link fw-bold text-gray {{ session('activeTab', 'formProgress') == 'formProgress' ? 'active' : '' }}"
+                    id="form-progress-tab" data-bs-toggle="tab" data-bs-target="#formProgress" type="button" role="tab">
                     <i class="fas fa-file-alt me-1"></i> Form Edit BA & PCM
                 </button>
             </li>
             <li class="nav-item">
-                <button class="nav-link fw-bold text-success" id="rekap-progress-tab" data-bs-toggle="tab"
-                    data-bs-target="#rekapProgress" type="button" role="tab" aria-controls="rekapProgress"
-                    aria-selected="false">
+                <button
+                    class="nav-link fw-bold text-success {{ session('activeTab') == 'rekapProgress' ? 'active' : '' }}"
+                    id="rekap-progress-tab" data-bs-toggle="tab" data-bs-target="#rekapProgress" type="button"
+                    role="tab">
                     <i class="fas fa-chart-line me-1"></i> Input & Rekap Progress
                 </button>
             </li>
@@ -62,8 +63,8 @@
             {{-- =================================================================== --}}
             {{-- TAB 1: Form Edit BA & PCM                                           --}}
             {{-- =================================================================== --}}
-            <div class="tab-pane fade show active" id="formProgress" role="tabpanel"
-                aria-labelledby="form-progress-tab">
+            <div class="tab-pane fade {{ session('activeTab', 'formProgress') == 'formProgress' ? 'show active' : '' }}"
+                id="formProgress" role="tabpanel">
                 <div class="card shadow-lg border-0 rounded-3 mb-4">
                     <div class="card-header bg-primary text-white p-3 rounded-top-3">
                         <h5 class="mb-0 fw-bold"><i class="fas fa-info-circle me-2"></i> Detail Proyek</h5>
@@ -180,7 +181,8 @@
             {{-- =================================================================== --}}
             {{-- TAB 2: Input & Rekap Progress                                       --}}
             {{-- =================================================================== --}}
-            <div class="tab-pane fade" id="rekapProgress" role="tabpanel" aria-labelledby="rekap-progress-tab">
+            <div class="tab-pane fade {{ session('activeTab') == 'rekapProgress' ? 'show active' : '' }}"
+                id="rekapProgress" role="tabpanel">
 
                 <div class="row mb-4 g-3">
                     <div class="col-md-6">

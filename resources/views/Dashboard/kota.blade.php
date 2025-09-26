@@ -5,7 +5,29 @@
 @section('content')
 <div class="page-inner">
     <div class="page-header">
-        <h4 class="page-title">Pekerjaan Di Kota {{ $wilayah->nama }}</h4>
+        <!-- <h4 class="page-title">Pekerjaan Di Kota {{ $wilayah->nama }}</h4> -->
+        {{-- Breadcrumb untuk navigasi --}}
+        <ul class="breadcrumbs" style="font-size: 1.1rem; font-weight: 500;">
+            <li class="nav-home">
+                {{-- Arahkan ke route dashboard utama Anda --}}
+                <a href="{{ route('dashboard.index') }}">
+                    <i class="icon-home"></i>
+                </a>
+            </li>
+            <li class="separator">
+                <i class="icon-arrow-right"></i>
+            </li>
+            <li class="nav-item">
+                {{-- Arahkan ke halaman daftar rencana kerja/wilayah --}}
+                <a href="{{ route('pekerjaan.index') }}">Rencana Kerja</a>
+            </li>
+            <li class="separator">
+                <i class="icon-arrow-right"></i>
+            </li>
+            <li class="nav-item">
+                <a>Pekerjaan di Kota {{ $wilayah->nama }}</a>
+            </li>
+        </ul>
     </div>
     <div class="row">
         <div class="col-md-12">
@@ -23,6 +45,8 @@
                         <table id="rencanaTable" class="display table table-striped table-hover">
                             <thead>
                                 <tr>
+                                    {{-- Kolom Action dipindahkan ke paling kiri --}}
+                                    <th>Action</th>
                                     <th>Unit Cabang</th>
                                     <th>COA</th>
                                     <th>Program Investasi</th>
@@ -31,22 +55,14 @@
                                     <th>Nama Investasi</th>
                                     <th>Kebutuhan Dana 2025</th>
                                     <th>RKAP 2025</th>
-                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($wilayah->pekerjaans as $pekerjaan)
                                 <tr>
-                                    <td>{{ $pekerjaan->wilayah?->nama ?? '-' }}</td>
-                                    <td>{{ $pekerjaan->coa }}</td>
-                                    <td>{{ $pekerjaan->program_investasi }}</td>
-                                    <td>{{ $pekerjaan->tipe_investasi }}</td>
-                                    <td>{{ $pekerjaan->nomor_prodef_sap }}</td>
-                                    <td>{{ $pekerjaan->nama_investasi }}</td>
-                                    <td>Rp {{ number_format($pekerjaan->kebutuhan_dana_2025,0,',','.') }}</td>
-                                    <td>Rp {{ number_format($pekerjaan->rkap_2025,0,',','.') }}</td>
+                                    {{-- Kolom Action dipindahkan ke paling kiri --}}
                                     <td>
-                                        <div class="dropdown dropend">
+                                        <div class="dropdown">
                                             <!-- Tombol dropdown -->
                                             <button class="btn btn-light btn-sm" type="button"
                                                 id="aksiDropdown{{ $pekerjaan->id }}" data-bs-toggle="dropdown"
@@ -86,13 +102,20 @@
                                             </ul>
                                         </div>
                                     </td>
+                                    <td>{{ $pekerjaan->wilayah?->nama ?? '-' }}</td>
+                                    <td>{{ $pekerjaan->coa }}</td>
+                                    <td>{{ $pekerjaan->program_investasi }}</td>
+                                    <td>{{ $pekerjaan->tipe_investasi }}</td>
+                                    <td>{{ $pekerjaan->nomor_prodef_sap }}</td>
+                                    <td>{{ $pekerjaan->nama_investasi }}</td>
+                                    <td>Rp {{ number_format($pekerjaan->kebutuhan_dana_2025,0,',','.') }}</td>
+                                    <td>Rp {{ number_format($pekerjaan->rkap_2025,0,',','.') }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>

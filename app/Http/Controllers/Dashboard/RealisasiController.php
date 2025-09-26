@@ -19,6 +19,7 @@ use App\Models\PekerjaanItem;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ProgressImport;
 use App\Models\Progress;
+use App\Models\ProgressDetail;
 
 class RealisasiController extends Controller
 {
@@ -487,6 +488,44 @@ public function updateProgress(Request $request, Po $po)
 
             $progress->save();
 
+            // Setelah $progress->save();
+            if ($request->has('progress')) {
+                foreach ($request->progress as $itemId => $mingguData) {
+                    foreach ($mingguData as $mingguId => $values) {
+                        $volumeRealisasi = (float) ($values['volume_realisasi'] ?? 0);
+
+                        // Ambil progress per item
+                        $itemProgress = $po->progresses()
+                            ->firstOrCreate(['po_id' => $po->id, 'pekerjaan_item_id' => $itemId]);
+
+                        // Ambil detail progress per minggu
+                        $detail = ProgressDetail::firstOrNew([
+                            'progress_id' => $itemProgress->id,
+                            'minggu_id'   => $mingguId,
+                        ]);
+
+                        // Ambil bobot rencana (sudah ada di DB)
+                        $bobotRencana = (float) $detail->bobot_rencana;
+
+                        // Ambil total volume dari pekerjaan_items
+                        $item = PekerjaanItem::find($itemId);
+                        $volumeItem = (float) ($item->volume ?? 0);
+
+                        // Hitung bobot realisasi
+                        $bobotRealisasi = 0;
+                        if ($volumeItem > 0 && $bobotRencana > 0) {
+                            $bobotRealisasi = ($volumeRealisasi / $volumeItem) * $bobotRencana;
+                        }
+
+                        // Simpan
+                        $detail->volume_realisasi = $volumeRealisasi;
+                        $detail->bobot_realisasi = $bobotRealisasi;
+                        $detail->save();
+                    }
+                }
+            }
+
+
             // ✅ Generate minggu pertama (M1) hanya sekali
             if (!empty($progress->tanggal_ba_mulai_kerja)) {
                 $existing = MasterMinggu::where('progress_id', $progress->id)->count();
@@ -516,7 +555,7 @@ public function updateProgress(Request $request, Po $po)
 
 
 
-    public function importExcel(Request $request, Po $po)
+public function importExcel(Request $request, Po $po)
 {
     $request->validate([
         'file' => 'required|mimes:xlsx,xls,csv'
@@ -524,11 +563,24 @@ public function updateProgress(Request $request, Po $po)
 
     try {
         Excel::import(new ProgressImport($po->id), $request->file('file'));
-        return back()->with('success', 'Data berhasil diimport!');
+        return redirect()->back()
+            ->with('success', 'Data berhasil diimport!')
+            ->with('activeTab', 'rekapProgress'); // tambahin ini
     } catch (\Throwable $e) {
-        //dd($e->getMessage(), $e->getTraceAsString());
+        Log::error('Import Progress gagal', [
+            'message' => $e->getMessage(),
+            'file'    => $e->getFile(),
+            'line'    => $e->getLine(),
+            'trace'   => $e->getTraceAsString(),
+        ]);
+
+        return redirect()->back()
+            ->with('error', 'Terjadi error saat import: '.$e->getMessage())
+            ->with('activeTab', 'rekapProgress'); // tetap ke tab 2 meski error
     }
 }
+
+
 
 
     // TEMPLATE DOWNLOAD

@@ -37,34 +37,40 @@ $hasChildren = $item->children && $item->children->isNotEmpty();
 
     <td class="text-end">{{ number_format((float) $item->volume, 2) }}</td>
     <td class="text-center">{{ $item->sat }}</td>
-    <td class="text-end">{{ number_format($item->harga_satuan ?? 0, 2, ',', '.') }}</td>
-    <td class="text-end fw-bold">{{ number_format($item->jumlah_harga ?? 0, 2, ',', '.') }}</td>
     <td class="text-end fw-bold text-primary">{{ number_format($item->bobot ?? $item->bobot_total ?? 0, 2) }}%</td>
-
-    <td class="text-end fw-bold text-primary">
-        @php
-        // Ambil realisasi dari minggu terakhir yang ada
-        $lastDetail = $progress?->details?->sortByDesc('minggu_id')->first();
-        $volumeRealisasi = $lastDetail?->volume_realisasi ?? 0;
-        @endphp
-        {{ number_format($volumeRealisasi, 2) }}
-    </td>
-
 
     {{-- Mingguan --}}
     @foreach ($masterMinggu as $minggu)
     @php
     $detail = $progress?->details?->firstWhere('minggu_id', $minggu->id);
     $rencana = (float) ($detail?->bobot_rencana ?? 0);
-    $realisasi = (float) ($detail?->bobot_realisasi ?? 0);
+    $volumeRealisasi = (float) ($detail?->volume_realisasi ?? 0);
+    $volume = (float) ($item->volume ?? 0);
+
+    // hitung bobot realisasi
+    $realisasi = 0;
+    if ($volume > 0 && $volumeRealisasi > 0) {
+    $realisasi = ($volumeRealisasi / $volume) * $rencana;
+    }
     @endphp
+
+    {{-- Rencana --}}
     <td class="text-end bg-warning-subtle small text-dark">
         {{ $rencana > 0 ? number_format($rencana, 2) . '%' : '-' }}
     </td>
-    <td class="text-end small text-success fw-bold">
-        {{ $realisasi > 0 ? number_format($realisasi, 2) . '%' : '' }}
+
+    {{-- Volume Realisasi --}}
+    <td class="text-end small">
+        <input type="number" step="0.01" name="progress[{{ $item->id }}][{{ $minggu->id }}][volume_realisasi]"
+            value="{{ $volumeRealisasi }}" class="form-control form-control-sm text-end">
+    </td>
+
+    {{-- Realisasi --}}
+    <td class="text-end small fw-bold text-success">
+        {{ $realisasi > 0 ? number_format($realisasi, 2) . '%' : '-' }}
     </td>
     @endforeach
+
 </tr>
 
 {{-- rekursif anak --}}

@@ -21,17 +21,20 @@
                 <th rowspan="4" class="align-middle" style="width:200px;">Jenis Pekerjaan</th>
                 <th rowspan="4" class="align-middle" style="width:80px;">Volume</th>
                 <th rowspan="4" class="align-middle" style="width:70px;">Sat</th>
-                <th rowspan="4" class="align-middle" style="width:120px;">Harga Satuan (Rp)</th>
-                <th rowspan="4" class="align-middle" style="width:150px;">Jumlah Harga (Rp)</th>
                 <th rowspan="4" class="align-middle" style="width:100px;">Bobot(%)</th>
-                <th rowspan="4" class="align-middle" style="width:120px;">Volume Realisasi</th>
                 <th colspan="{{ $totalDynamicColspan }}">JADWAL PELAKSANAAN PEKERJAAN</th>
             </tr>
 
             {{-- Baris 2: Bulan --}}
             <tr>
-                @foreach ($monthMap as $monthName => $data)
-                <th colspan="{{ count($data['minggus']) * 2 }}" class="bg-primary">{{ $monthName }}</th>
+                @foreach ($monthMap as $bulan => $data)
+                @php
+                $jumlahMinggu = count($data['minggus']);
+                $colspan = $jumlahMinggu * 3; // karena per minggu ada 3 kolom
+                @endphp
+                <th colspan="{{ $colspan }}" class="bg-primary text-white text-center">
+                    {{ $bulan }}
+                </th>
                 @endforeach
             </tr>
 
@@ -39,7 +42,7 @@
             <tr>
                 @foreach ($monthMap as $data)
                 @foreach ($data['minggus'] as $minggu)
-                <th colspan="2" class="bg-info text-dark">{{ $minggu->kode_minggu }}</th>
+                <th colspan="3" class="bg-info text-dark">{{ $minggu->kode_minggu }}</th>
                 @endforeach
                 @endforeach
             </tr>
@@ -49,6 +52,7 @@
                 @foreach ($monthMap as $data)
                 @foreach ($data['minggus'] as $minggu)
                 <th class="bg-warning text-dark small">Rencana (%)</th>
+                <th class="bg-secondary text-white small">Volume Realisasi</th>
                 <th class="bg-success small">Realisasi (%)</th>
                 @endforeach
                 @endforeach

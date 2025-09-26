@@ -4,8 +4,24 @@
 
 @section('content')
 <div class="page-inner">
-    <h4 class="page-title">Pengaturan Judul Aplikasi <span id="notifikasi"></span></h4>
+    <!-- <h4 class="page-title">Pengaturan Judul Aplikasi <span id="notifikasi"></span></h4> -->
 
+    <div class="page-header">
+        <ul class="breadcrumbs" style="font-size: 1.1rem; font-weight: 500;">
+            <li class="nav-setting">
+                {{-- Arahkan ke route dashboard utama Anda --}}
+                <a href="{{ route('setting_aplikasi.index') }}">
+                    <i class="fas fa-cog"></i>
+                </a>
+            </li>
+            <li class="separator">
+                <i class="icon-arrow-right"></i>
+            </li>
+            <li class="nav-item">
+                <a href="">Judul Aplikasi</a>
+            </li>
+        </ul>
+    </div>
     @if(session('success'))
     <div class="alert alert-success">{{ session('success') }}</div>
     @endif

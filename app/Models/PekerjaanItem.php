@@ -20,8 +20,6 @@ class PekerjaanItem extends Model
         'sub_sub_pekerjaan',
         'volume',
         'sat',
-        'harga_satuan',
-        'jumlah_harga',
         'bobot',
     ];
 

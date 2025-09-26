@@ -10,6 +10,7 @@ use App\Models\Po;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class ProgressImport implements ToCollection
 {
@@ -25,29 +26,36 @@ class ProgressImport implements ToCollection
     public function collection(Collection $rows)
     {
         if ($rows->isEmpty()) {
-            throw new \Exception("File Excel kosong.");
+            Log::error("ProgressImport: File Excel kosong");
+            return;
         }
 
-        // --- Ambil header baris pertama
+        // --- Ambil header
         $this->header = $rows->shift()->toArray();
+        Log::info("ProgressImport: Header Excel", $this->header);
 
-        // --- Cari kolom minggu (M1, M2, dst.)
+        // --- Cari kolom minggu
         $mingguColumns = collect($this->header)
-            ->filter(fn($col) => preg_match('/^M\d+$/i', $col))
+            ->filter(fn($col) => preg_match('/^M\d+$/i', trim($col)))
             ->values();
+        Log::info("ProgressImport: Kolom minggu ditemukan", $mingguColumns->toArray());
 
         // --- Ambil progress utama PO
         $po = Po::find($this->poId);
-        if (!$po) throw new \Exception("PO tidak ditemukan.");
+        if (!$po) {
+            Log::error("ProgressImport: PO tidak ditemukan", ['po_id' => $this->poId]);
+            return;
+        }
 
         $progressUtama = $po->progresses()->whereNull('pekerjaan_item_id')->first();
         if (!$progressUtama || empty($progressUtama->tanggal_ba_mulai_kerja)) {
-            throw new \Exception("Progress utama belum dibuat atau tanggal BA belum diisi.");
+            Log::error("ProgressImport: Progress utama belum dibuat atau tanggal BA belum diisi", ['po_id' => $this->poId]);
+            return;
         }
 
-        // --- Pastikan minggu dari Excel ada di MasterMinggu
+        // --- Pastikan minggu di MasterMinggu
         foreach ($mingguColumns as $col) {
-            $mingguKode = strtoupper($col);
+            $mingguKode = strtoupper(trim($col));
             $existing = MasterMinggu::where('progress_id', $progressUtama->id)
                 ->where('kode_minggu', $mingguKode)
                 ->first();
@@ -63,29 +71,39 @@ class ProgressImport implements ToCollection
                     'tanggal_awal'  => $awal,
                     'tanggal_akhir' => $akhir,
                 ]);
+                Log::info("ProgressImport: MasterMinggu dibuat", ['kode' => $mingguKode]);
             }
         }
 
         // --- Loop baris pekerjaan
-        foreach ($rows as $row) {
+        foreach ($rows as $rowIndex => $row) {
             $rowArray = $row->toArray();
 
             // skip baris kosong
-            if (count(array_filter($rowArray, fn($v) => $v !== null && $v !== '')) === 0) continue;
+            if (count(array_filter($rowArray, fn($v) => $v !== null && $v !== '')) === 0) {
+                Log::info("ProgressImport: Skip baris kosong", ['row' => $rowIndex + 2]);
+                continue;
+            }
 
+            // --- Mapping sesuai struktur dd()
             $kodePekerjaan       = trim($row[0] ?? '');
-            $jenisPekerjaanUtama = trim($row[2] ?? '');
+            $jenisPekerjaanUtama = trim($row[2] ?? ''); // bisa kosong
             $subPekerjaan        = trim($row[3] ?? '');
             $subSubPekerjaan     = trim($row[4] ?? '');
             $volume              = is_numeric($row[5] ?? null) ? (float)$row[5] : 0;
             $sat                 = trim($row[6] ?? '');
-            $hargaSatuan         = is_numeric($row[7] ?? null) ? (float)$row[7] : 0;
-            $jumlahHargaExcel    = is_numeric($row[8] ?? null) ? (float)$row[8] : null;
-            $bobotTotal          = is_numeric($row[9] ?? null) ? (float)$row[9] : 0;
-            $volumeRealisasi     = is_numeric($row[10] ?? null) ? (float)$row[10] : 0;
+            $bobotTotal          = $this->parsePercent($row[7] ?? 0);
 
-            // skip baris total/subtotal
-            if ($kodePekerjaan === '' || preg_match('/^(Jumlah|Total)/i', $kodePekerjaan)) continue;
+
+            // skip baris subtotal/total (cuma yang ada kata "Jumlah"/"Total")
+            if (
+                empty($kodePekerjaan) ||
+                preg_match('/^(Jumlah|Total)/i', $kodePekerjaan) ||
+                preg_match('/^(Jumlah|Total)/i', $subPekerjaan)
+            ) {
+                Log::info("ProgressImport: Skip subtotal/total", ['row' => $rowIndex + 2]);
+                continue;
+            }
 
             // --- Cari parent_id
             $parentId = null;
@@ -94,10 +112,7 @@ class ProgressImport implements ToCollection
                 $parentId   = $this->itemMap[$parentKode] ?? null;
             }
 
-            // --- Hitung jumlah harga
-            $jumlahHargaFinal = $jumlahHargaExcel ?? ($volume * $hargaSatuan);
-
-            // --- Simpan/Update pekerjaan
+            // --- Simpan/Update pekerjaan item
             $item = PekerjaanItem::updateOrCreate(
                 [
                     'po_id'          => $this->poId,
@@ -109,40 +124,27 @@ class ProgressImport implements ToCollection
                     'sub_sub_pekerjaan'     => $subSubPekerjaan,
                     'volume'                => $volume,
                     'sat'                   => $sat,
-                    'harga_satuan'          => $hargaSatuan,
-                    'jumlah_harga'          => $jumlahHargaFinal,
                     'bobot'                 => $bobotTotal,
                     'parent_id'             => $parentId,
                 ]
             );
 
             $this->itemMap[$kodePekerjaan] = $item->id;
+            Log::info("ProgressImport: PekerjaanItem dibuat/diupdate", ['kode' => $kodePekerjaan]);
 
-            // --- Buat progress item
+            // --- Buat/Update progress untuk item ini
             $progressItem = Progress::firstOrCreate([
                 'po_id'             => $this->poId,
                 'pekerjaan_item_id' => $item->id,
             ]);
+            Log::info("ProgressImport: ProgressItem dibuat/ada", ['kode' => $kodePekerjaan]);
 
             // --- Loop tiap kolom minggu
             foreach ($rowArray as $colIndex => $value) {
                 $headerName = $this->header[$colIndex] ?? null;
                 if ($headerName && preg_match('/^M(\d+)$/i', $headerName)) {
                     $mingguKode = strtoupper($headerName);
-                    $value = str_replace('%', '', $value);
-
-                    // --- Normalisasi bobot rencana
-                    $bobotRencana = null;
-                    if (is_numeric($value)) {
-                        $floatVal = (float)$value;
-                        if ($floatVal > 1) {
-                            $bobotRencana = $floatVal / 100;
-                        } elseif ($floatVal < 0.01 && $floatVal > 0) {
-                            $bobotRencana = $floatVal * 100;
-                        } else {
-                            $bobotRencana = $floatVal;
-                        }
-                    }
+                    $bobotRencana = $this->parsePercent($value);
 
                     if ($bobotRencana !== null) {
                         $minggu = MasterMinggu::where('kode_minggu', $mingguKode)
@@ -150,12 +152,6 @@ class ProgressImport implements ToCollection
                             ->first();
 
                         if ($minggu) {
-                            // --- Hitung bobot realisasi
-                            $bobotRealisasi = 0;
-                            if ($volume > 0 && $volumeRealisasi > 0 && $bobotRencana > 0) {
-                                $bobotRealisasi = ($volumeRealisasi / $volume) * $bobotRencana;
-                            }
-
                             ProgressDetail::updateOrCreate(
                                 [
                                     'progress_id' => $progressItem->id,
@@ -163,15 +159,38 @@ class ProgressImport implements ToCollection
                                 ],
                                 [
                                     'bobot_rencana'    => $bobotRencana,
-                                    'volume_realisasi' => $volumeRealisasi,
-                                    'bobot_realisasi'  => $bobotRealisasi,
+                                    'volume_realisasi' => 0,
+                                    'bobot_realisasi'  => 0,
                                     'keterangan'       => null,
                                 ]
                             );
+                            Log::info("ProgressImport: ProgressDetail dibuat/diupdate", [
+                                'kode' => $kodePekerjaan,
+                                'minggu' => $mingguKode,
+                                'bobot_rencana' => $bobotRencana
+                            ]);
                         }
                     }
                 }
             }
         }
     }
+
+    private function parsePercent($val)
+{
+    if ($val === null || $val === '') return 0;
+
+    $val = str_replace('%', '', trim($val));
+    if (!is_numeric($val)) return 0;
+
+    $floatVal = (float)$val;
+
+    // Normalisasi ke desimal (0.xx)
+    if ($floatVal > 1) {
+        return $floatVal / 100;
+    }
+
+    return $floatVal;
+}
+
 }
