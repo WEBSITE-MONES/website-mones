@@ -35,6 +35,12 @@ class Pr extends Model
     return $this->hasOne(Po::class);
 }
 
+// public function pos()
+// {
+//     return $this->hasMany(Po::class, 'pr_id');
+// }
+
+
 public function gr()
 {
     return $this->hasOne(GR::class, 'pr_id');

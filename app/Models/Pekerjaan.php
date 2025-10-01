@@ -51,8 +51,14 @@ class Pekerjaan extends Model
     }
 
     // Relasi ke MasterInvestasi
-    public function masterInvestasis()
-    {
-        return $this->hasMany(MasterInvestasi::class, 'pekerjaan_id');
-    }
+    // public function masterInvestasis()
+    // {
+    //     return $this->hasMany(MasterInvestasi::class, 'pekerjaan_id');
+    // }
+
+    public function masterInvestasi()
+{
+    return $this->hasOne(MasterInvestasi::class, 'pekerjaan_id', 'id');
+}
+
 }

@@ -6,9 +6,21 @@
 <div class="page-inner">
     {{-- Header Halaman Ditingkatkan --}}
     <div class="page-header d-flex justify-content-between align-items-center mb-4">
-        <h4 class="page-title fw-bold">
-            <i class="fas fa-users me-2 text-primary"></i> Data Pengguna (Users)
-        </h4>
+        <ul class="breadcrumbs" style="font-size: 1.1rem; font-weight: 500;">
+            <li class="nav-home">
+                {{-- Arahkan ke route dashboard utama Anda --}}
+                <a href="{{ route('dashboard.index') }}">
+                    <i class="icon-home"></i>
+                </a>
+            </li>
+            <li class="separator">
+                <i class="icon-arrow-right"></i>
+            </li>
+            <li class="nav-item">
+                {{-- Arahkan ke halaman daftar rencana kerja/wilayah --}}
+                <a href="{{ route('dashboard.user') }}">Data Pengguna</a>
+            </li>
+        </ul>
         {{-- Tombol Tambah di Header untuk akses cepat --}}
         <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm shadow-sm">
             <i class="fas fa-plus me-1"></i> Tambah User Baru
@@ -97,4 +109,26 @@
         </div>
     </div>
 </div>
+
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    $('#add-row').DataTable({
+        pageLength: 10,
+        responsive: true,
+        language: {
+            paginate: {
+                previous: "Sebelumnya",
+                next: "Berikutnya"
+            },
+            search: "_INPUT_",
+            searchPlaceholder: "Pencarian..",
+            lengthMenu: "Tampilkan _MENU_ data"
+        }
+    });
+});
+</script>
+@endpush
+
 @endsection

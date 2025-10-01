@@ -10,12 +10,16 @@ use App\Models\MasterInvestasi;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
+
+
+
+
 class PekerjaanController extends Controller
 {
     public function index(Request $request): View
     {
         $user = auth()->user();
-        $query = Pekerjaan::with('wilayah', 'masterInvestasis');
+        $query = Pekerjaan::with(['wilayah', 'masterInvestasi']); // ✅ singular
 
         if ($user->role !== 'superadmin' && $user->wilayah_id) {
             $query->where('wilayah_id', $user->wilayah_id);
@@ -50,8 +54,8 @@ class PekerjaanController extends Controller
             'wilayah_id'        => 'required|exists:wilayah,id',
             'coa'               => 'required|string|max:255',
             'program_investasi' => 'required|string|max:255',
-            'tipe'              => 'required|string|max:255', // kode tipe
-            'tipe_investasi'    => 'required|string|max:255', // nama lengkap
+            'tipe'              => 'required|string|max:255',
+            'tipe_investasi'    => 'required|string|max:255',
             'nomor_prodef_sap'  => 'nullable|string|max:255',
             'nama_investasi'    => 'required|string|max:255',
             'kebutuhan_dana'    => 'required|numeric',
@@ -65,12 +69,11 @@ class PekerjaanController extends Controller
             'urgensi'           => 'required|string|max:255',
         ]);
 
-        // Simpan pekerjaan
         $pekerjaan = Pekerjaan::create([
             'wilayah_id'        => $request->wilayah_id,
             'coa'               => $request->coa,
             'program_investasi' => $request->program_investasi,
-            'tipe_investasi'    => $request->tipe_investasi, // nama lengkap
+            'tipe_investasi'    => $request->tipe_investasi,
             'nomor_prodef_sap'  => $request->nomor_prodef_sap,
             'nama_investasi'    => $request->nama_investasi,
             'kebutuhan_dana'    => $request->kebutuhan_dana,
@@ -79,16 +82,14 @@ class PekerjaanController extends Controller
             'user_id'           => auth()->id(),
         ]);
 
-        // Simpan master investasi pakai kode tipe
-        MasterInvestasi::create([
-            'pekerjaan_id' => $pekerjaan->id,
-            'tipe'         => $request->tipe, // kode tipe (A/B/C...)
-            'coa_sub'      => $request->coa_sub,
-            'kategori'     => $request->kategori,
-            'manfaat'      => $request->manfaat,
-            'jenis'        => $request->jenis,
-            'sifat'        => $request->sifat,
-            'urgensi'      => $request->urgensi,
+        $pekerjaan->masterInvestasi()->create([
+            'tipe'      => $request->tipe,
+            'coa_sub'   => $request->coa_sub,
+            'kategori'  => $request->kategori,
+            'manfaat'   => $request->manfaat,
+            'jenis'     => $request->jenis,
+            'sifat'     => $request->sifat,
+            'urgensi'   => $request->urgensi,
         ]);
 
         return redirect()->route('pekerjaan.index')
@@ -97,7 +98,7 @@ class PekerjaanController extends Controller
 
     public function edit(int $id): View
     {
-        $pekerjaan = Pekerjaan::with('masterInvestasis')->findOrFail($id);
+        $pekerjaan = Pekerjaan::with('masterInvestasi')->findOrFail($id); // ✅ singular
         $wilayahs = Wilayah::all();
         return view('Dashboard.Pekerjaan.edit', compact('pekerjaan', 'wilayahs'));
     }
@@ -108,8 +109,8 @@ class PekerjaanController extends Controller
             'wilayah_id'        => 'required|exists:wilayah,id',
             'coa'               => 'nullable|string|max:255',
             'program_investasi' => 'nullable|string|max:255',
-            'tipe'              => 'required|string|max:255', // kode tipe
-            'tipe_investasi'    => 'required|string|max:255', // nama lengkap
+            'tipe'              => 'required|string|max:255',
+            'tipe_investasi'    => 'required|string|max:255',
             'nomor_prodef_sap'  => 'nullable|string|max:255',
             'nama_investasi'    => 'required|string|max:255',
             'kebutuhan_dana'    => 'required|numeric',
@@ -129,7 +130,7 @@ class PekerjaanController extends Controller
             'wilayah_id'        => $request->wilayah_id,
             'coa'               => $request->coa,
             'program_investasi' => $request->program_investasi,
-            'tipe_investasi'    => $request->tipe_investasi, // nama lengkap
+            'tipe_investasi'    => $request->tipe_investasi,
             'nomor_prodef_sap'  => $request->nomor_prodef_sap,
             'nama_investasi'    => $request->nama_investasi,
             'kebutuhan_dana'    => $request->kebutuhan_dana,
@@ -138,10 +139,19 @@ class PekerjaanController extends Controller
             'user_id'           => auth()->id(),
         ]);
 
-        if($pekerjaan->masterInvestasis()->exists()){
-            $master = $pekerjaan->masterInvestasis()->first();
-            $master->update([
-                'tipe'      => $request->tipe, // kode tipe
+        if ($pekerjaan->masterInvestasi) {
+            $pekerjaan->masterInvestasi->update([
+                'tipe'      => $request->tipe,
+                'coa_sub'   => $request->coa_sub,
+                'kategori'  => $request->kategori,
+                'manfaat'   => $request->manfaat,
+                'jenis'     => $request->jenis,
+                'sifat'     => $request->sifat,
+                'urgensi'   => $request->urgensi,
+            ]);
+        } else {
+            $pekerjaan->masterInvestasi()->create([
+                'tipe'      => $request->tipe,
                 'coa_sub'   => $request->coa_sub,
                 'kategori'  => $request->kategori,
                 'manfaat'   => $request->manfaat,
@@ -158,10 +168,15 @@ class PekerjaanController extends Controller
     public function destroy(int $id): RedirectResponse
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-        $pekerjaan->masterInvestasis()->delete();
+        if ($pekerjaan->masterInvestasi) {
+            $pekerjaan->masterInvestasi()->delete();
+        }
         $pekerjaan->delete();
 
         return redirect()->route('pekerjaan.index')
                          ->with('success', 'Rencana kerja dan master investasi berhasil dihapus!');
     }
+
+    
+    
 }

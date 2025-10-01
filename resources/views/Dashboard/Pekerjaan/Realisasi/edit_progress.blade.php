@@ -5,10 +5,39 @@
 @section('content')
 
 <div class="page-inner">
-    <div class="page-header mb-4">
+    <!-- <div class="page-header mb-4">
         <h4 class="page-title fw-bolder text-primary d-flex align-items-center">
             <i class="fas fa-edit me-2"></i> Edit Progress Pekerjaan
         </h4>
+
+
+    </div> -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap grid-margin mb-4">
+        <div class="page-header">
+            <h3 class="fw-bold mb-3">Formulir Edit Progress Pekerjaan</h3>
+            <ul class="breadcrumbs mb-3">
+                <li class="nav-home">
+                    <a href="{{ route('dashboard.index') }}">
+                        <i class="icon-home"></i>
+                    </a>
+                </li>
+                <li class="separator">
+                    <i class="icon-arrow-right"></i>
+                </li>
+                <li class="nav-item">
+                    <a href="#">Realisasi Berjalan</a>
+                </li>
+                <li class="separator">
+                    <i class="icon-arrow-right"></i>
+                </li>
+                <li class="nav-item">
+                    <a href="#">Edit Progress</a>
+                </li>
+            </ul>
+        </div>
+        <a href="{{ url()->previous() }}" class="btn btn-light btn-sm">
+            <i class="fas fa-arrow-left me-2"></i> Kembali
+        </a>
     </div>
 
     {{-- Alert Messages --}}
@@ -21,6 +50,8 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     @endif
+
+
 
     @if ($errors->any())
     <div class="alert alert-danger alert-dismissible fade show shadow-lg rounded-3 border-0" role="alert">
@@ -304,7 +335,9 @@
 </div>
 @endsection
 
+
 @push('scripts')
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Cari semua elemen toggle pada tree

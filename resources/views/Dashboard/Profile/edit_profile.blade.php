@@ -4,127 +4,163 @@
 
 @section('content')
 <div class="page-inner">
-    <div class="card">
-        <div class="card-header text-center">
-            <h3 class="card-title">Edit Profile</h3>
+    {{-- Header Halaman --}}
+    <div class="d-flex justify-content-between align-items-center flex-wrap grid-margin">
+        <div>
+            <h2 class="page-title">Edit Profile</h2>
+            <h5 class="fw-normal text-muted">Perbarui informasi personal dan kontak Anda.</h5>
         </div>
+    </div>
 
-        {{-- tampilkan error validasi --}}
-        @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul class="mb-0">
-                @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-        @endif
+    <div class="row">
+        <div class="col-lg-8">
+            <form action="{{ route('account.update') }}" method="POST">
+                @csrf
+                @method('PUT')
 
-        {{-- tampilkan pesan sukses --}}
-        @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
+                {{-- KARTU 1: INFORMASI PRIBADI --}}
+                <div class="card card-round shadow-sm border-0 mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="card-title fw-bold mb-4 border-bottom pb-3"><i
+                                class="fas fa-user-edit text-primary me-2"></i>Informasi Pribadi</h5>
 
-        <form action="{{ route('account.update') }}" method="POST" class="form-horizontal">
-            @csrf
-            @method('PUT')
-
-            <div class="card-body">
-                <div class="col-md-12 mt-3">
-                    <div class="alert alert-info">
-                        <i class="fa fa-info-circle fa-x5"></i>
-                        <small>
-                            <cite title="Source Title">
-                                Inputan yang ditanda bintang merah (<span class="text-danger">*</span>) harus
-                                diisi!
-                            </cite>
-                        </small>
-                    </div>
-                </div>
-
-                <div class="row">
-                    {{-- Kiri --}}
-                    <div class="col-md-6 col-lg-6">
-                        <div class="form-group">
-                            <label for="name">Nama Lengkap <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="name" value="{{ old('name', $user->name) }}"
-                                placeholder="Masukan nama lengkap.." required>
+                        {{-- Notifikasi Error & Sukses dipindahkan ke sini agar lebih kontekstual --}}
+                        @if ($errors->any())
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>Gagal!</strong> Terdapat kesalahan pada input Anda.
+                            <ul class="mb-0 mt-2">
+                                @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
+                        @endif
 
-                        <div class="form-group">
-                            <label>Tgl. Lahir <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="tanggal_lahir"
-                                value="{{ old('tanggal_lahir', $profile->tanggal_lahir) }}">
+                        @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <strong>Berhasil!</strong> {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
+                        @endif
 
-                        <div class="form-group">
-                            <label>Jenis Kelamin <span class="text-danger">*</span></label>
-                            <div class="form-check pt-0 pb-0 ml-2">
-                                <label class="form-check-label">
-                                    <input class="form-check-input" type="radio" name="jenis_kelamin" value="L"
-                                        {{ old('jenis_kelamin', $profile->jenis_kelamin) == 'L' ? 'checked' : '' }}>
-                                    Laki-laki
-                                </label>
-                                <label class="form-check-label ml-3">
-                                    <input class="form-check-input" type="radio" name="jenis_kelamin" value="P"
-                                        {{ old('jenis_kelamin', $profile->jenis_kelamin) == 'P' ? 'checked' : '' }}>
-                                    Perempuan
-                                </label>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="name" class="form-label">Nama Lengkap <span
+                                        class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control" id="name" name="name"
+                                        value="{{ old('name', $user->name) }}" placeholder="Masukkan nama lengkap Anda"
+                                        required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="tanggal_lahir" class="form-label">Tanggal Lahir <span
+                                        class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    <input type="date" class="form-control" id="tanggal_lahir" name="tanggal_lahir"
+                                        value="{{ old('tanggal_lahir', $profile->tanggal_lahir) }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="agama" class="form-label">Agama</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-mosque"></i></span>
+                                    <select name="agama" id="agama" class="form-select">
+                                        <option value="">-- Pilih Agama --</option>
+                                        @foreach(['Islam','Kristen Katolik','Kristen
+                                        Protestan','Hindu','Budha','Konghucu','Lainnya'] as $agama)
+                                        <option value="{{ $agama }}"
+                                            {{ old('agama', $profile->agama) == $agama ? 'selected' : '' }}>
+                                            {{ $agama }}
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label d-block">Jenis Kelamin <span class="text-danger">*</span></label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="jenis_kelamin" id="laki-laki"
+                                    value="L"
+                                    {{ old('jenis_kelamin', $profile->jenis_kelamin) == 'L' ? 'checked' : '' }}
+                                    required>
+                                <label class="form-check-label" for="laki-laki">Laki-laki</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="jenis_kelamin" id="perempuan"
+                                    value="P"
+                                    {{ old('jenis_kelamin', $profile->jenis_kelamin) == 'P' ? 'checked' : '' }}
+                                    required>
+                                <label class="form-check-label" for="perempuan">Perempuan</label>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {{-- Kanan --}}
-                    <div class="col-md-6 col-lg-6">
-                        <div class="form-group">
-                            <label>Jabatan</label>
-                            <input type="text" class="form-control" name="jabatan"
-                                value="{{ old('jabatan', optional($profile)->jabatan) }}"
-                                placeholder="Masukan jabatan..">
+                {{-- KARTU 2: INFORMASI KONTAK & PEKERJAAN --}}
+                <div class="card card-round shadow-sm border-0 mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="card-title fw-bold mb-4 border-bottom pb-3"><i
+                                class="fas fa-briefcase text-primary me-2"></i>Informasi Kontak & Pekerjaan</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="jabatan" class="form-label">Jabatan</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+                                    <input type="text" class="form-control" id="jabatan" name="jabatan"
+                                        value="{{ old('jabatan', optional($profile)->jabatan) }}"
+                                        placeholder="Masukkan jabatan">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="nomor_telepon" class="form-label">No. Telepon</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                    <input type="text" class="form-control" id="nomor_telepon" name="nomor_telepon"
+                                        value="{{ old('nomor_telepon', $profile->nomor_telepon) }}"
+                                        placeholder="Contoh: 08123456789" maxlength="15">
+                                </div>
+                            </div>
                         </div>
-
-                        <div class="form-group">
-                            <label>Agama</label>
-                            <select name="agama" class="form-control">
-                                <option value="">-- Pilih Agama --</option>
-                                @foreach(['Islam','Kristen Katolik','Kristen
-                                Protestan','Hindu','Budha','Konghucu','Lainnya'] as $agama)
-                                <option value="{{ $agama }}"
-                                    {{ old('agama', $profile->agama) == $agama ? 'selected' : '' }}>
-                                    {{ $agama }}
-                                </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>No. Telepon</label>
-                            <input type="text" class="form-control" name="nomor_telepon"
-                                value="{{ old('nomor_telepon', $profile->nomor_telepon) }}" placeholder="Ex : 0852xxx"
-                                maxlength="13">
-                        </div>
-                    </div>
-
-                    {{-- Full --}}
-                    <div class="col-12 col-lg-12">
-                        <div class="form-group">
-                            <label for="alamat">Alamat</label>
-                            <textarea name="alamat" class="form-control" rows="2"
-                                placeholder="Masukan alamat lengkap..">{{ old('alamat', $profile->alamat) }}</textarea>
+                        <div class="mb-3">
+                            <label for="alamat" class="form-label">Alamat</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                <textarea name="alamat" id="alamat" class="form-control" rows="3"
+                                    placeholder="Masukkan alamat lengkap">{{ old('alamat', $profile->alamat) }}</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="card-footer text-right bg-light">
-                <button type="submit" class="btn btn-sm btn-primary">
-                    <i class="fa fa-check"></i> Simpan
-                </button>
-                <button type="reset" class="btn btn-sm btn-danger">
-                    <i class="fa fa-undo"></i> Reset
-                </button>
+        </div>
+
+        <div class="col-lg-4">
+            {{-- KARTU 3: FOTO PROFIL & AKSI --}}
+            <div class="card card-round shadow-sm border-0 mb-4 sticky-lg-top" style="top: 20px;">
+                <div class="card-body p-4 text-center">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=0d6efd&color=fff&size=128"
+                        class="img-fluid rounded-circle mb-3" alt="Avatar">
+                    <h4 class="fw-bold mb-0">{{ $user->name }}</h4>
+                    <p class="text-muted">{{ $user->email }}</p>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-check me-2"></i>Simpan
+                            Perubahan</button>
+                        <button type="reset" class="btn btn-outline-danger"><i class="fas fa-undo me-2"></i>Reset
+                            Form</button>
+                    </div>
+                    <small class="form-text text-muted mt-3 d-block">
+                        Input yang ditandai (<span class="text-danger">*</span>) wajib diisi.
+                    </small>
+                </div>
             </div>
-        </form>
+        </div>
+        </form> {{-- Tag form ditutup di sini setelah mencakup kedua kolom --}}
     </div>
 </div>
 @endsection

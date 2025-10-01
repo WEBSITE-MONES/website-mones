@@ -85,7 +85,7 @@ class ProgressImport implements ToCollection
                 continue;
             }
 
-            // --- Mapping sesuai struktur dd()
+            // --- Mapping sesuai struktur Excel
             $kodePekerjaan       = trim($row[0] ?? '');
             $jenisPekerjaanUtama = trim($row[2] ?? ''); // bisa kosong
             $subPekerjaan        = trim($row[3] ?? '');
@@ -94,8 +94,7 @@ class ProgressImport implements ToCollection
             $sat                 = trim($row[6] ?? '');
             $bobotTotal          = $this->parsePercent($row[7] ?? 0);
 
-
-            // skip baris subtotal/total (cuma yang ada kata "Jumlah"/"Total")
+            // skip baris subtotal/total
             if (
                 empty($kodePekerjaan) ||
                 preg_match('/^(Jumlah|Total)/i', $kodePekerjaan) ||
@@ -177,20 +176,11 @@ class ProgressImport implements ToCollection
     }
 
     private function parsePercent($val)
-{
-    if ($val === null || $val === '') return 0;
+    {
+        if ($val === null || $val === '') return 0;
 
-    $val = str_replace('%', '', trim($val));
-    if (!is_numeric($val)) return 0;
+        $val = str_replace('%', '', trim($val));
 
-    $floatVal = (float)$val;
-
-    // Normalisasi ke desimal (0.xx)
-    if ($floatVal > 1) {
-        return $floatVal / 100;
+        return is_numeric($val) ? (float)$val : 0;
     }
-
-    return $floatVal;
-}
-
 }

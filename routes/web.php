@@ -9,6 +9,8 @@ use App\Http\Controllers\Dashboard\PekerjaanController;
 use App\Http\Controllers\Dashboard\SettingAplikasiController;
 use App\Http\Controllers\Dashboard\PekerjaanDetailController;
 use App\Http\Controllers\Dashboard\RealisasiController;
+use App\Http\Controllers\Dashboard\WeatherController;
+use App\Http\Controllers\Dashboard\GeoController;
 use App\Http\Middleware\RoleMiddleware;
 
 
@@ -32,6 +34,8 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/kota/{id}', [DashboardController::class, 'kota'])->name('dashboard.kota');
     Route::get('/user', [AuthController::class, 'user'])->name('dashboard.user');
+    Route::get('/user-location', [GeoController::class, 'getLocation'])->name('user.location');
+    Route::get('/sidebar-weather', [WeatherController::class, 'getWeather'])->name('sidebar.weather');
 
     // ====================== ACCOUNT ======================
     Route::prefix('account')->group(function() {
@@ -78,6 +82,9 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     // Payment Request
     Route::get('/create-payment/{pr}', [RealisasiController::class, 'createPayment'])->name('realisasi.createPayment');
     Route::post('/store-payment/{pr}', [RealisasiController::class, 'storePayment'])->name('realisasi.storePayment');
+    Route::get('/{pr}/payment/{payment}/edit', [RealisasiController::class, 'editPayment'])->name('realisasi.editPayment');
+    Route::put('/{pr}/payment/{payment}', [RealisasiController::class, 'updatePayment'])->name('realisasi.updatePayment');
+
 
 
     // Update status bertahap (PR → PO → GR → Payment)

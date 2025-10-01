@@ -12,6 +12,7 @@ class Payment extends Model
 
     protected $fillable = [
         'pr_id',
+        'gr_id',
         'tanggal_payment',
         'nomor_payment',
         'nilai_payment',
@@ -25,4 +26,10 @@ class Payment extends Model
     {
         return $this->belongsTo(Pr::class);
     }
+
+    public function gr()
+{
+    return $this->belongsTo(Gr::class);
+}
+
 }

@@ -6,9 +6,22 @@
 <div class="page-inner">
     {{-- Header Halaman Ditingkatkan --}}
     <div class="page-header d-flex justify-content-between align-items-center mb-4">
-        <h4 class="page-title fw-bold">
-            <i class="fas fa-tasks me-2 text-primary"></i> Progress Fisik Pekerjaan
-        </h4>
+        <div class="page-header">
+            <h3 class="fw-bold mb-3">Rencana Pekerjaan</h3>
+            <ul class="breadcrumbs mb-3">
+                <li class="nav-home">
+                    <a href="{{ route('dashboard.index') }}">
+                        <i class="icon-home"></i>
+                    </a>
+                </li>
+                <li class="separator">
+                    <i class="icon-arrow-right"></i>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('realisasi.index') }}">Rencana Pekerjaan</a>
+                </li>
+            </ul>
+        </div>
         @if(auth()->user()->role === 'superadmin')
         <a href="{{ route('pekerjaan.create') }}" class="btn btn-primary btn-sm shadow-sm">
             <i class="fas fa-plus me-1"></i> Input Rencana Kerja
@@ -16,7 +29,7 @@
         @endif
     </div>
 
-    ---
+    <hr>
 
     {{-- Alert Sukses (Ditingkatkan) --}}
     @if(session('success'))
@@ -29,8 +42,12 @@
     <div class="row">
         @forelse($pekerjaans as $pekerjaan)
         <div class="col-lg-4 col-md-6 mb-4">
-            {{-- Kartu Pekerjaan --}}
-            <div class="card h-100 shadow-lg border-primary border-3 border-start rounded-3">
+            {{-- Kartu Pekerjaan dengan Foto --}}
+            <div class="card h-100 shadow-sm border-0 rounded-3 overflow-hidden">
+
+                <img src="{{ asset("assets/img/proyek_pelindo.jpg") }}" class="card-img-top"
+                    alt="Foto Pekerjaan {{ $pekerjaan->nama_investasi }}" style="height: 200px; object-fit: cover;">
+
                 <div class="card-body d-flex flex-column">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
@@ -80,7 +97,7 @@
                         </div>
                     </div>
 
-                    {{-- Detail Pekerjaan dalam List Group --}}
+                    {{-- Detail Pekerjaan dalam List Group (Logika Tetap Sama) --}}
                     <ul class="list-group list-group-flush flex-grow-1">
                         <li class="list-group-item d-flex justify-content-between align-items-center py-2">
                             <span class="text-muted"><i class="fas fa-building me-2"></i>Entitas/Terminal</span>

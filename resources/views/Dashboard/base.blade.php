@@ -15,8 +15,6 @@
         href="{{ $setting && $setting->logo ? asset('img/mnp/'.$setting->logo) : asset('img/mnp/pelindo.png') }}"
         type="image/x-icon" />
 
-    <!-- Fonts and icons -->
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <script src="{{ asset('assets/js/plugin/webfont/webfont.min.js') }}"></script>
     <script>
     WebFont.load({
@@ -39,20 +37,44 @@
     </script>
 
 
-    <!-- CSS Files -->
     <link rel="stylesheet" href="{{ asset("assets/css/bootstrap.min.css") }}" />
     <link rel="stylesheet" href="{{ asset("assets/css/plugins.min.css") }}" />
     <link rel="stylesheet" href="{{ asset("assets/css/kaiadmin.min.css") }}" />
 
     <link rel="stylesheet" href="{{ asset("assets/css/demo.css") }}" />
+
+    <style>
+    .sidebar .sidebar-wrapper .weather-widget {
+        padding: 15px 25px;
+        border-top: 1px solid #f1f1f1;
+        border-bottom: 1px solid #f1f1f1;
+        margin-bottom: 15px;
+    }
+
+    .weather-widget .weather-info,
+    .weather-widget .location-info {
+        display: flex;
+        align-items: center;
+        color: #555;
+        font-size: 14px;
+    }
+
+    .weather-widget .weather-info i,
+    .weather-widget .location-info i {
+        font-size: 18px;
+        margin-right: 12px;
+        width: 20px;
+        text-align: center;
+        color: #0068AC;
+        /* Menggunakan warna biru kustom dari template Anda */
+    }
+    </style>
 </head>
 
 <body>
     <div class="wrapper">
-        <!-- Sidebar -->
         <div class="sidebar" data-background-color="white">
             <div class="sidebar-logo">
-                <!-- Logo Header -->
                 <div class="logo-header" data-background-color="dark"
                     class="d-flex justify-content-center align-items-center w-100">
                     <a href="{{ route('dashboard.index') }}" class="logo">
@@ -71,7 +93,6 @@
                         <i class="gg-more-vertical-alt"></i>
                     </button>
                 </div>
-                <!-- End Logo Header -->
             </div>
             <div class="sidebar-wrapper scrollbar scrollbar-inner">
                 <div class="user d-flex align-items-center">
@@ -86,6 +107,17 @@
                                 <span class="user-level">{{ Auth::user()->profile->jabatan ?? '-' }}</span>
                             </span>
                         </a>
+                    </div>
+                </div>
+
+                <div class="weather-widget">
+                    <div class="weather-info mb-2">
+                        <i class="fas fa-cloud"></i>
+                        <span id="weather-temp"><span class="fw-bold">--°C</span> - Loading...</span>
+                    </div>
+                    <div class="location-info">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span id="weather-location">-</span>
                     </div>
                 </div>
 
@@ -119,29 +151,49 @@
                         <li class="nav-item">
                             <a href="{{ route('realisasi.index') }}">
                                 <i class="fas fa-handshake"></i>
-                                <p>Rencana Investasi</p>
+                                <p>Database Pekerjaan</p>
                             </a>
                         </li>
                         @endif
-                        {{-- Data Investasi (admin & user) --}}
-                        <!-- @if(in_array(auth()->user()->role, ['superadmin','admin','user']))
+                        @if(in_array(auth()->user()->role, ['superadmin','admin']))
                         <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#realisasi" class="collapsed" aria-expanded="false">
-                                <i class="fas fa-handshake"></i>
-                                <p>Realisasi Investasi</p>
+                            <a data-bs-toggle="collapse" href="#statusinvestasi" class="collapsed"
+                                aria-expanded="false">
+                                <i class="fas fa-chart-line"></i>
+                                <p>Status Investasi</p>
                                 <span class="caret"></span>
                             </a>
-                            <div class="collapse" id="realisasi">
+                            <div class="collapse" id="statusinvestasi">
                                 <ul class="nav nav-collapse">
                                     <li>
-                                        <a href="{{ route('realisasi.index') }}">
-                                            <span class="sub-item">Investasi</span>
+                                        <a href="#">
+                                            <i></i>
+                                            <span class="sub-item">Perencanaan</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <i></i>
+                                            <span class="sub-item">Pelelangan</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <i></i>
+                                            <span class="sub-item">Pelaksanaan</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <i class=""></i>
+                                            <span class="sub-item">Selesai/Dibatalkan</span>
                                         </a>
                                     </li>
                                 </ul>
                             </div>
                         </li>
-                        @endif -->
+
+                        @endif
 
                         {{-- Pengaturan (hanya superadmin) --}}
                         @if(auth()->user()->role === 'superadmin')
@@ -174,24 +226,14 @@
                                 <p>User</p>
                             </a>
                         </li>
-                        <!-- <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#">
-                                <i class="fas fa-user-shield"></i>
-                                <p>Roles</p>
-                                <span></span>
-                            </a>
-                        </li> -->
                         @endif
                     </ul>
                 </div>
             </div>
         </div>
-        <!-- End Sidebar -->
-
         <div class="main-panel">
             <div class="main-header">
                 <div class="main-header-logo">
-                    <!-- Logo Header -->
                     <div class="logo-header" data-background-color="dark">
                         <a href="index.html" class="logo">
                             <img src="{{ asset("assets/img/kaiadmin/logo_light.svg") }}" alt="navbar brand"
@@ -209,12 +251,9 @@
                             <i class="gg-more-vertical-alt"></i>
                         </button>
                     </div>
-                    <!-- End Logo Header -->
                 </div>
-                <!-- Navbar Header -->
                 <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
                     <div class="container-fluid">
-                        <!--  selamat datang -->
                         @php
                         $setting = \App\Models\SettingAplikasi::first();
                         @endphp
@@ -233,7 +272,6 @@
                                     {{ Auth::user()->name }} <i class="fa fa-caret-down"></i>
                                 </a>
                                 <ul class="dropdown-menu dropdown-user animated fadeIn shadow">
-                                    <!-- User Info -->
                                     <div class="user-box">
                                         <div class="avatar-lg"><img src="{{ asset("assets/img/kaiadmin/user.png") }}"
                                                 alt="image profile" class="avatar-img rounded"></div>
@@ -245,7 +283,6 @@
                                     <li>
                                         <hr class="dropdown-divider">
                                     </li>
-                                    <!-- Menu Items -->
                                     <li>
                                         <a class="dropdown-item d-flex justify-content-between align-items-center"
                                             href="{{ route('account.index') }}">
@@ -291,10 +328,8 @@
                         </ul>
                     </div>
                 </nav>
-                <!-- End Navbar -->
             </div>
 
-            <!--  isi tambahkan disini-->
             <div class="container">
                 @yield('content')
             </div>
@@ -309,46 +344,34 @@
             </footer>
         </div>
     </div>
-    <!--   Core JS Files   -->
     <script src="{{ asset("assets/js/core/jquery-3.7.1.min.js") }}"></script>
     <script src="{{ asset("assets/js/core/popper.min.js") }}"></script>
     <script src="{{ asset("assets/js/core/bootstrap.min.js") }}"></script>
 
-    <!-- jQuery Scrollbar -->
     <script src="{{ asset("assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js") }}"></script>
 
-    <!-- Chart JS -->
     <script src="{{ asset('assets/js/plugin/chart.js/chart.min.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
-    <!-- jQuery Sparkline -->
     <script src="{{ asset("assets/js/plugin/jquery.sparkline/jquery.sparkline.min.js") }}"></script>
 
-    <!-- Chart Circle -->
     <script src="{{ asset("assets/js/plugin/chart-circle/circles.min.js") }}"></script>
 
-    <!-- Datatables -->
     <script src=" {{ asset("assets/js/plugin/datatables/datatables.min.js") }}"></script>
 
-    <!-- Bootstrap Notify -->
     <script src="{{ asset("assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js") }}"></script>
 
-    <!-- jQuery Vector Maps -->
     <script src="{{ asset("assets/js/plugin/jsvectormap/jsvectormap.min.js") }}"></script>
     <script src="{{ asset("assets/js/plugin/jsvectormap/world.js") }}"></script>
 
-    <!-- Sweet Alert -->
     <script src="{{ asset("assets/js/plugin/sweetalert/sweetalert.min.js")}}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Kaiadmin JS -->
     <script src="{{ asset("assets/js/kaiadmin.min.js") }}"></script>
 
-    <!-- chart js -->
     <script src="{{ asset("assets/js/plugin/chart.js/chart.js/chart.min.jas") }}"></script>
 
-    <!-- Kaiadmin DEMO methods, don't include it in your project! -->
     <script src="{{ asset("assets/js/setting-demo.js") }}"></script>
     <script src="{{ asset("assets/js/demo.js") }}"></script>
     <script>
@@ -379,8 +402,77 @@
         fillColor: "rgba(255, 165, 52, .14)",
     });
     </script>
-    @stack('scripts')
 
+
+    <script>
+    async function loadWeather() {
+        const weatherTemp = document.getElementById('weather-temp');
+        const weatherLocation = document.getElementById('weather-location');
+
+        try {
+            console.log('🌍 Fetching location...');
+
+            // 1. Ambil lokasi user
+            const locRes = await fetch("{{ route('user.location') }}");
+
+            if (!locRes.ok) {
+                throw new Error(`Location API returned ${locRes.status}`);
+            }
+
+            const loc = await locRes.json();
+            console.log('📍 Location:', loc);
+
+            if (!loc || !loc.latitude || !loc.longitude) {
+                weatherTemp.innerHTML = '<span class="fw-bold">--°C</span> - Lokasi tidak valid';
+                weatherLocation.innerText = "Lokasi tidak ditemukan";
+                return;
+            }
+
+            // Tampilkan lokasi dulu
+            weatherLocation.innerText = `${loc.city}, ${loc.region}`;
+
+            // 2. Ambil data cuaca
+            console.log('☁️ Fetching weather...');
+            const weatherRes = await fetch(
+                `{{ route('sidebar.weather') }}?lat=${loc.latitude}&lon=${loc.longitude}`
+            );
+
+            if (!weatherRes.ok) {
+                throw new Error(`Weather API returned ${weatherRes.status}`);
+            }
+
+            const weather = await weatherRes.json();
+            console.log('🌤️ Weather:', weather);
+
+            if (!weather || weather.temperature === undefined) {
+                weatherTemp.innerHTML = '<span class="fw-bold">--°C</span> - Data tidak tersedia';
+                return;
+            }
+
+            // 3. Tampilkan cuaca
+            const temp = Math.round(weather.temperature);
+            const desc = weather.description || 'Tidak ada data';
+
+            weatherTemp.innerHTML = `<span class="fw-bold">${temp}°C</span> - ${desc}`;
+
+        } catch (error) {
+            console.error('❌ Weather widget error:', error);
+            weatherTemp.innerHTML = '<span class="fw-bold">--°C</span> - Error';
+            weatherLocation.innerText = "Gagal memuat data";
+        }
+    }
+
+    // Panggil saat halaman siap
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadWeather);
+    } else {
+        loadWeather();
+    }
+    </script>
+
+</body>
+
+@stack('scripts')
 
 </body>
 

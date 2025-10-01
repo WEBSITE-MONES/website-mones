@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="page-inner">
-    {{-- Header Halaman Ditingkatkan --}}
+    {{-- Header Halaman --}}
     <div class="page-header d-flex justify-content-between align-items-center mb-4">
         <h4 class="page-title fw-bold">
             <i class="fas fa-plus-circle me-2 text-primary"></i> Tambah Rencana Investasi Kerja
@@ -14,11 +14,9 @@
         </a>
     </div>
 
-    ---
-
     <div class="row justify-content-center">
         <div class="col-md-12">
-            {{-- Kartu Utama Form --}}
+            {{-- Card Utama Form --}}
             <div class="card shadow-lg border-0 rounded-3">
                 <div class="card-header bg-primary text-white p-3 rounded-top-3">
                     <h4 class="card-title mb-0 text-center fw-bolder">
@@ -30,11 +28,12 @@
                     @csrf
                     <div class="card-body p-4">
 
-                        {{-- Alert Validasi Error (Ditingkatkan) --}}
+                        {{-- Alert Validasi Error --}}
                         @if ($errors->any())
                         <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-                            <h5 class="alert-heading fs-6 fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>
-                                Kesalahan Input!</h5>
+                            <h5 class="alert-heading fs-6 fw-bold">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Kesalahan Input!
+                            </h5>
                             <ul class="mb-0">
                                 @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
@@ -44,11 +43,11 @@
                         </div>
                         @endif
 
-                        {{-- Info Wajib Isi --}}
+                        {{-- Info Bidang Wajib Isi --}}
                         <div class="alert alert-info border-info shadow-sm p-2 mb-4">
                             <small class="d-flex align-items-center">
                                 <i class="fas fa-info-circle me-2"></i>
-                                Bidang yang ditanda bintang merah (<span class="text-danger">*</span>) **wajib diisi**.
+                                Bidang yang ditanda bintang merah (<span class="text-danger">*</span>) wajib diisi.
                             </small>
                         </div>
 
@@ -57,8 +56,8 @@
                             <legend class="float-none w-auto px-2 fs-6 fw-semibold text-primary">
                                 <i class="fas fa-folder me-1"></i> Data Umum
                             </legend>
-
                             <div class="row g-3">
+                                {{-- Unit Cabang --}}
                                 <div class="col-md-4">
                                     <label for="wilayah_id" class="form-label fw-semibold">
                                         <i class="fas fa-building me-1 text-muted"></i> Unit Cabang <span
@@ -75,7 +74,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-
+                                {{-- COA --}}
                                 <div class="col-md-4">
                                     <label for="coa" class="form-label fw-semibold">
                                         <i class="fas fa-barcode me-1 text-muted"></i> COA <span
@@ -90,7 +89,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-
+                                {{-- COA SUB --}}
                                 <div class="col-md-4">
                                     <label for="coa_sub" class="form-label fw-semibold">
                                         <i class="fas fa-stream me-1 text-muted"></i> COA SUB <span
@@ -99,7 +98,7 @@
                                     <input type="text" name="coa_sub" id="coa_sub" class="form-control form-control-sm"
                                         value="{{ old('coa_sub') }}" readonly required>
                                 </div>
-
+                                {{-- Program Investasi --}}
                                 <div class="col-md-6">
                                     <label for="program_investasi" class="form-label fw-semibold">
                                         <i class="fas fa-project-diagram me-1 text-muted"></i> Program Investasi <span
@@ -109,7 +108,7 @@
                                         class="form-control form-control-sm" value="{{ old('program_investasi') }}"
                                         placeholder="Contoh: Pengadaan Kapal" required>
                                 </div>
-
+                                {{-- Nomor Prodef SAP --}}
                                 <div class="col-md-6">
                                     <label for="nomor_prodef_sap" class="form-label fw-semibold">
                                         <i class="fas fa-hashtag me-1 text-muted"></i> Nomor Prodef SAP
@@ -126,8 +125,8 @@
                             <legend class="float-none w-auto px-2 fs-6 fw-semibold text-primary">
                                 <i class="fas fa-info-circle me-1"></i> Rincian Proyek
                             </legend>
-
                             <div class="row g-3">
+                                {{-- Nama Investasi --}}
                                 <div class="col-md-12">
                                     <label for="nama_investasi" class="form-label fw-semibold">
                                         <i class="fas fa-file-signature me-1 text-muted"></i> Nama Investasi <span
@@ -138,10 +137,10 @@
                                         placeholder="Deskripsi lengkap investasi"
                                         required>{{ old('nama_investasi') }}</textarea>
                                 </div>
-
+                                {{-- Tipe --}}
                                 <div class="col-md-4">
                                     <label for="tipe" class="form-label fw-semibold">
-                                        <i class="fas fa-chart-pie me-1 text-muted"></i> Tipe<span
+                                        <i class="fas fa-chart-pie me-1 text-muted"></i> Tipe <span
                                             class="text-danger">*</span>
                                     </label>
                                     <select name="tipe" id="tipe" class="form-select form-select-sm" required>
@@ -166,6 +165,7 @@
                                             Penyertaan Modal</option>
                                     </select>
                                 </div>
+                                {{-- Jenis --}}
                                 <div class="col-md-4">
                                     <label for="jenis" class="form-label fw-semibold">
                                         <i class="fas fa-shapes me-1 text-muted"></i> Jenis Investasi <span
@@ -190,6 +190,7 @@
                                         </option>
                                     </select>
                                 </div>
+                                {{-- Tipe Investasi --}}
                                 <div class="col-md-4">
                                     <label for="tipe_investasi" class="form-label fw-semibold">
                                         <i class="fas fa-tag me-1 text-muted"></i> Tipe Investasi <span
@@ -208,6 +209,7 @@
                                 <i class="fas fa-filter me-1"></i> Klasifikasi Proyek
                             </legend>
                             <div class="row g-3">
+                                {{-- Kategori --}}
                                 <div class="col-md-4">
                                     <label for="kategori" class="form-label fw-semibold">
                                         <i class="fas fa-cogs me-1 text-muted"></i> Kategori Investasi <span
@@ -215,39 +217,58 @@
                                     </label>
                                     <select name="kategori" id="kategori" class="form-select form-select-sm" required>
                                         <option value="">-- Pilih Kategori --</option>
-                                        <option value="1" {{ old('kategori') == '1' ? 'selected' : '' }}>Penggantian
-                                            untuk mempertahankan bisnis</option>
-                                        <option value="2" {{ old('kategori') == '2' ? 'selected' : '' }}>Penggantian
-                                            untuk efisiensi</option>
-                                        <option value="3" {{ old('kategori') == '3' ? 'selected' : '' }}>Pengembangan
-                                            bisnis brownfield</option>
-                                        <option value="4" {{ old('kategori') == '4' ? 'selected' : '' }}>Pengembangan
-                                            bisnis greenfield</option>
-                                        <option value="5" {{ old('kategori') == '5' ? 'selected' : '' }}>Proyek
-                                            Penugasan</option>
-                                        <option value="6" {{ old('kategori') == '6' ? 'selected' : '' }}>Investasi
-                                            lain-lain</option>
+                                        <option value="Penggantian untuk mempertahankan bisnis"
+                                            {{ old('kategori') == 'Penggantian untuk mempertahankan bisnis' ? 'selected' : '' }}>
+                                            Penggantian untuk mempertahankan bisnis
+                                        </option>
+                                        <option value="Penggantian untuk efisiensi"
+                                            {{ old('kategori') == 'Penggantian untuk efisiensi' ? 'selected' : '' }}>
+                                            Penggantian untuk efisiensi
+                                        </option>
+                                        <option value="Pengembangan bisnis brownfield"
+                                            {{ old('kategori') == 'Pengembangan bisnis brownfield' ? 'selected' : '' }}>
+                                            Pengembangan bisnis brownfield
+                                        </option>
+                                        <option value="Pengembangan bisnis greenfield"
+                                            {{ old('kategori') == 'Pengembangan bisnis greenfield' ? 'selected' : '' }}>
+                                            Pengembangan bisnis greenfield
+                                        </option>
+                                        <option value="Proyek Penugasan"
+                                            {{ old('kategori') == 'Proyek Penugasan' ? 'selected' : '' }}>
+                                            Proyek Penugasan
+                                        </option>
+                                        <option value="Investasi lain-lain"
+                                            {{ old('kategori') == 'Investasi lain-lain' ? 'selected' : '' }}>
+                                            Investasi lain-lain
+                                        </option>
                                     </select>
                                 </div>
-
+                                {{-- Manfaat --}}
                                 <div class="col-md-4">
                                     <label for="manfaat" class="form-label fw-semibold">
                                         <i class="fas fa-handshake me-1 text-muted"></i> Manfaat Investasi <span
                                             class="text-danger">*</span>
                                     </label>
                                     <select name="manfaat" id="manfaat" class="form-select form-select-sm" required>
-                                        <option value="">-- Pilih Manfaat --</option>
-                                        <option value="1" {{ old('manfaat') == '1' ? 'selected' : '' }}>Menghasilkan
-                                            Pendapatan / Menurunkan Biaya</option>
-                                        <option value="2" {{ old('manfaat') == '2' ? 'selected' : '' }}>Memenuhi
-                                            Kebutuhan Minimal</option>
-                                        <option value="3" {{ old('manfaat') == '3' ? 'selected' : '' }}>Meningkatkan
-                                            Keselamatan Kerja / Lingkungan</option>
-                                        <option value="4" {{ old('manfaat') == '4' ? 'selected' : '' }}>Tujuan
-                                            administratif / kualitas pelayanan</option>
+                                        <option value="Menghasilkan Pendapatan / Menurunkan Biaya"
+                                            {{ old('manfaat') == 'Menghasilkan Pendapatan / Menurunkan Biaya' ? 'selected' : '' }}>
+                                            Menghasilkan Pendapatan / Menurunkan Biaya
+                                        </option>
+                                        <option value="Memenuhi Kebutuhan Minimal"
+                                            {{ old('manfaat') == 'Memenuhi Kebutuhan Minimal' ? 'selected' : '' }}>
+                                            Memenuhi Kebutuhan Minimal
+                                        </option>
+                                        <option value="Meningkatkan Keselamatan Kerja / Lingkungan"
+                                            {{ old('manfaat') == 'Meningkatkan Keselamatan Kerja / Lingkungan' ? 'selected' : '' }}>
+                                            Meningkatkan Keselamatan Kerja / Lingkungan
+                                        </option>
+                                        <option value="Tujuan administratif / kualitas pelayanan"
+                                            {{ old('manfaat') == 'Tujuan administratif / kualitas pelayanan' ? 'selected' : '' }}>
+                                            Tujuan administratif / kualitas pelayanan
+                                        </option>
                                     </select>
                                 </div>
-
+                                {{-- Sifat --}}
                                 <div class="col-md-4">
                                     <label for="sifat" class="form-label fw-semibold">
                                         <i class="fas fa-exclamation-triangle me-1 text-muted"></i> Sifat Investasi
@@ -261,7 +282,7 @@
                                             Opsional</option>
                                     </select>
                                 </div>
-
+                                {{-- Urgensi --}}
                                 <div class="col-md-4">
                                     <label for="urgensi" class="form-label fw-semibold">
                                         <i class="fas fa-chart-bar me-1 text-muted"></i> Urgensi <span
@@ -277,7 +298,7 @@
                                         </option>
                                     </select>
                                 </div>
-
+                                {{-- Tahun Usulan --}}
                                 <div class="col-md-4">
                                     <label for="tahun_usulan" class="form-label fw-semibold">
                                         <i class="fas fa-calendar-alt me-1 text-muted"></i> Tahun Usulan <span
@@ -303,6 +324,7 @@
                                 <i class="fas fa-dollar-sign me-1"></i> Rincian Anggaran
                             </legend>
                             <div class="row g-3">
+                                {{-- Kebutuhan Dana --}}
                                 <div class="col-md-6">
                                     <label for="kebutuhan_dana" class="form-label fw-semibold">
                                         <i class="fas fa-money-check-alt me-1 text-muted"></i> Kebutuhan Dana <span
@@ -315,6 +337,7 @@
                                             required>
                                     </div>
                                 </div>
+                                {{-- RKAP --}}
                                 <div class="col-md-6">
                                     <label for="rkap" class="form-label fw-semibold">
                                         <i class="fas fa-piggy-bank me-1 text-muted"></i> RKAP <span
@@ -326,6 +349,7 @@
                                             value="{{ old('rkap', 0) }}" required>
                                     </div>
                                 </div>
+                                {{-- Total Dana --}}
                                 <div class="col-md-12">
                                     <div class="alert alert-primary text-end fw-bold shadow-sm p-2 mb-0">
                                         Total Anggaran: <span id="total-dana">Rp 0</span>
@@ -336,7 +360,7 @@
                         </fieldset>
                     </div>
 
-                    {{-- Card Footer Aksi (Text-end diubah ke d-flex justify-content-end) --}}
+                    {{-- Card Footer Aksi --}}
                     <div class="card-footer d-flex justify-content-end p-3 bg-light border-top">
                         <a href="{{ route('pekerjaan.index') }}" class="btn btn-outline-danger me-2 px-4 shadow-sm">
                             <i class="fas fa-times me-1"></i> Batal
@@ -353,9 +377,8 @@
 
 @push('scripts')
 <script>
-// LOGIKA JAVASCRIPT DIBIARKAN SAMA PERSIS
 $(document).ready(function() {
-    // COA SUB otomatis
+    // Mapping COA → COA SUB
     const coaSubMap = {
         '201': 'Bangunan Fasilitas',
         '202': 'Kapal',
@@ -367,11 +390,8 @@ $(document).ready(function() {
         '221': 'Kendaraan',
         '222': 'Emplasemen'
     };
-    $('#coa').change(function() {
-        $('#coa_sub').val(coaSubMap[$(this).val()] || '');
-    });
 
-    // Tipe Investasi otomatis
+    // Mapping Tipe → Tipe Investasi
     const tipeInvestasiMap = {
         'A': 'Investasi Murni',
         'B': 'Investasi Multi Year',
@@ -383,11 +403,18 @@ $(document).ready(function() {
         'KAP': 'Kapitalisasi Bunga',
         'PMPI': 'Penyertaan Modal'
     };
+
+    // Event: COA
+    $('#coa').change(function() {
+        $('#coa_sub').val(coaSubMap[$(this).val()] || '');
+    });
+
+    // Event: Tipe
     $('#tipe').change(function() {
         $('#tipe_investasi').val(tipeInvestasiMap[$(this).val()] || '');
     });
 
-    // Total Dana otomatis
+    // Fungsi Hitung Total
     function hitungTotal() {
         let kebutuhan = parseFloat($('.dana').val()) || 0;
         let rkap = parseFloat($('.rkap').val()) || 0;
@@ -395,16 +422,15 @@ $(document).ready(function() {
         $('#total-dana').text('Rp ' + total.toLocaleString('id-ID'));
         $('#total-dana-hidden').val(total);
     }
+
+    // Event: Input Dana & RKAP
     $('.dana, .rkap').on('input', hitungTotal);
 
-    // Panggil saat halaman dimuat untuk mengisi nilai awal
+    // Trigger awal
     hitungTotal();
-
-    // Memastikan nilai default terpilih jika ada di `old()`
     $('#coa').trigger('change');
     $('#tipe').trigger('change');
 });
 </script>
 @endpush
-
 @endsection

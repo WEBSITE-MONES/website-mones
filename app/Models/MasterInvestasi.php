@@ -20,8 +20,13 @@ class MasterInvestasi extends Model
         'urgensi',
     ];
 
-    public function pekerjaan()
-{
-    return $this->belongsTo(Pekerjaan::class); // id_pekerjaan di master_investasis
-}
+//     public function pekerjaan()
+// {
+//     return $this->belongsTo(Pekerjaan::class); // id_pekerjaan di master_investasis
+// }
+
+public function pekerjaan()
+    {
+        return $this->belongsTo(Pekerjaan::class, 'pekerjaan_id', 'id');
+    }
 }
