@@ -19,8 +19,8 @@ class Pekerjaan extends Model
         'kebutuhan_dana',
         'rkap',
         'tahun_usulan',
+        'gambar',
         'coa',
-        'program_investasi',
         'tipe_investasi',
         'nomor_prodef_sap',
     ];
@@ -59,6 +59,41 @@ class Pekerjaan extends Model
     public function masterInvestasi()
 {
     return $this->hasOne(MasterInvestasi::class, 'pekerjaan_id', 'id');
+}
+
+public function rkapDetails()
+{
+    return $this->hasMany(RkapPekerjaan::class, 'pekerjaan_id');
+}
+
+
+public function subPekerjaan()
+{
+    return $this->hasMany(SubPekerjaan::class, 'pekerjaan_id');
+}
+
+public function gambars()
+{
+    return $this->hasMany(Gambar::class);
+}
+
+public function laporans()
+{
+    return $this->hasMany(Laporan::class);
+}
+
+public function kontraks()
+{
+    return $this->hasMany(Kontrak::class);
+}
+
+public function korespondensis()
+{
+    return $this->hasMany(Korespondensi::class);
+}
+public function dokumenusulans()
+{
+    return $this->hasMany(DokumenUsulan::class);
 }
 
 }

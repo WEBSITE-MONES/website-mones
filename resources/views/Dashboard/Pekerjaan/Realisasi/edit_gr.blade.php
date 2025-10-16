@@ -76,11 +76,35 @@
             <h2 class="page-title">Edit Good Receipt (GR)</h2>
             <h5 class="fw-normal text-muted">Perbarui detail penerimaan barang/jasa dan lampirkan dokumen.</h5>
         </div>
-        <a href="{{ url()->previous() }}" class="btn btn-light btn-sm d-none d-md-block">
+        <a href="{{ route('realisasi.index') }}" class="btn btn-light btn-sm d-none d-md-block">
             <i class="fas fa-arrow-left me-2"></i> Kembali
         </a>
     </div>
 
+    @if(!$po)
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Error!</strong> PO tidak ditemukan untuk PR ini.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div class="text-center mt-4">
+        <a href="{{ route('realisasi.index') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-left me-2"></i>Kembali ke Daftar Realisasi
+        </a>
+    </div>
+    @elseif(!$gr)
+    {{-- ✅ ALERT: Kalau tidak ada GR --}}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Error!</strong> GR tidak ditemukan.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div class="text-center mt-4">
+        <a href="{{ route('realisasi.index') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-left me-2"></i>Kembali ke Daftar Realisasi
+        </a>
+    </div>
+    @else
     <form action="{{ route('realisasi.updateGR', [$pr->id, $gr->id]) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
@@ -114,7 +138,8 @@
                                     <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
                                     <input type="date" id="tanggal_gr" name="tanggal_gr"
                                         class="form-control @error('tanggal_gr') is-invalid @enderror"
-                                        value="{{ old('tanggal_gr', $gr->tanggal_gr) }}" required>
+                                        value="{{ old('tanggal_gr', $gr->tanggal_gr ? $gr->tanggal_gr->format('Y-m-d') : '') }}"
+                                        required>
                                 </div>
                                 @error('tanggal_gr')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -122,34 +147,19 @@
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="termin_id" class="form-label">Pilih Termin Pembayaran</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-list-ol"></i></span>
-                                    <select id="termin_id" name="termin_id"
-                                        class="form-select @error('termin_id') is-invalid @enderror" required>
-                                        <option value="">-- Pilih Termin --</option>
-                                        @foreach($termins as $t)
-                                        <option value="{{ $t->id }}" data-nilai="{{ $t->nilai_pembayaran }}"
-                                            {{ old('termin_id', $gr->termin_id) == $t->id ? 'selected' : '' }}>
-                                            {{ $t->uraian }} — Rp {{ number_format($t->nilai_pembayaran,0,',','.') }}
-                                        </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                @error('termin_id')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label for="nilai_gr_input" class="form-label">Nilai GR</label>
+                                <label for="nilai_gr_input" class="form-label">
+                                    Nilai GR <span class="text-danger">*</span>
+                                </label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
-                                    <input type="text" id="nilai_gr_input" name="nilai_gr"
-                                        class="form-control fw-bold @error('nilai_gr') is-invalid @enderror"
-                                        value="{{ old('nilai_gr', $gr->nilai_gr) }}" required>
+                                    <input type="text" id="nilai_gr_input"
+                                        class="form-control @error('nilai_gr') is-invalid @enderror"
+                                        value="{{ old('nilai_gr', '') }}" required placeholder="0">
                                 </div>
-                                <small class="form-text text-muted">Otomatis dari termin, bisa diubah manual.</small>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Masukkan nilai penerimaan bulan ini
+                                </small>
                                 @error('nilai_gr')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
@@ -169,8 +179,11 @@
                                 @if($gr->file_ba_pemeriksaan)
                                 <div class="current-file-info mb-2">
                                     <a href="{{ asset('storage/'.$gr->file_ba_pemeriksaan) }}" target="_blank">
-                                        <i class="fas fa-file-alt me-2"></i>{{ basename($gr->file_ba_pemeriksaan) }}
+                                        <i class="fas fa-file-pdf me-2"></i>{{ basename($gr->file_ba_pemeriksaan) }}
                                     </a>
+                                    <small class="d-block text-muted mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>Upload file baru untuk mengganti
+                                    </small>
                                 </div>
                                 @endif
                                 <label for="ba_pemeriksaan" class="custom-file-upload">
@@ -191,8 +204,11 @@
                                 @if($gr->file_ba_serah_terima)
                                 <div class="current-file-info mb-2">
                                     <a href="{{ asset('storage/'.$gr->file_ba_serah_terima) }}" target="_blank">
-                                        <i class="fas fa-file-alt me-2"></i>{{ basename($gr->file_ba_serah_terima) }}
+                                        <i class="fas fa-file-pdf me-2"></i>{{ basename($gr->file_ba_serah_terima) }}
                                     </a>
+                                    <small class="d-block text-muted mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>Upload file baru untuk mengganti
+                                    </small>
                                 </div>
                                 @endif
                                 <label for="ba_serah_terima" class="custom-file-upload">
@@ -213,8 +229,11 @@
                                 @if($gr->file_ba_pembayaran)
                                 <div class="current-file-info mb-2">
                                     <a href="{{ asset('storage/'.$gr->file_ba_pembayaran) }}" target="_blank">
-                                        <i class="fas fa-file-alt me-2"></i>{{ basename($gr->file_ba_pembayaran) }}
+                                        <i class="fas fa-file-pdf me-2"></i>{{ basename($gr->file_ba_pembayaran) }}
                                     </a>
+                                    <small class="d-block text-muted mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>Upload file baru untuk mengganti
+                                    </small>
                                 </div>
                                 @endif
                                 <label for="ba_pembayaran" class="custom-file-upload">
@@ -236,8 +255,11 @@
                                 <div class="current-file-info mb-2">
                                     <a href="{{ asset('storage/'.$gr->file_laporan_dokumentasi) }}" target="_blank">
                                         <i
-                                            class="fas fa-file-alt me-2"></i>{{ basename($gr->file_laporan_dokumentasi) }}
+                                            class="fas fa-file-pdf me-2"></i>{{ basename($gr->file_laporan_dokumentasi) }}
                                     </a>
+                                    <small class="d-block text-muted mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>Upload file baru untuk mengganti
+                                    </small>
                                 </div>
                                 @endif
                                 <label for="laporan_dokumentasi" class="custom-file-upload">
@@ -267,19 +289,18 @@
                         <div class="text-center bg-light p-3 rounded mb-4">
                             <h6 class="text-muted mb-1">NILAI PEKERJAAN (GR)</h6>
                             <h3 class="fw-bold text-success mb-0" id="display_nilai_gr">
-                                Rp {{ number_format(old('nilai_gr', $gr->nilai_gr),0,',','.') }}
+                                Rp {{ number_format((float)old('nilai_gr', $gr->nilai_gr), 0, ',', '.') }}
                             </h3>
                         </div>
 
                         <input type="hidden" name="nilai_gr" id="nilai_gr_hidden"
-                            value="{{ old('nilai_gr', (int)$gr->nilai_gr) }}">
-
+                            value="{{ (float)old('nilai_gr', $gr->nilai_gr) }}">
 
                         <div class="d-grid gap-2 mt-4">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="fas fa-save me-2"></i>Update GR
                             </button>
-                            <a href="{{ url()->previous() }}" class="btn btn-outline-danger">
+                            <a href="{{ route('realisasi.index') }}" class="btn btn-outline-danger">
                                 <i class="fas fa-times me-2"></i>Batal
                             </a>
                         </div>
@@ -288,16 +309,21 @@
             </div>
         </div>
     </form>
+    @endif
 </div>
 @endsection
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const terminSelect = document.getElementById('termin_id');
     const nilaiInput = document.getElementById('nilai_gr_input');
     const nilaiHidden = document.getElementById('nilai_gr_hidden');
     const displayNilai = document.getElementById('display_nilai_gr');
+
+    // ✅ Cek apakah elemen ada
+    if (!nilaiInput || !nilaiHidden || !displayNilai) {
+        return;
+    }
 
     function formatToRupiah(number) {
         return new Intl.NumberFormat('id-ID', {
@@ -310,15 +336,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function cleanNumber(value) {
         if (!value) return 0;
 
-        // Kalau langsung numeric (contoh 1000000 atau "1000000"), return langsung
-        if (!isNaN(value) && String(value).indexOf('.') === -1) {
-            return Number(value);
+        // ✅ Jika sudah berupa number, return langsung
+        if (typeof value === 'number') {
+            return Math.floor(value);
         }
 
-        // Kalau ada titik/koma (misalnya "1.000.000" atau "1000000.00"), bersihkan
-        return Number(String(value).replace(/[^\d]/g, '')) || 0;
-    }
+        // ✅ Konversi ke string
+        const strValue = String(value).trim();
 
+        // ✅ Jika kosong
+        if (!strValue) return 0;
+
+        // ✅ PENTING: Jika sudah murni angka tanpa pemisah (misal: "50000000")
+        // Jangan di-clean lagi, langsung return
+        if (/^\d+$/.test(strValue)) {
+            return Number(strValue);
+        }
+
+        // ✅ Jika ada pemisah ribuan (titik/koma), baru clean
+        const cleaned = strValue.replace(/[^\d]/g, '');
+        return Number(cleaned) || 0;
+    }
 
     function updateNilaiGR(rawValue) {
         nilaiInput.value = new Intl.NumberFormat('id-ID').format(rawValue);
@@ -326,30 +364,28 @@ document.addEventListener('DOMContentLoaded', function() {
         displayNilai.textContent = formatToRupiah(rawValue);
     }
 
-    terminSelect.addEventListener('change', function() {
-        const sel = this.selectedOptions[0];
-        const raw = sel ? cleanNumber(sel.dataset.nilai) : 0;
-        updateNilaiGR(raw);
-    });
-    nilaiInput.addEventListener('input', function() {
-        updateNilaiGR(cleanNumber(this.value));
-    });
 
+    // ✅ Event listener untuk file upload
     document.querySelectorAll('.file-input').forEach(input => {
         input.addEventListener('change', function(e) {
             const fileName = e.target.files[0] ? e.target.files[0].name : '';
             const label = this.previousElementSibling;
             if (label && label.classList.contains('custom-file-upload')) {
-                label.querySelector('.file-name').textContent = fileName;
-                label.querySelector('.file-text').textContent = fileName ?
-                    'File siap diupload:' : 'Pilih file...';
+                const fileNameEl = label.querySelector('.file-name');
+                const fileTextEl = label.querySelector('.file-text');
+
+                if (fileNameEl && fileTextEl) {
+                    fileNameEl.textContent = fileName;
+                    fileTextEl.textContent = fileName ? 'File siap diupload:' : 'Pilih file...';
+                }
             }
         });
     });
 
-    // Init
-    updateNilaiGR(cleanNumber(nilaiHidden.value));
-
+    // ✅ Inisialisasi nilai awal
+    const initialValue = cleanNumber(nilaiHidden.value);
+    console.log('🔄 Initial nilai_gr:', nilaiHidden.value, '→ Cleaned:', initialValue);
+    updateNilaiGR(initialValue);
 });
 </script>
 @endpush

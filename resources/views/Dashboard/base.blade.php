@@ -139,14 +139,14 @@
                         @endif
 
                         {{-- Progress Investasi (admin & user) --}}
-                        @if(in_array(auth()->user()->role, ['superadmin','admin']))
+                        <!-- @if(in_array(auth()->user()->role, ['superadmin','admin']))
                         <li class="nav-item">
                             <a href="#">
                                 <i class="fas fa-money-bill-alt"></i>
                                 <p>Anggaran</p>
                             </a>
                         </li>
-                        @endif
+                        @endif -->
                         @if(in_array(auth()->user()->role, ['superadmin','admin']))
                         <li class="nav-item">
                             <a href="{{ route('realisasi.index') }}">
@@ -155,6 +155,33 @@
                             </a>
                         </li>
                         @endif
+                        @if(in_array(auth()->user()->role, ['superadmin','admin']))
+                        <li class="nav-item">
+                            <a data-bs-toggle="collapse" href="#laporaninvestasi" class="collapsed"
+                                aria-expanded="false">
+                                <i class="fas fa-chart-line"></i>
+                                <p>Laporan</p>
+                                <span class="caret"></span>
+                            </a>
+                            <div class="collapse" id="laporaninvestasi">
+                                <ul class="nav nav-collapse">
+                                    <li>
+                                        <a href="{{ route('laporan.index') }}">
+                                            <i></i>
+                                            <span class="sub-item">Investasi</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <i></i>
+                                            <span class="sub-item">Kontrak</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        @endif
+
                         @if(in_array(auth()->user()->role, ['superadmin','admin']))
                         <li class="nav-item">
                             <a data-bs-toggle="collapse" href="#statusinvestasi" class="collapsed"
@@ -192,7 +219,6 @@
                                 </ul>
                             </div>
                         </li>
-
                         @endif
 
                         {{-- Pengaturan (hanya superadmin) --}}
@@ -236,8 +262,7 @@
                 <div class="main-header-logo">
                     <div class="logo-header" data-background-color="dark">
                         <a href="index.html" class="logo">
-                            <img src="{{ asset("assets/img/kaiadmin/logo_light.svg") }}" alt="navbar brand"
-                                class="navbar-brand" height="20" />
+                            <img src="#" alt="navbar brand" class="navbar-brand" height="20" />
                         </a>
                         <div class="nav-toggle">
                             <button class="btn btn-toggle toggle-sidebar">

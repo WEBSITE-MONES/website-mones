@@ -18,8 +18,6 @@ class Po extends Model
     'mekanisme_pembayaran',
 ];
 
-
-
     public function pr()
     {
         return $this->belongsTo(Pr::class);
@@ -29,11 +27,6 @@ class Po extends Model
 {
     return $this->hasMany(Progress::class);
 }
-
-// public function progresses()
-//     {
-//         return $this->hasMany(Progress::class, 'po_id');
-//     }
 
     public function progress()
 {

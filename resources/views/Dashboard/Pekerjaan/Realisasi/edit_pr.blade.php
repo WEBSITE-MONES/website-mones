@@ -4,32 +4,12 @@
 
 @section('content')
 <div class="page-inner">
-    {{-- Header Halaman (disamakan dengan create_pr) --}}
+    {{-- Header Halaman (disesuaikan dengan standar baru) --}}
     <div class="d-flex justify-content-between align-items-center flex-wrap grid-margin mb-4">
-        <div class="page-header">
-            <h3 class="fw-bold mb-3">Formulir Edit Perencanaan (PR)</h3>
-            <ul class="breadcrumbs mb-3">
-                <li class="nav-home">
-                    <a href="{{ route('dashboard.index') }}">
-                        <i class="icon-home"></i>
-                    </a>
-                </li>
-                <li class="separator">
-                    <i class="icon-arrow-right"></i>
-                </li>
-                <li class="nav-item">
-                    <a href="#">Realisasi Berjalan</a>
-                </li>
-                <li class="separator">
-                    <i class="icon-arrow-right"></i>
-                </li>
-                <li class="nav-item">
-                    <a href="#">Edit Progress</a>
-                </li>
-            </ul>
+        <div>
+            <h2 class="page-title">Formulir Edit Perencanaan (PR)</h2>
+            <h5 class="fw-normal text-muted">Perbarui detail pekerjaan dan anggaran perencanaan.</h5>
         </div>
-
-
         <a href="{{ url()->previous() }}" class="btn btn-light btn-sm">
             <i class="fas fa-arrow-left me-2"></i> Kembali
         </a>
@@ -52,7 +32,7 @@
         @csrf
         @method('PUT')
         <div class="row">
-            {{-- KOLOM KIRI: INPUT UTAMA --}}
+            {{-- Kolom Kiri: Detail Form --}}
             <div class="col-lg-8">
                 <div class="card card-round shadow-sm border-0 mb-4">
                     <div class="card-body p-4">
@@ -64,38 +44,66 @@
                             <div class="col-md-6">
                                 <label for="jenis_pekerjaan" class="form-label">Jenis Pekerjaan <span
                                         class="text-danger">*</span></label>
-                                <select name="jenis_pekerjaan" id="jenis_pekerjaan" class="form-select" required>
+                                <select name="jenis_pekerjaan" id="jenis_pekerjaan"
+                                    class="form-select @error('jenis_pekerjaan') is-invalid @enderror" required>
                                     <option value="Konsultan Perencana"
-                                        {{ $pr->jenis_pekerjaan == 'Konsultan Perencana' ? 'selected' : '' }}>
+                                        {{ old('jenis_pekerjaan', $pr->jenis_pekerjaan) == 'Konsultan Perencana' ? 'selected' : '' }}>
                                         Konsultan Perencana
                                     </option>
                                     <option value="Pelaksanaan Fisik"
-                                        {{ $pr->jenis_pekerjaan == 'Pelaksanaan Fisik' ? 'selected' : '' }}>
+                                        {{ old('jenis_pekerjaan', $pr->jenis_pekerjaan) == 'Pelaksanaan Fisik' ? 'selected' : '' }}>
                                         Pelaksanaan Fisik
                                     </option>
                                     <option value="Konsultan Pengawas"
-                                        {{ $pr->jenis_pekerjaan == 'Konsultan Pengawas' ? 'selected' : '' }}>
+                                        {{ old('jenis_pekerjaan', $pr->jenis_pekerjaan) == 'Konsultan Pengawas' ? 'selected' : '' }}>
                                         Konsultan Pengawas
                                     </option>
                                 </select>
+                                @error('jenis_pekerjaan')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
-                                <label for="pekerjaan_id" class="form-label">Nama Pekerjaan <span
+                                <label for="pekerjaan_id" class="form-label">Prodef SAP <span
                                         class="text-danger">*</span></label>
-                                <select name="pekerjaan_id" id="pekerjaan_id" class="form-select" required>
-                                    <option value="">-- Pilih Pekerjaan --</option>
+                                <select name="pekerjaan_id" id="pekerjaan_id"
+                                    class="form-select @error('pekerjaan_id') is-invalid @enderror" required>
+                                    <option value="" disabled>-- Pilih Prodef SAP --</option>
                                     @foreach($pekerjaans as $p)
-                                    <option value="{{ $p->id }}" {{ $p->id == $pr->pekerjaan_id ? 'selected' : '' }}>
-                                        {{ $p->nama_investasi }}
+                                    <option value="{{ $p->id }}" data-nama="{{ $p->nama_investasi }}"
+                                        {{ old('pekerjaan_id', $pr->pekerjaan_id) == $p->id ? 'selected' : '' }}>
+                                        {{ $p->nomor_prodef_sap }}
                                     </option>
                                     @endforeach
                                 </select>
+                                @error('pekerjaan_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
+
+                            <div class="col-md-12">
+                                <label for="nama_investasi_display" class="form-label">Definisi Proyek</label>
+                                <input type="text" id="nama_investasi_display" class="form-control bg-light" readonly>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label for="nama_investasi" class="form-label">
+                                    Nama Investasi <span class="text-danger">*</span>
+                                </label>
+                                <textarea name="sub_pekerjaan" id="nama_investasi"
+                                    class="form-control @error('sub_pekerjaan') is-invalid @enderror" rows="3"
+                                    placeholder="Masukkan nama atau deskripsi singkat investasi..."
+                                    required>{{ old('sub_pekerjaan', $pr->subPekerjaan->first()->nama_sub ?? '') }}</textarea>
+                                @error('sub_pekerjaan')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                         </div>
 
                         <hr class="my-4">
 
-                        {{-- Group: Data PR & Anggaran --}}
+                        {{-- Group: Data PR --}}
                         <h5 class="card-title fw-bold mb-4 border-bottom pb-3">
                             <i class="fas fa-barcode me-2 text-primary"></i>Data PR
                         </h5>
@@ -103,26 +111,48 @@
                             <div class="col-md-6">
                                 <label for="nomor_pr" class="form-label">Nomor PR <span
                                         class="text-danger">*</span></label>
-                                <input type="text" name="nomor_pr" id="nomor_pr" class="form-control"
-                                    value="{{ old('nomor_pr', $pr->nomor_pr) }}" required>
+                                <input type="text" name="nomor_pr" id="nomor_pr"
+                                    class="form-control @error('nomor_pr') is-invalid @enderror"
+                                    placeholder="Cth: 4000123456" value="{{ old('nomor_pr', $pr->nomor_pr) }}" required>
+                                @error('nomor_pr')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-6">
                                 <label for="tanggal_pr" class="form-label">Tanggal PR <span
                                         class="text-danger">*</span></label>
-                                <input type="date" name="tanggal_pr" id="tanggal_pr" class="form-control"
+                                <input type="date" name="tanggal_pr" id="tanggal_pr"
+                                    class="form-control @error('tanggal_pr') is-invalid @enderror"
                                     value="{{ old('tanggal_pr', $pr->tanggal_pr->format('Y-m-d')) }}" required>
+                                @error('tanggal_pr')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-12">
-                                <label for="tahun_anggaran" class="form-label">Tahun Anggaran</label>
-                                <input type="text" class="form-control" value="{{ $pr->tahun_anggaran }}" readonly
-                                    disabled>
+                                <label for="tahun_anggaran" class="form-label">Tahun Anggaran <span
+                                        class="text-danger">*</span></label>
+                                <select name="tahun_anggaran" id="tahun_anggaran"
+                                    class="form-select @error('tahun_anggaran') is-invalid @enderror" required>
+                                    <option value="" disabled>-- Pilih Tahun --</option>
+                                    @php
+                                    $currentYear = date('Y');
+                                    $startYear = $currentYear - 5;
+                                    $endYear = $currentYear + 5;
+                                    for ($i = $endYear; $i >= $startYear; $i--) {
+                                    $selected = ($i == old('tahun_anggaran', $pr->tahun_anggaran)) ? 'selected' : '';
+                                    echo "<option value='$i' $selected>$i</option>";
+                                    }
+                                    @endphp
+                                </select>
+                                @error('tahun_anggaran')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- KOLOM KANAN: RINGKASAN & AKSI --}}
             <div class="col-lg-4">
                 <div class="card card-round shadow-sm border-0 sticky-lg-top" style="top: 20px;">
                     <div class="card-body p-4">
@@ -132,21 +162,25 @@
                         <div class="mb-4">
                             <label for="nilai_pr_display" class="form-label fw-bold">Nilai PR <span
                                     class="text-danger">*</span></label>
-                            <div class="input-group">
+                            <div class="input-group @error('nilai_pr') has-validation @enderror">
                                 <span class="input-group-text fw-bold">Rp</span>
                                 <input type="text" id="nilai_pr_display"
-                                    class="form-control form-control-lg text-end fs-5 fw-bold"
-                                    value="{{ number_format($pr->nilai_pr, 0, ',', '.') }}" required>
-                                <input type="hidden" name="nilai_pr" id="nilai_pr" value="{{ $pr->nilai_pr }}">
+                                    class="form-control form-control-lg text-end fs-5 fw-bold" placeholder="0"
+                                    value="{{ old('nilai_pr', $pr->nilai_pr) }}" required>
+                                <input type="hidden" name="nilai_pr" id="nilai_pr"
+                                    value="{{ old('nilai_pr', $pr->nilai_pr) }}">
+                                @error('nilai_pr')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
 
-                        <div class="p-3 bg-light border rounded-3 mb-4">
-                            <div class="d-flex justify-content-between text-success">
+                        <div class="p-3 bg-body-tertiary border rounded-3 mb-4">
+                            <div class="d-flex justify-content-between align-items-center text-success-emphasis">
                                 <h6 class="fw-bold mb-0">Total Nilai PR:</h6>
-                                <h6 class="fw-bold mb-0" id="total-pr">Rp
-                                    {{ number_format($pr->nilai_pr, 0, ',', '.') }}</h6>
-                                <input type="hidden" name="total_pr" id="total-pr-hidden" value="{{ $pr->nilai_pr }}">
+                                <h5 class="fw-bolder mb-0" id="total-pr">Rp 0</h5>
+                                <input type="hidden" name="total_pr" id="total-pr-hidden"
+                                    value="{{ old('total_pr', $pr->nilai_pr) }}">
                             </div>
                         </div>
 
@@ -154,7 +188,7 @@
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="fas fa-sync-alt me-2"></i> Update PR
                             </button>
-                            <a href="{{ url()->previous() }}" class="btn btn-outline-danger">
+                            <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-times me-2"></i> Batal
                             </a>
                         </div>
@@ -166,28 +200,51 @@
 </div>
 
 @push('scripts')
-{{-- LOGIKA JAVASCRIPT TETAP SAMA --}}
 <script>
-$(function() {
+$(document).ready(function() {
+    $('#pekerjaan_id').on('change', function() {
+        let selectedNama = $(this).find(':selected').data('nama') || '';
+        $('#nama_investasi_display').val(selectedNama);
+    });
+
+    // Trigger change saat halaman dimuat untuk mengisi data awal
+    $('#pekerjaan_id').trigger('change');
+
+    // --- SCRIPT UNTUK FORMAT RUPIAH ---
     const displayInput = $('#nilai_pr_display');
     const hiddenInput = $('#nilai_pr');
 
-    displayInput.on('input', function() {
-        let value = this.value.replace(/\D/g, '');
-        if (value) {
-            this.value = new Intl.NumberFormat('id-ID').format(value);
+    const formatRupiah = (angka) => {
+        if (!angka || isNaN(angka)) {
+            return '';
         }
-        hiddenInput.val(value);
-        hitungTotal();
-    });
+        // Hapus pemisah ribuan yang mungkin ada dari old() atau value awal
+        const stringValue = String(angka).replace(/\D/g, '');
+        return new Intl.NumberFormat('id-ID', {
+            style: 'decimal',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(stringValue);
+    };
 
     function hitungTotal() {
         let nilai = parseInt(hiddenInput.val()) || 0;
-        $('#total-pr').text('Rp ' + new Intl.NumberFormat('id-ID').format(nilai));
+        $('#total-pr').text('Rp ' + formatRupiah(nilai));
         $('#total-pr-hidden').val(nilai);
     }
 
-    hitungTotal();
+    displayInput.on('input', function() {
+        let value = this.value.replace(/\D/g, ''); // Hapus semua karakter non-digit
+        hiddenInput.val(value);
+        this.value = value ? formatRupiah(value) : '';
+        hitungTotal();
+    });
+
+    // Inisialisasi format saat halaman dimuat dengan data dari controller
+    if (displayInput.val()) {
+        displayInput.val(formatRupiah(displayInput.val()));
+        hitungTotal();
+    }
 });
 </script>
 @endpush

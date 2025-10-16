@@ -19,38 +19,35 @@
                         <table id="korespondensiTable" class="display table table-striped table-hover">
                             <thead>
                                 <tr>
+                                    <th>Action</th>
                                     <th>Jenis</th>
                                     <th>Judul</th>
                                     <th>Tanggal</th>
                                     <th>File</th>
-                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                @forelse($pekerjaan->korespondensis as $korespondensi)
                                 <tr>
-                                    <td>Persuratan</td>
-                                    <td>Surat Permintaan Material</td>
-                                    <td>02-09-2025</td>
                                     <td>
-                                        <a href="#" class="btn btn-sm btn-info">
-                                            <i class="fa fa-download"></i> Download
-                                        </a>
-                                    </td>
-                                    <td>
-                                        <div class="dropdown dropend">
-                                            <button class="btn btn-light btn-sm" type="button" id="aksiDropdown1"
-                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                        <div class="dropdown dropstart">
+                                            <button class="btn btn-light btn-sm" type="button"
+                                                id="aksiDropdown{{ $korespondensi->id }}" data-bs-toggle="dropdown"
+                                                aria-expanded="false">
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </button>
-                                            <ul class="dropdown-menu" aria-labelledby="aksiDropdown1">
+                                            <ul class="dropdown-menu"
+                                                aria-labelledby="aksiDropdown{{ $korespondensi->id }}">
                                                 <li>
-                                                    <a href="#" class="dropdown-item">
+                                                    <a href="#" class="dropdown-item" data-bs-toggle="modal"
+                                                        data-bs-target="#editKorespondensiModal{{ $korespondensi->id }}">
                                                         <i class="fa fa-edit text-primary"></i> Edit
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <form action="#" method="POST"
-                                                        onsubmit="return confirm('Yakin ingin hapus?');">
+                                                    <form
+                                                        action="{{ route('pekerjaan.data.korespondensi.destroy', ['id' => $pekerjaan->id, 'korespondensi' => $korespondensi->id]) }}"
+                                                        method="POST" onsubmit="return confirm('Yakin ingin hapus?');">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="dropdown-item text-danger">
@@ -61,7 +58,80 @@
                                             </ul>
                                         </div>
                                     </td>
+                                    <td>{{ $korespondensi->jenis }}</td>
+                                    <td>{{ $korespondensi->judul }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($korespondensi->tanggal)->format('d-m-Y') }}</td>
+                                    <td>
+                                        @if($korespondensi->file_path)
+                                        <a href="{{ asset('storage/' . $korespondensi->file_path) }}" target="_blank"
+                                            class="btn btn-sm btn-info">
+                                            <i class="fa fa-file"></i> Lihat
+                                        </a>
+                                        @else
+                                        <span class="text-muted">Tidak ada file</span>
+                                        @endif
+                                    </td>
                                 </tr>
+
+                                {{-- Modal Edit --}}
+                                <div class="modal fade" id="editKorespondensiModal{{ $korespondensi->id }}"
+                                    tabindex="-1" aria-labelledby="editKorespondensiModalLabel{{ $korespondensi->id }}"
+                                    aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Edit Korespondensi</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form
+                                                    action="{{ route('pekerjaan.data.korespondensi.update', ['id' => $pekerjaan->id, 'korespondensi' => $korespondensi->id]) }}"
+                                                    method="POST" enctype="multipart/form-data">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Jenis Korespondensi</label>
+                                                        <select class="form-select" name="jenis" required>
+                                                            <option value="Persuratan"
+                                                                {{ $korespondensi->jenis == 'Persuratan' ? 'selected' : '' }}>
+                                                                Persuratan</option>
+                                                            <option value="Berita Acara"
+                                                                {{ $korespondensi->jenis == 'Berita Acara' ? 'selected' : '' }}>
+                                                                Berita Acara</option>
+                                                            <option value="Lainnya"
+                                                                {{ $korespondensi->jenis == 'Lainnya' ? 'selected' : '' }}>
+                                                                Lainnya</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Judul</label>
+                                                        <input type="text" name="judul" class="form-control"
+                                                            value="{{ $korespondensi->judul }}" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Tanggal</label>
+                                                        <input type="date" name="tanggal" class="form-control"
+                                                            value="{{ $korespondensi->tanggal }}" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Upload File (Opsional)</label>
+                                                        <input type="file" name="file_korespondensi"
+                                                            class="form-control">
+                                                    </div>
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fa fa-save"></i> Simpan Perubahan
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @empty
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Belum ada data korespondensi</td>
+                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -71,7 +141,7 @@
     </div>
 </div>
 
-{{-- Modal Upload --}}
+{{-- Modal Tambah --}}
 <div class="modal fade" id="uploadKorespondensiModal" tabindex="-1" aria-labelledby="uploadKorespondensiModalLabel"
     aria-hidden="true">
     <div class="modal-dialog">
@@ -81,10 +151,12 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form action="{{ route('pekerjaan.data.korespondensi.store', $pekerjaan->id) }}" method="POST"
+                    enctype="multipart/form-data">
+                    @csrf
                     <div class="mb-3">
                         <label class="form-label">Jenis Korespondensi</label>
-                        <select class="form-select">
+                        <select class="form-select" name="jenis" required>
                             <option value="Persuratan">Persuratan</option>
                             <option value="Berita Acara">Berita Acara</option>
                             <option value="Lainnya">Lainnya</option>
@@ -92,15 +164,16 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Judul</label>
-                        <input type="text" class="form-control" placeholder="Masukkan judul dokumen">
+                        <input type="text" name="judul" class="form-control" placeholder="Masukkan judul dokumen"
+                            required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Tanggal</label>
-                        <input type="date" class="form-control">
+                        <input type="date" name="tanggal" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Upload File</label>
-                        <input type="file" class="form-control">
+                        <input type="file" name="file_korespondensi" class="form-control">
                     </div>
                     <button type="submit" class="btn btn-primary">
                         <i class="fa fa-upload"></i> Upload
@@ -114,7 +187,7 @@
 @push('scripts')
 <script>
 $('#korespondensiTable').DataTable({
-    pageLength: 5,
+    pageLength: -1,
     responsive: true,
     language: {
         paginate: {

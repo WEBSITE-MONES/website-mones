@@ -1,0 +1,70 @@
+.text-primary-light {
+    color: #5B9AFF !important;
+}
+
+.bg-primary-light {
+    background-color: #E6F0FF !important;
+}
+
+.bg-success-light {
+    background-color: #E6FFEB !important;
+}
+
+.bg-warning-light {
+    background-color: #FFF8E6 !important;
+}
+
+.bg-info-light {
+    background-color: #E6FAFF !important;
+}
+
+.bg-light-gray {
+    background-color: #f8f9fa !important;
+}
+
+/* Icon Container for Stats Cards */
+.icon-stat-modern {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    /* Soft rounded corners */
+    font-size: 1.5rem;
+}
+
+.map-container {
+    padding-bottom: 56.25%;
+    /* 16:9 Aspect Ratio */
+    position: relative;
+    height: 0;
+}
+
+.map-container img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+    font-size: 100px;
+    /* Ukuran ikon */
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.marker:hover {
+    transform: translate(-50%, -50%) scale(1.3);
+}
+
+.marker.disabled {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.4;
+}

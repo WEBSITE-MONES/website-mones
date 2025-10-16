@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="page-inner">
-    {{-- Header Halaman (disesuaikan dengan standar baru) --}}
+    {{-- Header --}}
     <div class="d-flex justify-content-between align-items-center flex-wrap grid-margin mb-4">
         <div>
             <h2 class="page-title">Formulir Input Perencanaan (PR)</h2>
@@ -31,11 +31,11 @@
     <form action="{{ route('realisasi.storePR') }}" method="POST">
         @csrf
         <div class="row">
-            {{-- KOLOM KIRI: INPUT UTAMA --}}
+            {{-- Kolom Kiri: Detail Form --}}
             <div class="col-lg-8">
                 <div class="card card-round shadow-sm border-0 mb-4">
                     <div class="card-body p-4">
-                        {{-- Group: Detail Pekerjaan --}}
+                        {{-- Detail Pekerjaan --}}
                         <h5 class="card-title fw-bold mb-4 border-bottom pb-3">
                             <i class="fas fa-tasks me-2 text-primary"></i>Detail Pekerjaan
                         </h5>
@@ -48,27 +48,32 @@
                                     <option value="" disabled selected>-- Pilih Jenis Pekerjaan --</option>
                                     <option value="Konsultan Perencana"
                                         {{ old('jenis_pekerjaan') == 'Konsultan Perencana' ? 'selected' : '' }}>
-                                        Konsultan Perencana</option>
+                                        Konsultan Perencana
+                                    </option>
                                     <option value="Pelaksanaan Fisik"
                                         {{ old('jenis_pekerjaan') == 'Pelaksanaan Fisik' ? 'selected' : '' }}>
-                                        Pelaksanaan Fisik</option>
+                                        Pelaksanaan Fisik
+                                    </option>
                                     <option value="Konsultan Pengawas"
-                                        {{ old('jenis_pekerjaan') == 'Konsultan Pengawas' ? 'selected' : '' }}>Konsultan
-                                        Pengawas</option>
+                                        {{ old('jenis_pekerjaan') == 'Konsultan Pengawas' ? 'selected' : '' }}>
+                                        Konsultan Pengawas
+                                    </option>
                                 </select>
                                 @error('jenis_pekerjaan')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+
                             <div class="col-md-6">
-                                <label for="pekerjaan_id" class="form-label">Nama Pekerjaan <span
+                                <label for="pekerjaan_id" class="form-label">Prodef SAP <span
                                         class="text-danger">*</span></label>
                                 <select name="pekerjaan_id" id="pekerjaan_id"
                                     class="form-select @error('pekerjaan_id') is-invalid @enderror" required>
-                                    <option value="" disabled selected>-- Pilih Pekerjaan --</option>
+                                    <option value="" disabled selected>-- Pilih Prodef SAP --</option>
                                     @foreach($pekerjaans as $p)
-                                    <option value="{{ $p->id }}" {{ old('pekerjaan_id') == $p->id ? 'selected' : '' }}>
-                                        {{ $p->nama_investasi }}
+                                    <option value="{{ $p->id }}" data-nama="{{ $p->nama_investasi }}"
+                                        {{ old('pekerjaan_id') == $p->id ? 'selected' : '' }}>
+                                        {{ $p->nomor_prodef_sap }}
                                     </option>
                                     @endforeach
                                 </select>
@@ -76,11 +81,28 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+
+                            <div class="col-md-12">
+                                <label for="nama_investasi_display" class="form-label">Definisi Proyek</label>
+                                <input type="text" id="nama_investasi_display" class="form-control bg-light" readonly>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label for="nama_investasi" class="form-label">Nama Investasi <span
+                                        class="text-danger">*</span></label>
+                                <textarea name="sub_pekerjaan" id="nama_investasi"
+                                    class="form-control @error('sub_pekerjaan') is-invalid @enderror" rows="3"
+                                    placeholder="Masukkan nama atau deskripsi singkat investasi..."
+                                    required>{{ old('sub_pekerjaan') }}</textarea>
+                                @error('sub_pekerjaan')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
 
                         <hr class="my-4">
 
-                        {{-- Group: Data PR & Anggaran --}}
+                        {{-- Data PR --}}
                         <h5 class="card-title fw-bold mb-4 border-bottom pb-3">
                             <i class="fas fa-barcode me-2 text-primary"></i>Data PR
                         </h5>
@@ -90,7 +112,7 @@
                                         class="text-danger">*</span></label>
                                 <input type="text" name="nomor_pr" id="nomor_pr"
                                     class="form-control @error('nomor_pr') is-invalid @enderror"
-                                    placeholder="Cth: PR/2025/001" value="{{ old('nomor_pr') }}" required>
+                                    placeholder="Cth: 4000123456" value="{{ old('nomor_pr') }}" required>
                                 @error('nomor_pr')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -130,7 +152,7 @@
                 </div>
             </div>
 
-            {{-- KOLOM KANAN: RINGKASAN & AKSI (STICKY) --}}
+            {{-- Kolom Kanan: Ringkasan & Aksi --}}
             <div class="col-lg-4">
                 <div class="card card-round shadow-sm border-0 sticky-lg-top" style="top: 20px;">
                     <div class="card-body p-4">
@@ -152,10 +174,10 @@
                             </div>
                         </div>
 
-                        <div class="p-3 bg-light border rounded-3 mb-4">
-                            <div class="d-flex justify-content-between text-success">
+                        <div class="p-3 bg-body-tertiary border rounded-3 mb-4">
+                            <div class="d-flex justify-content-between align-items-center text-success-emphasis">
                                 <h6 class="fw-bold mb-0">Total Nilai PR:</h6>
-                                <h6 class="fw-bold mb-0" id="total-pr">Rp 0</h6>
+                                <h5 class="fw-bolder mb-0" id="total-pr">Rp 0</h5>
                                 <input type="hidden" name="total_pr" id="total-pr-hidden"
                                     value="{{ old('total_pr', 0) }}">
                             </div>
@@ -165,7 +187,7 @@
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="fas fa-save me-2"></i> Simpan PR
                             </button>
-                            <a href="{{ url()->previous() }}" class="btn btn-outline-danger">
+                            <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-times me-2"></i> Batal
                             </a>
                         </div>
@@ -177,45 +199,43 @@
 </div>
 
 @push('scripts')
-{{-- LOGIKA JAVASCRIPT TETAP SAMA, HANYA MEMASTIKAN ID ELEMENT SESUAI --}}
 <script>
-$(function() {
+$(document).ready(function() {
+    // Tampilkan definisi proyek sesuai pilihan Prodef SAP
+    $('#pekerjaan_id').on('change', function() {
+        let selectedNama = $(this).find(':selected').data('nama') || '';
+        $('#nama_investasi_display').val(selectedNama);
+    });
+
+    if ($('#pekerjaan_id').val()) {
+        $('#pekerjaan_id').trigger('change');
+    }
+
+    // Format Rupiah
     const displayInput = $('#nilai_pr_display');
     const hiddenInput = $('#nilai_pr');
 
-    // Fungsi format angka ke Rupiah
     const formatRupiah = (angka) => {
-        if (!angka || isNaN(angka)) {
-            return '';
-        }
+        if (!angka || isNaN(angka)) return '';
         return new Intl.NumberFormat('id-ID', {
             style: 'decimal',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
+            minimumFractionDigits: 0
         }).format(angka);
     };
 
-    // Fungsi menghitung total PR
     function hitungTotal() {
         let nilai = parseInt(hiddenInput.val()) || 0;
-        // Format Rupiah untuk tampilan, pastikan ada spasi setelah Rp
         $('#total-pr').text('Rp ' + formatRupiah(nilai));
         $('#total-pr-hidden').val(nilai);
     }
 
-    // Event saat input Nilai PR berubah
     displayInput.on('input', function() {
-        let value = this.value.replace(/\D/g, ''); // Hapus semua non-digit
-
+        let value = this.value.replace(/\D/g, '');
         hiddenInput.val(value);
-
-        // Hanya format jika ada nilai, jika tidak, biarkan kosong
         this.value = value ? formatRupiah(value) : '';
-
         hitungTotal();
     });
 
-    // Panggil hitungTotal saat halaman dimuat untuk old value jika ada
     if (hiddenInput.val()) {
         displayInput.val(formatRupiah(hiddenInput.val()));
         hitungTotal();

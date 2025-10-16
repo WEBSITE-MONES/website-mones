@@ -12,7 +12,6 @@ class Gr extends Model
     protected $fillable = [
         'pr_id',
         'po_id',
-        'termin_id',
         'tanggal_gr',
         'nomor_gr',
         'nilai_gr',
@@ -20,6 +19,11 @@ class Gr extends Model
         'file_ba_serah_terima',
         'file_ba_pembayaran',
         'file_laporan_dokumentasi',
+    ];
+
+    protected $casts = [
+        'nilai_gr' => 'float',
+        'tanggal_gr' => 'date',
     ];
 
     public function pr()
@@ -34,6 +38,9 @@ class Gr extends Model
 {
     return $this->hasMany(Payment::class);
 }
-
+public function getNilaiGrAttribute($value)
+    {
+        return (float) $value;
+    }
         
 }

@@ -4,29 +4,50 @@
 @section('content')
 <div class="page-inner">
 
+    {{-- Header --}}
     <div class="page-header d-flex justify-content-between align-items-center mb-4">
         <h4 class="page-title fw-bold">
-            <i class="fas fa-chart-line me-2 text-primary"></i> Dashboard
+            <i class="fas fa-chart-line me-2 text-primary"></i> Dashboard Investasi Tahun {{ $tahun }}
         </h4>
+        <div class="ms-auto">
+            <div class="dropdown">
+                <button class="btn btn-light border dropdown-toggle" type="button" id="tahunFilter"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-calendar-alt me-2"></i> Tahun {{ $tahun }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="tahunFilter">
+                    @for ($i = now()->year; $i >= 2020; $i--)
+                    <li>
+                        <a class="dropdown-item tahun-filter {{ $tahun == $i ? 'active' : '' }}" href="#"
+                            data-tahun="{{ $i }}">
+                            {{ $i }}
+                        </a>
+                    </li>
+                    @endfor
+                </ul>
+            </div>
+        </div>
+
     </div>
 
     ---
 
-    {{-- Stats Cards Section: Cleaner, more defined cards --}}
+    {{-- Stats Cards Section --}}
     <div class="row g-4 mb-3">
-        {{-- Total Nilai Investasi Card (Primary Color Focus) --}}
+        {{-- Total Nilai Investasi --}}
         <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-lg h-100">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-start">
                         <div class="icon-stat-modern bg-primary-light text-primary me-3">
                             <i class="fas fa-dollar-sign"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <p class="card-category text-muted mb-1 small">Total Nilai Investasi</p>
+                            <p class="card-category text-muted mb-1 small">Total Nilai Investasi {{ $tahun }}</p>
                             <h4 class="card-title fw-bolder text-dark mb-0">
                                 Rp {{ number_format($totalNilaiInvestasi, 0, ',', '.') }}
                             </h4>
+                            <small class="text-success fw-bold"><i class="fas fa-arrow-up"></i> 5%</small>
                         </div>
                     </div>
                 </div>
@@ -34,15 +55,16 @@
         </div>
         {{-- Jumlah Proyek Card --}}
         <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-lg h-100">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-start">
                         <div class="icon-stat-modern bg-success-light text-success me-3">
                             <i class="fas fa-project-diagram"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <p class="card-category text-muted mb-1 small">Jumlah Proyek</p>
+                            <p class="card-category text-muted mb-1 small">Total Proyek {{ $tahun }}</p>
                             <h4 class="card-title fw-bolder text-dark mb-0">{{ $jumlahProyek }} Proyek</h4>
+                            <small class="text-success fw-bold"><i class="fas fa-plus"></i> 2 baru</small>
                         </div>
                     </div>
                 </div>
@@ -50,15 +72,16 @@
         </div>
         {{-- Realisasi Anggaran Card --}}
         <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-lg h-100">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-start">
                         <div class="icon-stat-modern bg-warning-light text-warning me-3">
-                            <i class="fas fa-sync-alt"></i>
+                            <i class="fas fa-tasks"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <p class="card-category text-muted mb-1 small">Realisasi Anggaran</p>
-                            <h4 class="card-title fw-bolder text-dark mb-0">75%</h4>
+                            <p class="card-category text-muted mb-1 small">Proyek Berjalan {{ $tahun }}</p>
+                            <h4 class="card-title fw-bolder text-dark mb-0">25 Proyek</h4>
+                            <small class="text-muted">75% dari total</small>
                         </div>
                     </div>
                 </div>
@@ -66,15 +89,16 @@
         </div>
         {{-- Proyek Selesai Card --}}
         <div class="col-md-6 col-lg-3">
-            <div class="card border-0 shadow-lg h-100">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-start">
                         <div class="icon-stat-modern bg-info-light text-info me-3">
                             <i class="fas fa-check-circle"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <p class="card-category text-muted mb-1 small">Proyek Selesai</p>
+                            <p class="card-category text-muted mb-1 small">Proyek Selesai {{ $tahun }}</p>
                             <h4 class="card-title fw-bolder text-dark mb-0">15 Proyek</h4>
+                            <small class="text-danger fw-bold"><i class="fas fa-arrow-down"></i> 10%</small>
                         </div>
                     </div>
                 </div>
@@ -99,8 +123,6 @@
                     <div class="map-container position-relative overflow-hidden" style="width: 100%;">
                         <img src="{{ asset('assets/img/Wilayah Pelindo.png') }}" alt="Peta Pelindo" class="img-fluid"
                             style="width: 100%;">
-
-                        {{-- Logika PHP dan koordinat dipertahankan --}}
                         @php
                         $kotas = [
                         1 => ['title' => 'Ambon', 'top' => '58.2%', 'left' => '70%'],
@@ -161,66 +183,122 @@
 
     ---
 
-    {{-- Data Table Section: Simple card for the table --}}
     <div class="row">
-        <div class="col-md-12">
-            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="card-header bg-light-gray p-4 border-bottom-0">
-                    <h4 class="card-title fw-bolder text-dark mb-0">
-                        <i class="fas fa-database me-2"></i> Database Pekerjaan
-                    </h4>
+        {{-- Kartu Ringkasan Realisasi Anggaran --}}
+        <div class="col-lg-4 col-md-12 mb-4">
+            <div class="card border-0 shadow-sm h-100 card-round">
+                <div class="card-header bg-transparent p-3 border-bottom-0">
+                    <h5 class="card-title fw-bolder text-dark mb-0">
+                        <i class="fas fa-stream me-2 text-primary"></i>
+                        Progres Realisasi Anggaran {{ $tahun }}
+                    </h5>
                 </div>
-                <div class="card-body p-4">
-                    {{-- Table content goes here --}}
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table id="tabelDatabase" class="display table table-striped table-hover">
-
-                                        <thead>
-                                            <tr>
-                                                <th>Nama Investasi</th>
-                                                <th>Tahun Usulan</th>
-                                                <th>COA</th>
-                                                <th>Program Investasi</th>
-                                                <th>Tipe Investasi</th>
-                                                <th>Kategori Investasi</th>
-                                                <th>Manfaat Investasi</th>
-                                                <th>Jenis Investasi</th>
-                                            </tr>
-                                        </thead>
-                                        <tfoot>
-                                            <tr>
-                                                <th>Nama Investasi</th>
-                                                <th>Tahun Usulan</th>
-                                                <th>COA</th>
-                                                <th>Program Investasi</th>
-                                                <th>Tipe Investasi</th>
-                                                <th>Kategori Investasi</th>
-                                                <th>Manfaat Investasi</th>
-                                                <th>Jenis Investasi</th>
-                                            </tr>
-                                        </tfoot>
-                                        <tbody>
-                                            @foreach($pekerjaans as $pk)
-                                            <tr>
-                                                <td>{{ $pk->nama_investasi }}</td>
-                                                <td>{{ $pk->tahun_usulan }}</td>
-                                                <td>{{ $pk->coa }}</td>
-                                                <td>{{ $pk->program_investasi }}</td>
-                                                <td>{{ $pk->tipe_investasi }}</td>
-                                                <td>{{ $pk->masterInvestasi->kategori ?? '-' }}</td>
-                                                <td>{{ $pk->masterInvestasi->manfaat ?? '-' }}</td>
-                                                <td>{{ $pk->masterInvestasi->jenis ?? '-' }}</td>
-                                            </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                <div class="card-body pt-0">
+                    {{-- Item PR --}}
+                    <div class="realisasi-item">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold text-dark">Perencanaan (PR)</span>
+                            <span class="fw-bold text-primary">{{ number_format($persentasePR, 2) }}%</span>
+                        </div>
+                        <div class="progress rounded-pill mb-1" style="height: 10px;">
+                            <div class="progress-bar rounded-pill bg-primary" role="progressbar"
+                                style="width: {{ $persentasePR }}%;" aria-valuenow="{{ $persentasePR }}"
+                                aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                Rp. {{ number_format($totalNilaiPR, 0, ',', '.') }}
+                            </small>
+                            <a href="#" id="openModalPR" title="Lihat Detail Data PR"
+                                class="text-primary text-decoration-none fw-bold">&rarr;</a>
                         </div>
                     </div>
+
+                    {{-- Item PO --}}
+                    <div class="realisasi-item">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold text-dark">Anggaran (PO)</span>
+                            <span class="fw-bold text-warning">{{ number_format($persentasePO, 2) }}%</span>
+                        </div>
+                        <div class="progress rounded-pill mb-1" style="height: 10px;">
+                            <div class="progress-bar rounded-pill bg-warning" role="progressbar"
+                                style="width: {{ $persentasePO }}%;" aria-valuenow="{{ $persentasePO }}"
+                                aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                Rp. {{ number_format($totalNilaiPO, 0, ',', '.') }}
+                            </small>
+                            <a href="#" id="openModalPO" title="Lihat Detail Data PO"
+                                class="text-warning text-decoration-none fw-bold">&rarr;</a>
+                        </div>
+                    </div>
+
+                    {{-- Item GR --}}
+                    <div class="realisasi-item">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold text-dark">Realisasi (GR)</span>
+                            <span class="fw-bold text-info">{{ number_format($persentaseGR, 2) }}%</span>
+                        </div>
+                        <div class="progress rounded-pill mb-1" style="height: 10px;">
+                            <div class="progress-bar rounded-pill bg-info" role="progressbar"
+                                style="width: {{ $persentaseGR }}%;" aria-valuenow="{{ $persentaseGR }}"
+                                aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Rp. {{ number_format($totalNilaiGR, 0, ',', '.') }}</small>
+                            <a href="#" id="openModalGR" title="Lihat Detail Data GR"
+                                class="text-info text-decoration-none fw-bold">&rarr;</a>
+                        </div>
+                    </div>
+
+                    {{-- Item Payment --}}
+                    <div class="realisasi-item border-0">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold text-dark">Pembayaran</span>
+                            <span class="fw-bold text-success">{{ number_format($persentasePayment, 2) }}%</span>
+                        </div>
+                        <div class="progress rounded-pill mb-1" style="height: 10px;">
+                            <div class="progress-bar rounded-pill bg-success" role="progressbar"
+                                style="width: {{ $persentasePayment }}%;" aria-valuenow="{{ $persentasePayment }}"
+                                aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Rp. {{ number_format($totalNilaiPayment, 0, ',', '.') }}</small>
+                            <a href="#" id="openModalPayment" title="Lihat Detail Data Payment"
+                                class="text-success text-decoration-none fw-bold">&rarr;</a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        {{-- Kartu Statistik --}}
+        <div class="col-lg-8 col-md-12 mb-4">
+            <div class="card border-0 shadow-sm h-100 card-round">
+                <div
+                    class="card-header bg-transparent p-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title fw-bolder text-dark mb-0">
+                        <i class="fas fa-chart-bar me-2 text-primary"></i>
+                        Statistik Investasi {{ $tahun }}
+                    </h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-light" title="Export Data">
+                            <i class="fas fa-download me-1"></i> Export
+                        </button>
+                        <button type="button" class="btn btn-light" title="Cetak Grafik">
+                            <i class="fas fa-print me-1"></i> Print
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center p-4">
+                    <div class="chart-container w-100" style="min-height: 350px;">
+                        <canvas id="statisticsChart"></canvas>
+                    </div>
+                    <div id="myChartLegend"></div>
                 </div>
             </div>
         </div>
@@ -230,11 +308,9 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Pengaturan ini tetap sama, karena sudah bagus
     const dataTableOptions = {
         pageLength: 10,
         responsive: false,
-        // scrollX: true,
         language: {
             paginate: {
                 previous: "Previous",
@@ -252,13 +328,31 @@ $(document).ready(function() {
 
     $('#tabelDatabase').DataTable(dataTableOptions);
 
+    // filter tahun
+    $(document).on('click', '.tahun-filter', function(e) {
+        e.preventDefault();
+        let tahun = $(this).data('tahun');
+
+        $.ajax({
+            url: "{{ route('dashboard') }}",
+            type: "GET",
+            data: {
+                tahun: tahun
+            },
+            success: function(response) {
+                // ambil bagian konten dashboard (page-inner)
+                let newContent = $(response).find('.page-inner').html();
+                $('.page-inner').html(newContent);
+            },
+            error: function() {
+                alert("Gagal memuat data tahun " + tahun);
+            }
+        });
+    });
 });
 </script>
 @endpush
 <style>
-/* Custom Styles for Modern Look */
-
-/* Primary color variation (assuming Bootstrap utility classes are available) */
 .text-primary-light {
     color: #5B9AFF !important;
 }

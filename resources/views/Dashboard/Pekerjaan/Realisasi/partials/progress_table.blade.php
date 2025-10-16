@@ -1,18 +1,3 @@
-<!-- {{-- [UI/UX] Kontrol untuk menampilkan/menyembunyikan kolom bulan --}}
-<div class="card mb-3">
-    <div class="card-body d-flex flex-wrap align-items-center p-2">
-        <strong class="me-3 text-nowrap"><i class="bi bi-calendar-week me-2"></i>Filter Bulan:</strong>
-        <div id="bulan-toggle-controls" class="btn-group flex-wrap me-auto" role="group" aria-label="Month Toggles">
-            @foreach ($monthMap as $bulan => $data)
-            {{-- Setiap tombol memiliki data-bulan yang akan digunakan oleh JavaScript --}}
-            <button type="button" class="btn btn-sm btn-outline-primary active" data-bulan="{{ $bulan }}">
-                {{ $bulan }}
-            </button>
-            @endforeach
-        </div>
-        <button id="toggle-all-months" class="btn btn-sm btn-outline-secondary ms-2 mt-2 mt-md-0">Toggle Semua</button>
-    </div>
-</div> -->
 <div class="table-responsive bg-white rounded-3 shadow-sm p-3">
     <table id="rekapTable" class="table table-bordered table-hover align-middle mb-0" style="min-width: 1800px;">
         <thead class="text-center align-middle sticky-top" style="top: -1px;">

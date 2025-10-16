@@ -21,10 +21,10 @@
                 <a href="{{ route('dashboard.user') }}">Data Pengguna</a>
             </li>
         </ul>
-        {{-- Tombol Tambah di Header untuk akses cepat --}}
+        <!-- {{-- Tombol Tambah di Header untuk akses cepat --}}
         <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm shadow-sm">
             <i class="fas fa-plus me-1"></i> Tambah User Baru
-        </a>
+        </a> -->
     </div>
 
     ---
@@ -37,6 +37,11 @@
                     <h5 class="card-title mb-0 fw-semibold text-dark">
                         Daftar Pengguna Sistem
                     </h5>
+
+                    <button class="btn btn-primary btn-round ms-auto"
+                        onclick="window.location='{{ route('users.create') }}'">
+                        <i class="fa fa-plus me-2"></i> Tambah User Baru
+                    </button>
                     {{-- Tombol Tambah bisa juga diletakkan di sini jika design mengharuskan (opsional)--}}
                 </div>
 

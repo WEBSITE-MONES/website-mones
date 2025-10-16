@@ -27,9 +27,15 @@ class Payment extends Model
         return $this->belongsTo(Pr::class);
     }
 
-    public function gr()
-{
-    return $this->belongsTo(Gr::class);
-}
+        public function gr()
+    {
+        return $this->belongsTo(Gr::class);
+    }
+
+    public function termins()
+    {
+        return $this->hasMany(Termin::class);
+    }
+
 
 }

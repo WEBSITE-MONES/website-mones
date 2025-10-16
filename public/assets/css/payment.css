@@ -1,0 +1,209 @@
+:root {
+    --primary-color: #0d6efd;
+    --primary-light-subtle: #cfe2ff;
+    --border-color: #dee2e6;
+    --card-bg: #ffffff;
+    --text-muted: #6c757d;
+    --card-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+    --border-radius: 0.75rem;
+}
+
+body {
+    background-color: #f8f9fa;
+}
+
+.card-round {
+    border-radius: var(--border-radius);
+}
+
+.card-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-right: 12px;
+}
+
+.termin-selection-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.termin-option {
+    position: relative;
+    padding: 0;
+    margin: 0;
+    transition: all 0.2s ease-in-out;
+}
+
+.termin-option .form-check-input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    cursor: pointer;
+}
+
+.termin-option .form-check-label {
+    display: block;
+    width: 100%;
+    padding: 1.25rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--card-bg);
+    transition: all 0.2s ease-in-out;
+}
+
+.termin-option .form-check-input:checked + .form-check-label {
+    border-color: var(--primary-color);
+    background-color: var(--primary-light-subtle);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+
+.termin-details .termin-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #343a40;
+}
+
+.termin-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.sticky-sidebar {
+    position: sticky;
+    top: 20px;
+}
+
+.payment-summary-header {
+    background: linear-gradient(45deg, #0d6efd, #0d9afd);
+    color: white;
+    padding: 1.5rem;
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+}
+
+.payment-summary-header h2 {
+    font-size: 2.25rem;
+}
+
+#selectedTerminsList .rincian-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+#selectedTerminsList .rincian-item:last-child {
+    border-bottom: none;
+}
+
+#selectedTerminsList .rincian-item-label {
+    font-weight: 500;
+}
+
+#selectedTerminsList .rincian-item-value {
+    font-weight: 600;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.info-item small {
+    color: var(--text-muted);
+}
+.info-item strong {
+    font-size: 1.1rem;
+}
+
+.custom-file-container {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    position: relative;
+    transition: all 0.2s ease-in-out;
+}
+.custom-file-container:hover {
+    border-color: var(--primary-color);
+    background-color: #f8f9fa;
+}
+
+.custom-file-upload-label {
+    cursor: pointer;
+    display: block;
+}
+
+.upload-icon {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.upload-text {
+    margin-bottom: 0;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.file-info-container {
+    display: flex;
+    align-items: center;
+    background-color: #e9ecef;
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+}
+
+.file-info-container .file-icon {
+    color: #dc3545;
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+}
+
+.file-info-container .file-name {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.9rem;
+}
+
+.btn-remove-file {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0 0.5rem;
+}
+
+.btn-remove-file:hover {
+    color: #343a40;
+}
+
+@media (max-width: 768px) {
+    .termin-option .form-check-label {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    .termin-value {
+        margin-top: 0.5rem;
+        font-size: 1.1rem;
+    }
+}

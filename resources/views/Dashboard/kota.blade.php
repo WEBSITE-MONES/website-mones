@@ -49,7 +49,6 @@
                                     <th>Action</th>
                                     <th>Unit Cabang</th>
                                     <th>COA</th>
-                                    <th>Program Investasi</th>
                                     <th>Tipe Investasi</th>
                                     <th>Nomor Prodef SAP</th>
                                     <th>Nama Investasi</th>
@@ -104,11 +103,10 @@
                                     </td>
                                     <td>{{ $pekerjaan->wilayah?->nama ?? '-' }}</td>
                                     <td>{{ $pekerjaan->coa }}</td>
-                                    <td>{{ $pekerjaan->program_investasi }}</td>
                                     <td>{{ $pekerjaan->tipe_investasi }}</td>
                                     <td>{{ $pekerjaan->nomor_prodef_sap }}</td>
                                     <td>{{ $pekerjaan->nama_investasi }}</td>
-                                    <td>Rp {{ number_format($pekerjaan->kebutuhan_dana_2025,0,',','.') }}</td>
+                                    <td>Rp {{ number_format($pekerjaan->kebutuhan_dana,0,',','.') }}</td>
                                     <td>Rp {{ number_format($pekerjaan->rkap_2025,0,',','.') }}</td>
                                 </tr>
                                 @endforeach

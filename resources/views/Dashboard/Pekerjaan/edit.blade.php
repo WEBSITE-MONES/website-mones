@@ -9,33 +9,33 @@
         <h4 class="page-title fw-bold">
             <i class="fas fa-edit me-2 text-primary"></i> Edit Rencana Investasi Kerja
         </h4>
-        <a href="{{ route('pekerjaan.index') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-arrow-left me-1"></i> Kembali ke Daftar Pekerjaan
+        <a href="{{ route('pekerjaan.index') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+            <i class="fas fa-arrow-left me-1"></i> Kembali ke Daftar
         </a>
     </div>
 
     <div class="row justify-content-center">
         <div class="col-md-12">
-            {{-- Card Utama Form --}}
-            <div class="card shadow-lg border-0 rounded-3">
-                <div class="card-header bg-primary text-white p-3 rounded-top-3">
-                    <h4 class="card-title mb-0 text-center fw-bolder">
-                        FORM EDIT RENCANA INVESTASI
-                    </h4>
-                </div>
+            <form action="{{ route('pekerjaan.update', $pekerjaan->id) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                {{-- Card Utama Form --}}
+                <div class=" card shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-primary text-white p-3">
+                        <h4 class="card-title mb-0 text-center fw-bolder">
+                            <i class="fas fa-edit me-2"></i> FORM EDIT RENCANA INVESTASI
+                        </h4>
+                    </div>
 
-                <form action="{{ route('pekerjaan.update', $pekerjaan->id) }}" method="POST">
-                    @csrf
-                    @method('PUT')
                     <div class="card-body p-4">
 
                         {{-- Alert Validasi Error --}}
                         @if ($errors->any())
-                        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                        <div class="alert alert-danger alert-dismissible fade show shadow-sm rounded-3" role="alert">
                             <h5 class="alert-heading fs-6 fw-bold">
-                                <i class="fas fa-exclamation-triangle me-2"></i> Kesalahan Input!
+                                <i class="fas fa-exclamation-triangle me-2"></i> Ada Kesalahan Input!
                             </h5>
-                            <ul class="mb-0">
+                            <ul class="mb-0 ps-3">
                                 @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
                                 @endforeach
@@ -45,23 +45,23 @@
                         @endif
 
                         {{-- Info Bidang Wajib Isi --}}
-                        <div class="alert alert-info border-info shadow-sm p-2 mb-4">
+                        <div class="alert alert-info border-info-subtle bg-info-subtle shadow-sm p-2 mb-4 rounded-3">
                             <small class="d-flex align-items-center">
                                 <i class="fas fa-info-circle me-2"></i>
-                                Bidang yang ditanda bintang merah (<span class="text-danger">*</span>) wajib diisi.
+                                Bidang dengan tanda bintang merah (<span class="text-danger">*</span>) wajib diisi.
                             </small>
                         </div>
 
-                        {{-- Section: Informasi Dasar --}}
+                        {{-- Section: Data Umum --}}
                         <fieldset class="border p-3 mb-4 rounded-3">
-                            <legend class="float-none w-auto px-2 fs-6 fw-semibold text-primary">
-                                <i class="fas fa-folder me-1"></i> Data Umum
+                            <legend class="float-none w-auto px-3 fs-6 fw-semibold text-primary">
+                                <i class="fas fa-folder-open me-2"></i>Data Umum
                             </legend>
                             <div class="row g-3">
                                 {{-- Unit Cabang --}}
                                 <div class="col-md-4">
-                                    <label for="wilayah_id" class="form-label fw-semibold">
-                                        <i class="fas fa-building me-1 text-muted"></i> Unit Cabang <span
+                                    <label for="wilayah_id" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-building me-2 text-muted"></i>Unit Cabang <span
                                             class="text-danger">*</span>
                                     </label>
                                     <select name="wilayah_id" id="wilayah_id" class="form-select form-select-sm"
@@ -75,10 +75,63 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                {{-- Nomor Prodef SAP --}}
+                                <div class="col-md-4">
+                                    <label for="nomor_prodef_sap" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-hashtag me-2 text-muted"></i>Nomor Prodef SAP
+                                    </label>
+                                    <input type="text" name="nomor_prodef_sap" id="nomor_prodef_sap"
+                                        class="form-control form-control-sm"
+                                        value="{{ old('nomor_prodef_sap', $pekerjaan->nomor_prodef_sap) }}"
+                                        placeholder="Opsional">
+                                </div>
+                                {{-- Gambar Proyek --}}
+                                <div class="col-md-4">
+                                    <label for="gambar" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-image me-2 text-muted"></i>Gambar Proyek
+                                    </label>
+
+                                    {{-- Preview gambar lama --}}
+                                    @if ($pekerjaan->gambar)
+                                    <div class="mb-2">
+                                        <img src="{{ asset('storage/' . $pekerjaan->gambar) }}" alt="Gambar Proyek"
+                                            class="img-thumbnail" style="max-height: 150px; object-fit: cover;">
+                                    </div>
+                                    @endif
+
+                                    {{-- Input file baru --}}
+                                    <input type="file" name="gambar" id="gambar" class="form-control form-control-sm"
+                                        accept="image/*">
+
+                                    <small class="text-muted d-block mt-1">
+                                        Kosongkan jika tidak ingin mengganti gambar.
+                                    </small>
+                                </div>
+
+                                {{-- Nama Investasi --}}
+                                <div class="col-md-12">
+                                    <label for="nama_investasi" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-file-signature me-2 text-muted"></i>Nama Investasi <span
+                                            class="text-danger">*</span>
+                                    </label>
+                                    <textarea name="nama_investasi" id="nama_investasi"
+                                        class="form-control form-control-sm" rows="2"
+                                        placeholder="Masukkan deskripsi lengkap mengenai investasi..."
+                                        required>{{ old('nama_investasi', $pekerjaan->nama_investasi) }}</textarea>
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        {{-- Section: Klasifikasi Investasi --}}
+                        <fieldset class="border p-3 mb-4 rounded-3">
+                            <legend class="float-none w-auto px-3 fs-6 fw-semibold text-primary">
+                                <i class="fas fa-filter me-2"></i>Klasifikasi Investasi
+                            </legend>
+                            <div class="row g-3">
                                 {{-- COA --}}
                                 <div class="col-md-4">
-                                    <label for="coa" class="form-label fw-semibold">
-                                        <i class="fas fa-barcode me-1 text-muted"></i> COA <span
+                                    <label for="coa" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-barcode me-2 text-muted"></i>COA <span
                                             class="text-danger">*</span>
                                     </label>
                                     <select name="coa" id="coa" class="form-select form-select-sm" required>
@@ -93,320 +146,265 @@
                                 </div>
                                 {{-- COA SUB --}}
                                 <div class="col-md-4">
-                                    <label for="coa_sub" class="form-label fw-semibold">
-                                        <i class="fas fa-stream me-1 text-muted"></i> COA SUB <span
+                                    <label for="coa_sub" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-stream me-2 text-muted"></i>COA SUB <span
                                             class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="coa_sub" id="coa_sub" class="form-control form-control-sm"
-                                        value="{{ old('coa_sub', optional($pekerjaan->masterInvestasis->first())->coa_sub) }}"
+                                    <input type="text" name="coa_sub" id="coa_sub"
+                                        class="form-control form-control-sm bg-light"
+                                        value="{{ old('coa_sub', $pekerjaan->masterInvestasi->coa_sub ?? '') }}"
                                         readonly required>
-                                </div>
-                                {{-- Program Investasi --}}
-                                <div class="col-md-6">
-                                    <label for="program_investasi" class="form-label fw-semibold">
-                                        <i class="fas fa-project-diagram me-1 text-muted"></i> Program Investasi <span
-                                            class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" name="program_investasi" id="program_investasi"
-                                        class="form-control form-control-sm"
-                                        value="{{ old('program_investasi', $pekerjaan->program_investasi) }}"
-                                        placeholder="Contoh: Pengadaan Kapal" required>
-                                </div>
-                                {{-- Nomor Prodef SAP --}}
-                                <div class="col-md-6">
-                                    <label for="nomor_prodef_sap" class="form-label fw-semibold">
-                                        <i class="fas fa-hashtag me-1 text-muted"></i> Nomor Prodef SAP
-                                    </label>
-                                    <input type="text" name="nomor_prodef_sap" id="nomor_prodef_sap"
-                                        class="form-control form-control-sm"
-                                        value="{{ old('nomor_prodef_sap', $pekerjaan->nomor_prodef_sap) }}"
-                                        placeholder="Opsional">
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        {{-- Section: Detail Investasi --}}
-                        <fieldset class="border p-3 mb-4 rounded-3">
-                            <legend class="float-none w-auto px-2 fs-6 fw-semibold text-primary">
-                                <i class="fas fa-info-circle me-1"></i> Rincian Proyek
-                            </legend>
-                            <div class="row g-3">
-                                {{-- Nama Investasi --}}
-                                <div class="col-md-12">
-                                    <label for="nama_investasi" class="form-label fw-semibold">
-                                        <i class="fas fa-file-signature me-1 text-muted"></i> Nama Investasi <span
-                                            class="text-danger">*</span>
-                                    </label>
-                                    <textarea name="nama_investasi" id="nama_investasi"
-                                        class="form-control form-control-sm" rows="2"
-                                        placeholder="Deskripsi lengkap investasi"
-                                        required>{{ old('nama_investasi', $pekerjaan->nama_investasi) }}</textarea>
-                                </div>
-                                {{-- Tipe --}}
-                                <div class="col-md-4">
-                                    <label for="tipe" class="form-label fw-semibold">
-                                        <i class="fas fa-chart-pie me-1 text-muted"></i> Tipe <span
-                                            class="text-danger">*</span>
-                                    </label>
-                                    <select name="tipe" id="tipe" class="form-select form-select-sm" required>
-                                        <option value="">-- Pilih Tipe --</option>
-                                        @php
-                                        $tipeOptions = [
-                                        'A'=>'Investasi Murni','B'=>'Investasi Multi Year','B1'=>'Multi Year 2020',
-                                        'B2'=>'Multi Year 2021','B3'=>'Multi Year 2022','B4'=>'Multi Year 2023 & 2024',
-                                        'C'=>'Carry Forward/Over','KAP'=>'Kapitalisasi Bunga','PMPI'=>'Penyertaan Modal'
-                                        ];
-                                        @endphp
-                                        @foreach($tipeOptions as $key => $label)
-                                        <option value="{{ $key }}"
-                                            {{ old('tipe', optional($pekerjaan->masterInvestasis->first())->tipe) == $key ? 'selected' : '' }}>
-                                            {{ $key }}: {{ $label }}
-                                        </option>
-                                        @endforeach
-                                    </select>
                                 </div>
                                 {{-- Jenis --}}
                                 <div class="col-md-4">
-                                    <label for="jenis" class="form-label fw-semibold">
-                                        <i class="fas fa-shapes me-1 text-muted"></i> Jenis Investasi <span
+                                    <label for="jenis" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-shapes me-2 text-muted"></i>Jenis Investasi <span
                                             class="text-danger">*</span>
                                     </label>
                                     <select name="jenis" id="jenis" class="form-select form-select-sm" required>
                                         <option value="">-- Pilih Jenis --</option>
-                                        @foreach(['Investasi Murni','Investasi Multi Year','Carry Forward','Kapitalisasi
-                                        Bunga','Penyertaan Modal'] as $jenis)
-                                        <option value="{{ $jenis }}"
-                                            {{ old('jenis', optional($pekerjaan->masterInvestasis->first())->jenis) == $jenis ? 'selected' : '' }}>
-                                            {{ $jenis }}
+                                        <option value="STR: Strategi"
+                                            {{ old('jenis', $pekerjaan->masterInvestasi->jenis ?? '') == 'STR: Strategi' ? 'selected' : '' }}>
+                                            STR: Strategi
                                         </option>
-                                        @endforeach
+                                        <option value="NSTF:Non Strategis (BAU)"
+                                            {{ old('jenis', $pekerjaan->masterInvestasi->jenis ?? '') == 'NSTF:Non Strategis (BAU)' ? 'selected' : '' }}>
+                                            NSTF: Non Strategis (BAU)
+                                        </option>
                                     </select>
                                 </div>
-                                {{-- Tipe Investasi (Readonly) --}}
+                                {{-- Tipe --}}
                                 <div class="col-md-4">
-                                    <label for="tipe_investasi" class="form-label fw-semibold">
-                                        <i class="fas fa-tag me-1 text-muted"></i> Tipe Investasi <span
+                                    <label for="tipe" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-chart-pie me-2 text-muted"></i>Tipe <span
+                                            class="text-danger">*</span>
+                                    </label>
+                                    <select name="tipe" id="tipe" class="form-select form-select-sm" required>
+                                        <option value="">-- Pilih Tipe --</option>
+                                        <option value="A"
+                                            {{ old('tipe', $pekerjaan->masterInvestasi->tipe ?? '') == 'A' ? 'selected' : '' }}>
+                                            A: Investasi Murni
+                                        </option>
+                                        <option value="B"
+                                            {{ old('tipe', $pekerjaan->masterInvestasi->tipe ?? '') == 'B' ? 'selected' : '' }}>
+                                            B: Investasi Multi Year</option>
+                                        <option value="B1"
+                                            {{ old('tipe', $pekerjaan->masterInvestasi->tipe ?? '') == 'B1' ? 'selected' : '' }}>
+                                            B1: Multi Year 2020</option>
+                                        <option value="B2"
+                                            {{ old('tipe', $pekerjaan->masterInvestasi->tipe ?? '') == 'B2' ? 'selected' : '' }}>
+                                            B2: Multi Year 2021</option>
+                                        <option value="B3"
+                                            {{ old('tipe', $pekerjaan->masterInvestasi->tipe ?? '') == 'B3' ? 'selected' : '' }}>
+                                            B3: Multi Year 2022</option>
+                                        <option value="B4"
+                                            {{ old('tipe', $pekerjaan->masterInvestasi->tipe ?? '') == 'B4' ? 'selected' : '' }}>
+                                            B4: Multi Year 2023 & 2024</option>
+                                        <option value="C"
+                                            {{ old('tipe', $pekerjaan->masterInvestasi->tipe ?? '') == 'C' ? 'selected' : '' }}>
+                                            C: Carry Forward/Over</option>
+                                        <option value="KAP"
+                                            {{ old('tipe', $pekerjaan->masterInvestasi->tipe ?? '') == 'KAP' ? 'selected' : '' }}>
+                                            KAP: Kapitalisasi Bunga</option>
+                                        <option value="PMPI"
+                                            {{ old('tipe', $pekerjaan->masterInvestasi->tipe ?? '') == 'PMPI' ? 'selected' : '' }}>
+                                            PMPI: Penyertaan Modal</option>
+                                    </select>
+                                </div>
+                                {{-- Tipe Investasi --}}
+                                <div class="col-md-4">
+                                    <label for="tipe_investasi" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-tag me-2 text-muted"></i>Tipe Investasi <span
                                             class="text-danger">*</span>
                                     </label>
                                     <input type="text" name="tipe_investasi" id="tipe_investasi"
-                                        class="form-control form-control-sm"
+                                        class="form-control form-control-sm bg-light"
                                         value="{{ old('tipe_investasi', $pekerjaan->tipe_investasi) }}" readonly
                                         required>
                                 </div>
-                            </div>
-                        </fieldset>
-
-                        {{-- Section: Klasifikasi & Urgensi --}}
-                        <fieldset class="border p-3 mb-4 rounded-3">
-                            <legend class="float-none w-auto px-2 fs-6 fw-semibold text-primary">
-                                <i class="fas fa-filter me-1"></i> Klasifikasi Proyek
-                            </legend>
-                            <div class="row g-3">
                                 {{-- Kategori --}}
                                 <div class="col-md-4">
-                                    <label for="kategori" class="form-label fw-semibold">
-                                        <i class="fas fa-cogs me-1 text-muted"></i> Kategori Investasi <span
+                                    <label for="kategori" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-cogs me-2 text-muted"></i>Kategori Investasi <span
                                             class="text-danger">*</span>
                                     </label>
                                     <select name="kategori" id="kategori" class="form-select form-select-sm" required>
                                         <option value="">-- Pilih Kategori --</option>
-                                        @foreach([
-                                        '1'=>'Penggantian untuk mempertahankan bisnis', '2'=>'Penggantian untuk
-                                        efisiensi',
-                                        '3'=>'Pengembangan brownfield', '4'=>'Pengembangan greenfield',
-                                        '5'=>'Proyek Penugasan', '6'=>'Investasi lain-lain'
-                                        ] as $key => $label)
-                                        <option value="{{ $key }}"
-                                            {{ old('kategori', optional($pekerjaan->masterInvestasis->first())->kategori) == $key ? 'selected' : '' }}>
-                                            {{ $label }}
-                                        </option>
-                                        @endforeach
+                                        <option value="Penggantian untuk mempertahankan bisnis"
+                                            {{ old('kategori', $pekerjaan->masterInvestasi->kategori ?? '') == 'Penggantian untuk mempertahankan bisnis' ? 'selected' : '' }}>
+                                            Penggantian untuk mempertahankan bisnis</option>
+                                        <option value="Penggantian untuk efisiensi"
+                                            {{ old('kategori', $pekerjaan->masterInvestasi->kategori ?? '') == 'Penggantian untuk efisiensi' ? 'selected' : '' }}>
+                                            Penggantian untuk efisiensi</option>
+                                        <option value="Pengembangan bisnis brownfield"
+                                            {{ old('kategori', $pekerjaan->masterInvestasi->kategori ?? '') == 'Pengembangan bisnis brownfield' ? 'selected' : '' }}>
+                                            Pengembangan bisnis brownfield</option>
+                                        <option value="Pengembangan bisnis greenfield"
+                                            {{ old('kategori', $pekerjaan->masterInvestasi->kategori ?? '') == 'Pengembangan bisnis greenfield' ? 'selected' : '' }}>
+                                            Pengembangan bisnis greenfield</option>
+                                        <option value="Proyek Penugasan"
+                                            {{ old('kategori', $pekerjaan->masterInvestasi->kategori ?? '') == 'Proyek Penugasan' ? 'selected' : '' }}>
+                                            Proyek Penugasan</option>
+                                        <option value="Investasi lain-lain"
+                                            {{ old('kategori', $pekerjaan->masterInvestasi->kategori ?? '') == 'Investasi lain-lain' ? 'selected' : '' }}>
+                                            Investasi lain-lain</option>
                                     </select>
                                 </div>
                                 {{-- Manfaat --}}
                                 <div class="col-md-4">
-                                    <label for="manfaat" class="form-label fw-semibold">
-                                        <i class="fas fa-handshake me-1 text-muted"></i> Manfaat Investasi <span
+                                    <label for="manfaat" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-handshake me-2 text-muted"></i>Manfaat Investasi <span
                                             class="text-danger">*</span>
                                     </label>
                                     <select name="manfaat" id="manfaat" class="form-select form-select-sm" required>
                                         <option value="">-- Pilih Manfaat --</option>
-                                        @foreach([
-                                        '1'=>'Menghasilkan Pendapatan / Menurunkan Biaya', '2'=>'Memenuhi Kebutuhan
-                                        Minimal',
-                                        '3'=>'Meningkatkan Keselamatan / Keamanan', '4'=>'Tujuan administratif / layanan
-                                        / estetika'
-                                        ] as $key => $label)
-                                        <option value="{{ $key }}"
-                                            {{ old('manfaat', optional($pekerjaan->masterInvestasis->first())->manfaat) == $key ? 'selected' : '' }}>
-                                            {{ $label }}
-                                        </option>
-                                        @endforeach
+                                        <option value="Menghasilkan Pendapatan / Menurunkan Biaya"
+                                            {{ old('manfaat', $pekerjaan->masterInvestasi->manfaat ?? '') == 'Menghasilkan Pendapatan / Menurunkan Biaya' ? 'selected' : '' }}>
+                                            Menghasilkan Pendapatan / Menurunkan Biaya</option>
+                                        <option value="Memenuhi Kebutuhan Minimal"
+                                            {{ old('manfaat', $pekerjaan->masterInvestasi->manfaat ?? '') == 'Memenuhi Kebutuhan Minimal' ? 'selected' : '' }}>
+                                            Memenuhi Kebutuhan Minimal</option>
+                                        <option value="Meningkatkan Keselamatan Kerja / Lingkungan"
+                                            {{ old('manfaat', $pekerjaan->masterInvestasi->manfaat ?? '') == 'Meningkatkan Keselamatan Kerja / Lingkungan' ? 'selected' : '' }}>
+                                            Meningkatkan Keselamatan Kerja / Lingkungan</option>
+                                        <option value="Tujuan administratif / kualitas pelayanan"
+                                            {{ old('manfaat', $pekerjaan->masterInvestasi->manfaat ?? '') == 'Tujuan administratif / kualitas pelayanan' ? 'selected' : '' }}>
+                                            Tujuan administratif / kualitas pelayanan</option>
                                     </select>
                                 </div>
                                 {{-- Sifat --}}
                                 <div class="col-md-4">
-                                    <label for="sifat" class="form-label fw-semibold">
-                                        <i class="fas fa-exclamation-triangle me-1 text-muted"></i> Sifat Investasi
-                                        <span class="text-danger">*</span>
+                                    <label for="sifat" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-check-circle me-2 text-muted"></i>Sifat Investasi <span
+                                            class="text-danger">*</span>
                                     </label>
                                     <select name="sifat" id="sifat" class="form-select form-select-sm" required>
                                         <option value="">-- Pilih Sifat --</option>
-                                        @foreach(['Wajib','Opsional'] as $sifat)
-                                        <option value="{{ $sifat }}"
-                                            {{ old('sifat', optional($pekerjaan->masterInvestasis->first())->sifat) == $sifat ? 'selected' : '' }}>
-                                            {{ $sifat }}
-                                        </option>
-                                        @endforeach
+                                        <option value="Pengembangan/Expanse"
+                                            {{ old('sifat', $pekerjaan->masterInvestasi->sifat ?? '') == 'Pengembangan/Expanse' ? 'selected' : '' }}>
+                                            PE: Pengembangan/Expanse</option>
+                                        <option value="RU: Rutin/Maintenance"
+                                            {{ old('sifat', $pekerjaan->masterInvestasi->sifat ?? '') == 'RU: Rutin/Maintenance' ? 'selected' : '' }}>
+                                            RU: Rutin/Maintenance</option>
                                     </select>
                                 </div>
                                 {{-- Urgensi --}}
                                 <div class="col-md-4">
-                                    <label for="urgensi" class="form-label fw-semibold">
-                                        <i class="fas fa-chart-bar me-1 text-muted"></i> Urgensi <span
+                                    <label for="urgensi" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-exclamation-triangle me-2 text-muted"></i>Urgensi <span
                                             class="text-danger">*</span>
                                     </label>
                                     <select name="urgensi" id="urgensi" class="form-select form-select-sm" required>
                                         <option value="">-- Pilih Urgensi --</option>
-                                        @foreach(['Tinggi','Sedang','Rendah'] as $urgensi)
-                                        <option value="{{ $urgensi }}"
-                                            {{ old('urgensi', optional($pekerjaan->masterInvestasis->first())->urgensi) == $urgensi ? 'selected' : '' }}>
-                                            {{ $urgensi }}
-                                        </option>
-                                        @endforeach
+                                        <option value="Tinggi"
+                                            {{ old('urgensi', $pekerjaan->masterInvestasi->urgensi ?? '') == 'Tinggi' ? 'selected' : '' }}>
+                                            MU: Must Have</option>
+                                        <option value="Sedang"
+                                            {{ old('urgensi', $pekerjaan->masterInvestasi->urgensi ?? '') == 'Sedang' ? 'selected' : '' }}>
+                                            Ni: Nice to Have</option>
                                     </select>
                                 </div>
                                 {{-- Tahun Usulan --}}
                                 <div class="col-md-4">
-                                    <label for="tahun_usulan" class="form-label fw-semibold">
-                                        <i class="fas fa-calendar-alt me-1 text-muted"></i> Tahun Usulan <span
+                                    <label for="tahun_usulan" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-calendar-alt me-2 text-muted"></i>Tahun Usulan <span
                                             class="text-danger">*</span>
                                     </label>
                                     <select name="tahun_usulan" id="tahun_usulan" class="form-select form-select-sm"
                                         required>
-                                        @for ($year=date('Y'); $year<=date('Y')+5; $year++) <option value="{{ $year }}"
-                                            {{ old('tahun_usulan', $pekerjaan->tahun_usulan) == $year ? 'selected' : '' }}>
-                                            {{ $year }}</option>
-                                            @endfor
+                                        <option value="">-- Pilih Tahun --</option>
+                                        @php
+                                        $currentYear = date('Y');
+                                        $startYear = 2020;
+                                        $endYear = $currentYear + 5;
+                                        for ($i = $startYear; $i <= $endYear; $i++) { $selected=old('tahun_usulan',
+                                            $pekerjaan->tahun_usulan) == $i ? 'selected' : '';
+                                            echo "<option value='$i' $selected>$i</option>";
+                                            }
+                                            @endphp
                                     </select>
                                 </div>
                             </div>
                         </fieldset>
 
-                        {{-- Section: Anggaran --}}
+                        {{-- Section: Rincian Anggaran --}}
                         <fieldset class="border p-3 mb-4 rounded-3">
-                            <legend class="float-none w-auto px-2 fs-6 fw-semibold text-primary">
-                                <i class="fas fa-dollar-sign me-1"></i> Rincian Anggaran
+                            <legend class="float-none w-auto px-3 fs-6 fw-semibold text-primary">
+                                <i class="fas fa-dollar-sign me-2"></i>Rincian Anggaran
                             </legend>
-                            <div class="row g-3">
-                                {{-- Kebutuhan Dana --}}
-                                <div class="col-md-6">
-                                    <label for="kebutuhan_dana" class="form-label fw-semibold">
-                                        <i class="fas fa-money-check-alt me-1 text-muted"></i> Kebutuhan Dana <span
-                                            class="text-danger">*</span>
+                            <div class="row g-4">
+
+                                {{-- Kebutuhan Dana Total --}}
+                                <div class="col-md-5">
+                                    <label for="kebutuhan_dana_display" class="form-label fw-semibold mb-1">
+                                        <i class="fas fa-money-check-alt me-2 text-muted"></i>
+                                        Total Kebutuhan Dana <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-group input-group-sm">
-                                        <span class="input-group-text">Rp</span>
-                                        <input type="number" name="kebutuhan_dana" id="kebutuhan_dana"
-                                            class="form-control dana" step="1000"
-                                            value="{{ old('kebutuhan_dana', $pekerjaan->kebutuhan_dana) }}" required>
+                                        <span class="input-group-text fw-bold">Rp</span>
+                                        {{-- Input tampil (format rupiah) --}}
+                                        <input type="text" id="kebutuhan_dana_display"
+                                            class="form-control format-rupiah"
+                                            value="{{ old('kebutuhan_dana', $pekerjaan->kebutuhan_dana) ? number_format(old('kebutuhan_dana', $pekerjaan->kebutuhan_dana), 0, ',', '.') : '0' }}"
+                                            required>
+                                        {{-- Hidden input (nilai mentah untuk DB) --}}
+                                        <input type="hidden" name="kebutuhan_dana" id="kebutuhan_dana"
+                                            value="{{ old('kebutuhan_dana', $pekerjaan->kebutuhan_dana ?? 0) }}">
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Estimasi total biaya yang dibutuhkan untuk keseluruhan investasi.
+                                    </small>
+                                </div>
+
+                                {{-- Alokasi RKAP per Tahun --}}
+                                <div class="col-md-7">
+                                    <div class="bg-light p-3 rounded-3 border">
+                                        <h6 class="fw-semibold mb-2 text-dark">
+                                            <i class="fas fa-calendar-check me-2 text-muted"></i>
+                                            Alokasi Dana per Tahun (RKAP)
+                                        </h6>
+                                        <div id="rkap-wrapper" class="row gx-2 gy-2">
+                                            {{-- Dynamic RKAP inputs will be generated here by JS --}}
+                                        </div>
                                     </div>
                                 </div>
-                                {{-- RKAP --}}
-                                <div class="col-md-6">
-                                    <label for="rkap" class="form-label fw-semibold">
-                                        <i class="fas fa-piggy-bank me-1 text-muted"></i> RKAP <span
-                                            class="text-danger">*</span>
-                                    </label>
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">Rp</span>
-                                        <input type="number" name="rkap" id="rkap" class="form-control rkap" step="1000"
-                                            value="{{ old('rkap', $pekerjaan->rkap) }}" required>
-                                    </div>
-                                </div>
-                                {{-- Total Dana --}}
-                                <div class="col-md-12">
-                                    <div class="alert alert-primary text-end fw-bold shadow-sm p-2 mb-0">
-                                        Total Anggaran: <span id="total-dana">Rp 0</span>
+
+                                {{-- Total Dana Summary --}}
+                                <div class="col-md-12 mt-3">
+                                    <div
+                                        class="d-flex justify-content-between align-items-center bg-primary-subtle text-primary-emphasis p-3 rounded-3 fw-bold fs-5 shadow-sm">
+                                        <span>Total Nilai Anggaran</span>
+                                        <span id="total-dana">Rp 0</span>
                                         <input type="hidden" name="total_dana" id="total-dana-hidden" value="0">
                                     </div>
                                 </div>
+
                             </div>
                         </fieldset>
+
                     </div>
 
                     {{-- Card Footer Aksi --}}
-                    <div class="card-footer d-flex justify-content-end p-3 bg-light border-top">
-                        <a href="{{ route('pekerjaan.index') }}" class="btn btn-outline-danger me-2 px-4 shadow-sm">
+                    <div class="card-footer d-flex justify-content-end p-3 bg-body-tertiary border-top">
+                        <a href="{{ route('pekerjaan.index') }}"
+                            class="btn btn-outline-danger me-2 px-4 shadow-sm rounded-pill">
                             <i class="fas fa-times me-1"></i> Batal
                         </a>
-                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm rounded-pill">
                             <i class="fas fa-save me-1"></i> Simpan Perubahan
                         </button>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+@endsection
 
 @push('scripts')
-{{-- SCRIPT DISERAGAMKAN DENGAN FORM TAMBAH --}}
 <script>
-$(document).ready(function() {
-    // Mapping COA → COA SUB
-    const coaSubMap = {
-        '201': 'Bangunan Fasilitas',
-        '202': 'Kapal',
-        '203': 'Alat-Alat Fasilitas',
-        '204': 'Instalasi Fasilitas',
-        '211': 'Tanah dan Hak Atas Tanah',
-        '212': 'Jalan, Bangunan, Sarana dan Prasarana',
-        '213': 'Peralatan dan Perlengkapan',
-        '221': 'Kendaraan',
-        '222': 'Emplasemen'
-    };
-
-    // Mapping Tipe → Tipe Investasi
-    const tipeInvestasiMap = {
-        'A': 'Investasi Murni',
-        'B': 'Investasi Multi Year',
-        'B1': 'Investasi Multi Year',
-        'B2': 'Investasi Multi Year',
-        'B3': 'Investasi Multi Year',
-        'B4': 'Investasi Multi Year',
-        'C': 'Carry Forward/Over',
-        'KAP': 'Kapitalisasi Bunga',
-        'PMPI': 'Penyertaan Modal'
-    };
-
-    // Event: COA
-    $('#coa').change(function() {
-        $('#coa_sub').val(coaSubMap[$(this).val()] || '');
-    });
-
-    // Event: Tipe
-    $('#tipe').change(function() {
-        $('#tipe_investasi').val(tipeInvestasiMap[$(this).val()] || '');
-    });
-
-    // Fungsi Hitung Total
-    function hitungTotal() {
-        let kebutuhan = parseFloat($('.dana').val()) || 0;
-        let rkap = parseFloat($('.rkap').val()) || 0;
-        let total = kebutuhan + rkap;
-        $('#total-dana').text('Rp ' + total.toLocaleString('id-ID'));
-        $('#total-dana-hidden').val(total);
-    }
-
-    // Event: Input Dana & RKAP
-    $('.dana, .rkap').on('input', hitungTotal);
-
-    // Trigger awal saat halaman dimuat untuk mengisi data
-    hitungTotal();
-    $('#coa').trigger('change');
-    $('#tipe').trigger('change');
-});
+window.existingRkap = @json($existingRkap ?? []);
+console.log('Existing RKAP:', window.existingRkap);
 </script>
+<script src="{{ asset('assets/js/pekerjaan.js') }}?v={{ time() }}"></script>
 @endpush
-@endsection

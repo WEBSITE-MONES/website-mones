@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use Illuminate\Support\Facades\Log;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB; //GEGARA LUPA TAMBAH INI ERRORKU 2 JAM SIELLL
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\Pekerjaan;
 use App\Models\Pr;
@@ -18,7 +18,6 @@ use App\Models\MasterMinggu;
 use App\Models\PekerjaanItem;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ProgressImport;
-use App\Models\Progress;
 use App\Models\ProgressDetail;
 use Illuminate\Support\Facades\Storage;
 
@@ -27,71 +26,75 @@ class RealisasiController extends Controller
 {
     // Daftar PR
     public function index()
-    {
-        $prs = Pr::with('pekerjaan')
-            ->orderByRaw("
+{
+    $prs = Pr::with('pekerjaan','subPekerjaan')
+        ->orderByRaw("
             CASE 
                 WHEN UPPER(TRIM(status_pekerjaan)) = 'PR' THEN 1
                 WHEN UPPER(TRIM(status_pekerjaan)) = 'PO' THEN 2
-                WHEN UPPER(TRIM(status_pekerjaan)) = 'GR' THEN 3
-                WHEN UPPER(TRIM(status_pekerjaan)) = 'PAYMENT' THEN 4
-                ELSE 5
+                WHEN UPPER(TRIM(status_pekerjaan)) = 'PROGRESS' THEN 3
+                WHEN UPPER(TRIM(status_pekerjaan)) = 'GR' THEN 4
+                WHEN UPPER(TRIM(status_pekerjaan)) = 'PAYMENT' THEN 5
+                ELSE 6
             END
         ")
-            ->orderBy('id', 'asc') // biar stabil kalau status sama
-            ->paginate(10);
+        ->orderBy('id', 'asc') 
+        ->get();
 
-         // Ambil semua pekerjaan dengan master_investasi
-        $pekerjaans = \App\Models\Pekerjaan::with('masterInvestasi')
+    // Ambil semua pekerjaan dengan master_investasi
+    $pekerjaans = \App\Models\Pekerjaan::with('masterInvestasi','wilayah')
         ->orderBy('id', 'desc')
-        ->paginate(10);
+        ->get();
 
-        return view('Dashboard.Pekerjaan.realisasi_pekerjaan', compact('prs', 'pekerjaans'));
-    }
+    return view('Dashboard.Pekerjaan.realisasi_pekerjaan', compact('prs', 'pekerjaans'));
+}
 
 
     // Form input PR
     public function createPR()
-    {
-        $pekerjaans = Pekerjaan::whereDoesntHave('prs')
-            ->orderBy('nama_investasi')
-            ->get();
-        return view('Dashboard.Pekerjaan.Realisasi.create_pr', compact('pekerjaans'));
-    }
+{
+    $pekerjaans = Pekerjaan::orderBy('nomor_prodef_sap')->get();
+
+    return view('Dashboard.Pekerjaan.Realisasi.create_pr', compact('pekerjaans'));
+}
 
     // Simpan PR
     public function storePR(Request $request)
-    {
-        // Bersihkan nilai PR dari titik, koma, spasi
-        $nilaiPR = preg_replace('/[^\d]/', '', $request->nilai_pr);
+{
+    $nilaiPR = preg_replace('/[^\d]/', '', $request->nilai_pr);
+    $request->merge(['nilai_pr' => $nilaiPR]);
 
-        $request->merge([
-            'nilai_pr' => $nilaiPR,
-        ]);
+    $request->validate([
+        'jenis_pekerjaan' => 'required|in:Konsultan Perencana,Pelaksanaan Fisik,Konsultan Pengawas',
+        'pekerjaan_id'    => 'required|exists:pekerjaan,id',
+        'nilai_pr'        => 'required|numeric|min:0',
+        'nomor_pr'        => 'required|string|max:255|unique:prs,nomor_pr',
+        'tanggal_pr'      => 'required|date',
+        'sub_pekerjaan'   => 'required|string|max:255', 
+    ]);
 
-        $request->validate([
-            'jenis_pekerjaan' => 'required|in:Konsultan Perencana,Pelaksanaan Fisik,Konsultan Pengawas',
-            'pekerjaan_id'    => 'required|exists:pekerjaan,id',
-            'nilai_pr'        => 'required|numeric|min:0',
-            'nomor_pr'        => 'required|string|max:255|unique:prs,nomor_pr',
-            'tanggal_pr'      => 'required|date',
-        ]);
+    $pr = Pr::create([
+        'jenis_pekerjaan' => $request->jenis_pekerjaan,
+        'pekerjaan_id'    => $request->pekerjaan_id,
+        'nilai_pr'        => $nilaiPR,
+        'nomor_pr'        => $request->nomor_pr,
+        'tanggal_pr'      => $request->tanggal_pr,
+        'tahun_anggaran'  => $request->tahun_anggaran,
+        'status_pekerjaan'=> 'PR',
+    ]);
 
-        $pr = Pr::create([
-            'jenis_pekerjaan' => $request->jenis_pekerjaan, // langsung string
-            'pekerjaan_id'    => $request->pekerjaan_id,
-            'nilai_pr'        => $nilaiPR,
-            'nomor_pr'        => $request->nomor_pr,
-            'tanggal_pr'      => $request->tanggal_pr,
-            'tahun_anggaran'  => $request->tahun_anggaran,
-            'status_pekerjaan' => 'PR',
-        ]);
+    $pr->pekerjaan->update(['status_realisasi' => 'PR']);
 
-        $pr->pekerjaan->update(['status_realisasi' => 'PR']);
+    if ($request->filled('sub_pekerjaan')) {
+    $pr->subPekerjaan()->create([
+        'pekerjaan_id' => $pr->pekerjaan_id,
+        'nama_sub'     => $request->sub_pekerjaan,
+    ]);
+}
 
-        return redirect()->route('realisasi.index')
-            ->with('success', 'Data PR berhasil ditambahkan.');
-    }
+    return redirect()->route('realisasi.index')
+        ->with('success', 'Data PR beserta sub-pekerjaan berhasil ditambahkan.');
+}
 
     // Update status PR → PO → GR → Payment
     public function updateStatus(Pr $pr, $status)
@@ -117,32 +120,39 @@ class RealisasiController extends Controller
 
     // update PR
     public function updatePR(Request $request, Pr $pr)
-    {
-        $nilaiPR = preg_replace('/[^\d]/', '', $request->nilai_pr);
+{
+    $nilaiPR = preg_replace('/[^\d]/', '', $request->nilai_pr);
 
-        $request->merge([
-            'nilai_pr' => $nilaiPR,
-        ]);
+    $request->merge([
+        'nilai_pr' => $nilaiPR,
+    ]);
 
-        $request->validate([
-            'jenis_pekerjaan' => 'required|in:Konsultan Perencana,Pelaksanaan Fisik,Konsultan Pengawas',
-            'pekerjaan_id'    => 'required|exists:pekerjaan,id',
-            'nilai_pr'        => 'required|numeric|min:0',
-            'nomor_pr'        => 'required|string|max:255|unique:prs,nomor_pr,' . $pr->id,
-            'tanggal_pr'      => 'required|date',
-        ]);
+    $request->validate([
+        'jenis_pekerjaan' => 'required|in:Konsultan Perencana,Pelaksanaan Fisik,Konsultan Pengawas',
+        'pekerjaan_id'    => 'required|exists:pekerjaan,id',
+        'nilai_pr'        => 'required|numeric|min:0',
+        'nomor_pr'        => 'required|string|max:255|unique:prs,nomor_pr,' . $pr->id,
+        'tanggal_pr'      => 'required|date',
+        'sub_pekerjaan'   => 'required|string|max:255', // tambahkan validasi sub-pekerjaan
+    ]);
 
-        $pr->update([
-            'jenis_pekerjaan' => $request->jenis_pekerjaan,
-            'pekerjaan_id'    => $request->pekerjaan_id,
-            'nilai_pr'        => $nilaiPR,
-            'nomor_pr'        => $request->nomor_pr,
-            'tanggal_pr'      => $request->tanggal_pr,
-            'tahun_anggaran'  => $request->tahun_anggaran ?? $pr->tahun_anggaran,
-        ]);
+    $pr->update([
+        'jenis_pekerjaan' => $request->jenis_pekerjaan,
+        'pekerjaan_id'    => $request->pekerjaan_id,
+        'nilai_pr'        => $nilaiPR,
+        'nomor_pr'        => $request->nomor_pr,
+        'tanggal_pr'      => $request->tanggal_pr,
+        'tahun_anggaran'  => $request->tahun_anggaran ?? $pr->tahun_anggaran,
+    ]);
 
-        return redirect()->route('realisasi.index')->with('success', 'PR berhasil diperbarui.');
-    }
+    // Update sub-pekerjaan (single string)
+    $sub = $pr->pekerjaan->subPekerjaan()->firstOrNew([]);
+    $sub->nama_sub = $request->sub_pekerjaan;
+    $sub->save();
+
+
+    return redirect()->route('realisasi.index')->with('success', 'PR berhasil diperbarui.');
+}
 
     // PO
     // CREATE
@@ -155,6 +165,14 @@ class RealisasiController extends Controller
     // STORE
     public function storePO(Request $request, Pr $pr)
     {
+        // ✅ CEK STATUS PR TERLEBIH DAHULU
+        if (!in_array($pr->status_pekerjaan, ['PR'])) {
+            return back()->withErrors([
+                'status_pekerjaan' => "Tidak bisa menambahkan PO karena status pekerjaan saat ini adalah '{$pr->status_pekerjaan}'. 
+                Hanya PR yang bisa dibuatkan PO."
+            ])->withInput();
+        }
+        
         // Bersihkan angka rupiah (Rp, titik, koma, dll)
         $request->merge([
             'nilai_po' => preg_replace('/[^\d]/', '', $request->nilai_po),
@@ -452,141 +470,139 @@ class RealisasiController extends Controller
         ));
     }
     // UPDATE PROGRESS BA DAN PCM
-public function updateProgress(Request $request, Po $po)
-{
-    $rules = [
-        // BA
-        'nomor_ba_mulai_kerja'   => 'nullable|string|max:255',
-        'tanggal_ba_mulai_kerja' => 'nullable|date',
-        'file_ba'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+    public function updateProgress(Request $request, Po $po)
+    {
+        $rules = [
+            // BA
+            'nomor_ba_mulai_kerja'   => 'nullable|string|max:255',
+            'tanggal_ba_mulai_kerja' => 'nullable|date',
+            'file_ba'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
 
-        // PCM
-        'nomor_pcm_mulai_kerja'   => 'nullable|string|max:255',
-        'tanggal_pcm_mulai_kerja' => 'nullable|date',
-        'file_pcm'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-    ];
+            // PCM
+            'nomor_pcm_mulai_kerja'   => 'nullable|string|max:255',
+            'tanggal_pcm_mulai_kerja' => 'nullable|date',
+            'file_pcm'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        ];
 
-    $validated = $request->validate($rules);
+        $validated = $request->validate($rules);
 
-    try {
-        DB::transaction(function () use ($validated, $po, $request) {
+        try {
+            DB::transaction(function () use ($validated, $po, $request) {
 
-            // ✅ Ambil atau buat progress utama (1 record per PO, tanpa pekerjaan_item_id)
-            $progress = $po->progresses()->firstOrCreate(
-                ['po_id' => $po->id, 'pekerjaan_item_id' => null]
-            );
+                // ✅ Ambil atau buat progress utama (1 record per PO, tanpa pekerjaan_item_id)
+                $progress = $po->progresses()->firstOrCreate(
+                    ['po_id' => $po->id, 'pekerjaan_item_id' => null]
+                );
 
-            // ✅ Update BA
-            $progress->nomor_ba_mulai_kerja   = $validated['nomor_ba_mulai_kerja'] ?? $progress->nomor_ba_mulai_kerja;
-            $progress->tanggal_ba_mulai_kerja = $validated['tanggal_ba_mulai_kerja'] ?? $progress->tanggal_ba_mulai_kerja;
+                // ✅ Update BA
+                $progress->nomor_ba_mulai_kerja   = $validated['nomor_ba_mulai_kerja'] ?? $progress->nomor_ba_mulai_kerja;
+                $progress->tanggal_ba_mulai_kerja = $validated['tanggal_ba_mulai_kerja'] ?? $progress->tanggal_ba_mulai_kerja;
 
-            if ($request->hasFile('file_ba')) {
-                $fileBa = $request->file('file_ba')->store('ba_files', 'public');
-                $progress->file_ba = $fileBa;
-            }
+                if ($request->hasFile('file_ba')) {
+                    $fileBa = $request->file('file_ba')->store('ba_files', 'public');
+                    $progress->file_ba = $fileBa;
+                }
 
-            // ✅ Update PCM
-            $progress->nomor_pcm_mulai_kerja   = $validated['nomor_pcm_mulai_kerja'] ?? $progress->nomor_pcm_mulai_kerja;
-            $progress->tanggal_pcm_mulai_kerja = $validated['tanggal_pcm_mulai_kerja'] ?? $progress->tanggal_pcm_mulai_kerja;
+                // ✅ Update PCM
+                $progress->nomor_pcm_mulai_kerja   = $validated['nomor_pcm_mulai_kerja'] ?? $progress->nomor_pcm_mulai_kerja;
+                $progress->tanggal_pcm_mulai_kerja = $validated['tanggal_pcm_mulai_kerja'] ?? $progress->tanggal_pcm_mulai_kerja;
 
-            if ($request->hasFile('file_pcm')) {
-                $filePcm = $request->file('file_pcm')->store('pcm_files', 'public');
-                $progress->file_pcm = $filePcm;
-            }
+                if ($request->hasFile('file_pcm')) {
+                    $filePcm = $request->file('file_pcm')->store('pcm_files', 'public');
+                    $progress->file_pcm = $filePcm;
+                }
 
-            $progress->save();
+                $progress->save();
 
-            // Setelah $progress->save();
-            if ($request->has('progress')) {
-                foreach ($request->progress as $itemId => $mingguData) {
-                    foreach ($mingguData as $mingguId => $values) {
-                        $volumeRealisasi = (float) ($values['volume_realisasi'] ?? 0);
+                // Setelah $progress->save();
+                if ($request->has('progress')) {
+                    foreach ($request->progress as $itemId => $mingguData) {
+                        foreach ($mingguData as $mingguId => $values) {
+                            $volumeRealisasi = (float) ($values['volume_realisasi'] ?? 0);
 
-                        // Ambil progress per item
-                        $itemProgress = $po->progresses()
-                            ->firstOrCreate(['po_id' => $po->id, 'pekerjaan_item_id' => $itemId]);
+                            // Ambil progress per item
+                            $itemProgress = $po->progresses()
+                                ->firstOrCreate(['po_id' => $po->id, 'pekerjaan_item_id' => $itemId]);
 
-                        // Ambil detail progress per minggu
-                        $detail = ProgressDetail::firstOrNew([
-                            'progress_id' => $itemProgress->id,
-                            'minggu_id'   => $mingguId,
-                        ]);
+                            // Ambil detail progress per minggu
+                            $detail = ProgressDetail::firstOrNew([
+                                'progress_id' => $itemProgress->id,
+                                'minggu_id'   => $mingguId,
+                            ]);
 
-                        // Ambil bobot rencana (sudah ada di DB)
-                        $bobotRencana = (float) $detail->bobot_rencana;
+                            // Ambil bobot rencana (sudah ada di DB)
+                            $bobotRencana = (float) $detail->bobot_rencana;
 
-                        // Ambil total volume dari pekerjaan_items
-                        $item = PekerjaanItem::find($itemId);
-                        $volumeItem = (float) ($item->volume ?? 0);
+                            // Ambil total volume dari pekerjaan_items
+                            $item = PekerjaanItem::find($itemId);
+                            $volumeItem = (float) ($item->volume ?? 0);
 
-                        // Hitung bobot realisasi
-                        $bobotRealisasi = 0;
-                        if ($volumeItem > 0 && $bobotRencana > 0) {
-                            $bobotRealisasi = ($volumeRealisasi / $volumeItem) * $bobotRencana;
+                            // Hitung bobot realisasi
+                            $bobotRealisasi = 0;
+                            if ($volumeItem > 0 && $bobotRencana > 0) {
+                                $bobotRealisasi = ($volumeRealisasi / $volumeItem) * $bobotRencana;
+                            }
+
+                            // Simpan
+                            $detail->volume_realisasi = $volumeRealisasi;
+                            $detail->bobot_realisasi = $bobotRealisasi;
+                            $detail->save();
                         }
-
-                        // Simpan
-                        $detail->volume_realisasi = $volumeRealisasi;
-                        $detail->bobot_realisasi = $bobotRealisasi;
-                        $detail->save();
                     }
                 }
-            }
 
 
-            // ✅ Generate minggu pertama (M1) hanya sekali
-            if (!empty($progress->tanggal_ba_mulai_kerja)) {
-                $existing = MasterMinggu::where('progress_id', $progress->id)->count();
+                // ✅ Generate minggu pertama (M1) hanya sekali
+                if (!empty($progress->tanggal_ba_mulai_kerja)) {
+                    $existing = MasterMinggu::where('progress_id', $progress->id)->count();
 
-                if ($existing == 0) {
-                    $start = Carbon::parse($progress->tanggal_ba_mulai_kerja);
-                    $awal = $start->copy();
-                    $akhir = $awal->copy()->endOfWeek();
+                    if ($existing == 0) {
+                        $start = Carbon::parse($progress->tanggal_ba_mulai_kerja);
+                        $awal = $start->copy();
+                        $akhir = $awal->copy()->endOfWeek();
 
-                    MasterMinggu::create([
-                        'progress_id'   => $progress->id,
-                        'kode_minggu'   => 'M1',
-                        'tanggal_awal'  => $awal,
-                        'tanggal_akhir' => $akhir,
-                    ]);
+                        MasterMinggu::create([
+                            'progress_id'   => $progress->id,
+                            'kode_minggu'   => 'M1',
+                            'tanggal_awal'  => $awal,
+                            'tanggal_akhir' => $akhir,
+                        ]);
+                    }
                 }
-            }
-        });
+            });
 
-        return redirect()->route('realisasi.editProgress', $po->id)
-            ->with('success', 'Progress berhasil diperbarui.');
-    } catch (\Throwable $e) {
-        return redirect()->route('realisasi.editProgress', $po->id)
-            ->with('error', 'Gagal memperbarui progress. Pesan error: ' . $e->getMessage());
+            return redirect()->route('realisasi.editProgress', $po->id)
+                ->with('success', 'Progress berhasil diperbarui.');
+        } catch (\Throwable $e) {
+            return redirect()->route('realisasi.editProgress', $po->id)
+                ->with('error', 'Gagal memperbarui progress. Pesan error: ' . $e->getMessage());
+        }
     }
-}
 
-
-
-public function importExcel(Request $request, Po $po)
-{
-    $request->validate([
-        'file' => 'required|mimes:xlsx,xls,csv'
-    ]);
-
-    try {
-        Excel::import(new ProgressImport($po->id), $request->file('file'));
-        return redirect()->back()
-            ->with('success', 'Data berhasil diimport!')
-            ->with('activeTab', 'rekapProgress'); // tambahin ini
-    } catch (\Throwable $e) {
-        Log::error('Import Progress gagal', [
-            'message' => $e->getMessage(),
-            'file'    => $e->getFile(),
-            'line'    => $e->getLine(),
-            'trace'   => $e->getTraceAsString(),
+    public function importExcel(Request $request, Po $po)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv'
         ]);
 
-        return redirect()->back()
-            ->with('error', 'Terjadi error saat import: '.$e->getMessage())
-            ->with('activeTab', 'rekapProgress'); // tetap ke tab 2 meski error
+        try {
+            Excel::import(new ProgressImport($po->id), $request->file('file'));
+            return redirect()->back()
+                ->with('success', 'Data berhasil diimport!')
+                ->with('activeTab', 'rekapProgress'); // tambahin ini
+        } catch (\Throwable $e) {
+            Log::error('Import Progress gagal', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Terjadi error saat import: '.$e->getMessage())
+                ->with('activeTab', 'rekapProgress'); // tetap ke tab 2 meski error
+        }
     }
-}
 
 
     // TEMPLATE DOWNLOAD
@@ -603,69 +619,66 @@ public function importExcel(Request $request, Po $po)
         return view('Dashboard.Pekerjaan.Realisasi.modal_progress_form', compact('item'))->render();
     }
 
-// -------------------------------------------------------------- sekarang kerja gr dan payment
-    // GR
-    // Form input GR
+    // -------------------------------------------------------------- sekarang kerja gr dan payment
+    
     public function createGR(Pr $pr)
     {
+        $po = $pr->po()->first();
 
-        // $pos = $pr->pos()->with('termins')->get();
-        // $po = $pr->po ?? null;
-        $po = $pr->po()->with('termins')->first();
-        $termins = $po ? $po->termins : collect();
-        return view('Dashboard.Pekerjaan.Realisasi.create_gr', compact('pr', 'po', 'termins'));
+        if (!$po) {
+            return redirect()->back()->with('error', 'PO belum tersedia untuk PR ini.');
+        }
+
+        return view('Dashboard.Pekerjaan.Realisasi.create_gr', compact('pr', 'po'));
     }
-    
-    // Simpan GR
-    public function storeGR(Request $request, Pr $pr)
+
+public function storeGR(Request $request, Pr $pr)
 {
+    
     $request->merge([
         'nilai_gr' => isset($request->nilai_gr) ? preg_replace('/[^\d\-]/', '', $request->nilai_gr) : null,
     ]);
 
+    // Validasi input
     $validated = $request->validate([
         'tanggal_gr' => 'required|date',
         'nomor_gr'   => 'required|string|max:255|unique:grs,nomor_gr',
         'nilai_gr'   => 'required|numeric|min:0',
-        'termin_id'  => 'nullable|exists:termins,id',
         'ba_pemeriksaan'      => 'nullable|file|mimes:pdf|max:2048',
         'ba_serah_terima'     => 'nullable|file|mimes:pdf|max:2048',
         'ba_pembayaran'       => 'nullable|file|mimes:pdf|max:2048',
         'laporan_dokumentasi' => 'nullable|file|mimes:pdf|max:2048',
     ]);
 
-    // ambil po dari pr
     $po = $pr->po()->first();
 
-    if (!empty($validated['termin_id']) && (empty($validated['nilai_gr']) || $validated['nilai_gr'] == 0)) {
-        $termin = \App\Models\Termin::find($validated['termin_id']);
-        if ($termin) {
-            $validated['nilai_gr'] = $termin->nilai_pembayaran;
-        }
+    if (!$po) {
+        return redirect()->back()->with('error', 'PO tidak ditemukan.');
     }
 
-    $gr = Gr::create([
+    // Simpan data GR
+    $gr = \App\Models\Gr::create([
         'pr_id'      => $pr->id,
-        'po_id'      => $po?->id,
-        'termin_id'  => $validated['termin_id'] ?? null,
+        'po_id'      => $po->id,
         'tanggal_gr' => $validated['tanggal_gr'],
         'nomor_gr'   => $validated['nomor_gr'],
         'nilai_gr'   => $validated['nilai_gr'],
     ]);
 
-    // simpan file kalau ada
+    // Simpan file PDF jika ada
     foreach ([
-    'ba_pemeriksaan'      => 'file_ba_pemeriksaan',
-    'ba_serah_terima'     => 'file_ba_serah_terima',
-    'ba_pembayaran'       => 'file_ba_pembayaran',
-    'laporan_dokumentasi' => 'file_laporan_dokumentasi',
-] as $inputName => $columnName) {
-    if ($request->hasFile($inputName)) {
-        $path = $request->file($inputName)->store('gr', 'public');
-        $gr->update([$columnName => $path]);
+        'ba_pemeriksaan'      => 'file_ba_pemeriksaan',
+        'ba_serah_terima'     => 'file_ba_serah_terima',
+        'ba_pembayaran'       => 'file_ba_pembayaran',
+        'laporan_dokumentasi' => 'file_laporan_dokumentasi',
+    ] as $inputName => $columnName) {
+        if ($request->hasFile($inputName)) {
+            $path = $request->file($inputName)->store('gr', 'public');
+            $gr->update([$columnName => $path]);
+        }
     }
-}
 
+    // Update status PR dan pekerjaan
     $pr->update(['status_pekerjaan' => 'GR']);
     if ($pr->pekerjaan) {
         $pr->pekerjaan->update(['status_realisasi' => 'GR']);
@@ -674,162 +687,387 @@ public function importExcel(Request $request, Po $po)
     return redirect()->route('realisasi.index')->with('success', 'GR berhasil ditambahkan.');
 }
 
-    // Form edit GR
+
     public function editGR(Pr $pr)
-{
-    $gr = $pr->gr ?? null;
-    $po = $pr->po ?? null;
+    {
+        $gr = $pr->gr ?? null;
+        $po = $pr->po ?? null;
 
-    if (!$gr) {
-        return redirect()->back()->with('error', 'GR belum tersedia untuk PR ini.');
+        if (!$gr) {
+            return redirect()->back()->with('error', 'GR belum tersedia untuk PR ini.');
+        }
+
+        // Termin yang sudah dipakai oleh GR lain (kecuali GR ini)
+        $terminYangSudahDigunakan = Gr::where('po_id', $po->id)
+            ->where('id', '!=', $gr->id)
+            ->whereNotNull('termin_id')
+            ->pluck('termin_id')
+            ->toArray();
+
+        // Termin yang masih bisa dipilih
+        $termins = $po->termins()
+            ->where(function($query) use ($terminYangSudahDigunakan, $gr) {
+                $query->whereNotIn('id', $terminYangSudahDigunakan)
+                    ->orWhere('id', $gr->termin_id);
+            })
+            ->orderBy('id', 'asc')
+            ->get();
+
+        return view('Dashboard.Pekerjaan.Realisasi.edit_gr', compact('pr', 'po', 'gr', 'termins'));
     }
 
-    // ambil termin dari PO
-    $termins = $po ? $po->termins : collect();
 
-    return view('Dashboard.Pekerjaan.Realisasi.edit_gr', compact('pr', 'po', 'gr', 'termins'));
-}
-    // Update GR
     public function updateGR(Request $request, Pr $pr, Gr $gr)
-{
-    $validated = $request->validate([
-        'tanggal_gr' => 'required|date',
-        'nomor_gr'   => 'required|string|max:255|unique:grs,nomor_gr,' . $gr->id,
-        'nilai_gr'   => 'required|numeric|min:0',
-        'termin_id'  => 'nullable|exists:termins,id',
-        'ba_pemeriksaan'      => 'nullable|file|mimes:pdf|max:2048',
-        'ba_serah_terima'     => 'nullable|file|mimes:pdf|max:2048',
-        'ba_pembayaran'       => 'nullable|file|mimes:pdf|max:2048',
-        'laporan_dokumentasi' => 'nullable|file|mimes:pdf|max:2048',
-    ]);
+    {
+        // Bersihkan format angka jadi murni number
+        $cleanedNilai = preg_replace('/[^\d]/', '', $request->nilai_gr ?? '0');
+        $request->merge(['nilai_gr' => $cleanedNilai]);
 
-    // fallback nilai dari termin
-    if (!empty($validated['termin_id']) && (empty($validated['nilai_gr']) || $validated['nilai_gr'] == 0)) {
-        $termin = \App\Models\Termin::find($validated['termin_id']);
-        if ($termin) {
-            $validated['nilai_gr'] = $termin->nilai_pembayaran;
+        // 🔹 Validasi input
+        $validated = $request->validate([
+            'tanggal_gr' => 'required|date',
+            'nomor_gr'   => 'required|string|max:255|unique:grs,nomor_gr,' . $gr->id,
+            'nilai_gr'   => 'required|numeric|min:0',
+            'termin_id'  => 'nullable|exists:termins,id', // 🔄 dibuat nullable
+            'ba_pemeriksaan'      => 'nullable|file|mimes:pdf|max:2048',
+            'ba_serah_terima'     => 'nullable|file|mimes:pdf|max:2048',
+            'ba_pembayaran'       => 'nullable|file|mimes:pdf|max:2048',
+            'laporan_dokumentasi' => 'nullable|file|mimes:pdf|max:2048',
+        ]);
+
+        $po = $pr->po()->first();
+        if (!$po) {
+            return redirect()->back()->with('error', 'PO tidak ditemukan.');
         }
-    }
 
-    $gr->update([
-        'tanggal_gr' => $validated['tanggal_gr'],
-        'nomor_gr'   => $validated['nomor_gr'],
-        'nilai_gr'   => $validated['nilai_gr'],
-        'termin_id'  => $validated['termin_id'] ?? null,
-    ]);
+        // 🔹 Jika termin diisi, pastikan belum digunakan GR lain
+        if (!empty($validated['termin_id'])) {
+            $terminSudahDipakai = Gr::where('po_id', $po->id)
+                ->where('id', '!=', $gr->id)
+                ->where('termin_id', $validated['termin_id'])
+                ->exists();
 
-    foreach ([
-    'ba_pemeriksaan'      => 'file_ba_pemeriksaan',
-    'ba_serah_terima'     => 'file_ba_serah_terima',
-    'ba_pembayaran'       => 'file_ba_pembayaran',
-    'laporan_dokumentasi' => 'file_laporan_dokumentasi',
-] as $inputName => $columnName) {
-    if ($request->hasFile($inputName)) {
-        // hapus lama biar nggak numpuk
-        if ($gr->$columnName && Storage::disk('public')->exists($gr->$columnName)) {
-            Storage::disk('public')->delete($gr->$columnName);
-        }
-        $path = $request->file($inputName)->store('gr', 'public');
-        $gr->update([$columnName => $path]);
-    }
-}
-
-    return redirect()->route('realisasi.index')->with('success', 'GR berhasil diperbarui.');
-}
-
-
-
-    // FORM CREATE PAYMENT
-public function createPayment(Pr $pr)
-{
-    $gr = $pr->gr;
-return view('Dashboard.Pekerjaan.Realisasi.create_payment', compact('pr', 'gr'));
-
-}
-
-// STORE PAYMENT
-public function storePayment(Request $request, Pr $pr)
-{
-    $request->validate([
-        'gr_id'           => 'required|exists:grs,id',
-        'tanggal_payment' => 'required|date',
-        'nomor_payment'   => 'required|string|unique:payments,nomor_payment',
-        'nilai_payment'   => 'required|numeric|min:0',
-        'invoice'         => 'nullable|file|mimes:pdf',
-        'receipt'         => 'nullable|file|mimes:pdf',
-        'nodin_payment'   => 'nullable|file|mimes:pdf',
-        'bill'            => 'nullable|file|mimes:pdf',
-    ]);
-
-    $data = $request->all();
-
-    foreach (['invoice', 'receipt', 'nodin_payment', 'bill'] as $file) {
-        if ($request->hasFile($file)) {
-            $data[$file] = $request->file($file)->store('payments', 'public');
-        }
-    }
-
-    $data['pr_id'] = $pr->id;
-
-    Payment::create($data);
-
-    // Update status PR & pekerjaan
-    $pr->update(['status_pekerjaan' => 'Payment']);
-    if ($pr->pekerjaan) {
-        $pr->pekerjaan->update(['status_realisasi' => 'Payment']);
-    }
-
-    return redirect()->route('realisasi.index')->with('success', 'Payment Request berhasil ditambahkan.');
-}
-
-// EDIT PAYMENT
-public function editPayment(Pr $pr, Payment $payment)
-{
-    $gr = $pr->gr;
-
-    return view('Dashboard.Pekerjaan.Realisasi.edit_payment', compact('pr', 'gr', 'payment'));
-}
-
-// UPDATE PAYMENT
-public function updatePayment(Request $request, Pr $pr, Payment $payment)
-{
-    $request->validate([
-        'gr_id'           => 'required|exists:grs,id',
-        'tanggal_payment' => 'required|date',
-        'nomor_payment'   => 'required|string|unique:payments,nomor_payment,' . $payment->id,
-        'nilai_payment'   => 'required|numeric|min:0',
-        'invoice'         => 'nullable|file|mimes:pdf',
-        'receipt'         => 'nullable|file|mimes:pdf',
-        'nodin_payment'   => 'nullable|file|mimes:pdf',
-        'bill'            => 'nullable|file|mimes:pdf',
-    ]);
-
-    $data = $request->all();
-
-    foreach (['invoice', 'receipt', 'nodin_payment', 'bill'] as $file) {
-        if ($request->hasFile($file)) {
-            // Hapus file lama kalau ada
-            if ($payment->$file) {
-                Storage::disk('public')->delete($payment->$file);
+            if ($terminSudahDipakai) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['termin_id' => 'Termin ini sudah digunakan GR lain. Pilih termin yang berbeda.']);
             }
-            $data[$file] = $request->file($file)->store('payments', 'public');
-        } else {
-            // Tetap pakai file lama kalau nggak upload baru
-            $data[$file] = $payment->$file;
+        }
+
+        // 🔹 Update data GR utama
+        $gr->update([
+            'tanggal_gr' => $validated['tanggal_gr'],
+            'nomor_gr'   => $validated['nomor_gr'],
+            'nilai_gr'   => $validated['nilai_gr'],
+            'termin_id'  => $validated['termin_id'] ?? null,
+        ]);
+
+        // 🔹 Update file-file lampiran (hapus lama, upload baru)
+        foreach ([
+            'ba_pemeriksaan'      => 'file_ba_pemeriksaan',
+            'ba_serah_terima'     => 'file_ba_serah_terima',
+            'ba_pembayaran'       => 'file_ba_pembayaran',
+            'laporan_dokumentasi' => 'file_laporan_dokumentasi',
+        ] as $inputName => $columnName) {
+            if ($request->hasFile($inputName)) {
+                if ($gr->$columnName && Storage::disk('public')->exists($gr->$columnName)) {
+                    Storage::disk('public')->delete($gr->$columnName);
+                }
+
+                $path = $request->file($inputName)->store('gr', 'public');
+                $gr->update([$columnName => $path]);
+            }
+        }
+
+        return redirect()->route('realisasi.index')->with('success', 'Data GR berhasil diperbarui.');
+    }
+
+
+
+    
+    // FORM CREATE PAYMENT
+        public function createPayment(Pr $pr)
+    {
+        $gr = $pr->gr;
+        
+        // Ambil PO yang terkait dengan PR ini
+        $po = $pr->po; // atau Po::where('pr_id', $pr->id)->first();
+        
+        if (!$po) {
+            return redirect()->back()->with('error', 'PO belum dibuat untuk PR ini.');
+        }
+        
+        // Ambil termin dari PO yang BELUM dibayar
+        $termins = Termin::where('po_id', $po->id)
+                        ->whereNull('payment_id')
+                        ->orderBy('id')
+                        ->get();
+        
+        return view('Dashboard.Pekerjaan.Realisasi.create_payment', compact('pr', 'gr', 'termins'));
+    }
+
+// STORE PAYMENT - PERBAIKAN
+    public function storePayment(Request $request, Pr $pr)
+    {
+        Log::info('Store Payment - Data masuk:', $request->all());
+
+        $request->validate([
+            'gr_id'           => 'required|exists:grs,id',
+            'tanggal_payment' => 'required|date',
+            'nomor_payment'   => 'required|string|unique:payments,nomor_payment',
+            'termin_ids'      => 'required|array|min:1',
+            'termin_ids.*'    => 'exists:termins,id',
+            'invoice'         => 'nullable|file|mimes:pdf|max:5120',
+            'receipt'         => 'nullable|file|mimes:pdf|max:5120',
+            'nodin_payment'   => 'nullable|file|mimes:pdf|max:5120',
+            'bill'            => 'nullable|file|mimes:pdf|max:5120',
+        ], [
+            'termin_ids.required' => 'Pilih minimal 1 termin untuk dibayar',
+            'termin_ids.min' => 'Pilih minimal 1 termin untuk dibayar',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Ambil PO dari PR
+            $po = $pr->po;
+            if (!$po) {
+                throw new \Exception('PO tidak ditemukan untuk PR ini.');
+            }
+
+            // Ambil termin yang dipilih dari PO ini
+            $selectedTermins = Termin::whereIn('id', $request->termin_ids)
+                                    ->where('po_id', $po->id)
+                                    ->whereNull('payment_id')
+                                    ->get();
+            
+            \Log::info('Termin yang dipilih:', [
+                'po_id' => $po->id,
+                'requested_ids' => $request->termin_ids,
+                'found_count' => $selectedTermins->count(),
+                'found_ids' => $selectedTermins->pluck('id')->toArray()
+            ]);
+
+            if ($selectedTermins->isEmpty()) {
+                throw new \Exception('Termin yang dipilih tidak valid atau sudah dibayar');
+            }
+
+            // Hitung total nilai payment
+            $totalNilaiPayment = $selectedTermins->sum('nilai_pembayaran');
+
+            // Siapkan data payment
+            $paymentData = [
+                'pr_id'           => $pr->id,
+                'gr_id'           => $request->gr_id,
+                'tanggal_payment' => $request->tanggal_payment,
+                'nomor_payment'   => $request->nomor_payment,
+                'nilai_payment'   => $totalNilaiPayment,
+            ];
+
+            // Upload file jika ada
+            foreach (['invoice', 'receipt', 'nodin_payment', 'bill'] as $fileField) {
+                if ($request->hasFile($fileField)) {
+                    $paymentData[$fileField] = $request->file($fileField)->store('payments', 'public');
+                }
+            }
+
+            // Buat payment
+            $payment = Payment::create($paymentData);
+
+            Log::info('Payment dibuat:', ['id' => $payment->id]);
+
+            // Update payment_id di termin (PENTING!)
+            $updatedCount = 0;
+            foreach ($selectedTermins as $termin) {
+                $termin->payment_id = $payment->id;
+                if ($termin->save()) {
+                    $updatedCount++;
+                }
+            }
+
+            Log::info('Termin di-update:', [
+                'expected' => $selectedTermins->count(),
+                'success' => $updatedCount
+            ]);
+
+            // Update status PR & pekerjaan
+            $pr->update(['status_pekerjaan' => 'Payment']);
+            if ($pr->pekerjaan) {
+                $pr->pekerjaan->update(['status_realisasi' => 'Payment']);
+            }
+
+            DB::commit();
+
+            return redirect()->route('realisasi.index')
+                            ->with('success', "Payment Request berhasil! {$updatedCount} termin dibayar (Total: Rp " . number_format($totalNilaiPayment, 0, ',', '.') . ")");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error Store Payment:', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+            
+            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
+                        ->withInput();
         }
     }
 
-    $data['pr_id'] = $pr->id;
+    // EDIT PAYMENT
+    public function editPayment(Pr $pr, Payment $payment)
+    {
+        $gr = $pr->gr;
+        
+        // Ambil PO dari PR
+        $po = $pr->po;
+        
+        if (!$po) {
+            return redirect()->back()->with('error', 'PO tidak ditemukan untuk PR ini.');
+        }
+        
+        // Ambil termin yang sudah terpilih di payment ini
+        $selectedTermins = Termin::where('payment_id', $payment->id)
+                                ->where('po_id', $po->id)
+                                ->get();
+        
+        // Ambil termin yang belum dibayar (available untuk ditambahkan)
+        $availableTermins = Termin::where('po_id', $po->id)
+                                ->whereNull('payment_id')
+                                ->orderBy('id')
+                                ->get();
 
-    $payment->update($data);
+        return view('Dashboard.Pekerjaan.Realisasi.edit_payment', compact(
+            'pr', 
+            'gr', 
+            'payment', 
+            'selectedTermins', 
+            'availableTermins'
+        ));
+    }
 
-    return redirect()->route('realisasi.index')->with('success', 'Payment Request berhasil diperbarui.');
-}
+    // UPDATE PAYMENT
+    public function updatePayment(Request $request, Pr $pr, Payment $payment)
+    {
+        Log::info('Update Payment - Data masuk:', $request->all());
 
+        $request->validate([
+            'gr_id'           => 'required|exists:grs,id',
+            'tanggal_payment' => 'required|date',
+            'nomor_payment'   => 'required|string|unique:payments,nomor_payment,' . $payment->id,
+            'termin_ids'      => 'required|array|min:1',
+            'termin_ids.*'    => 'exists:termins,id',
+            'invoice'         => 'nullable|file|mimes:pdf|max:5120',
+            'receipt'         => 'nullable|file|mimes:pdf|max:5120',
+            'nodin_payment'   => 'nullable|file|mimes:pdf|max:5120',
+            'bill'            => 'nullable|file|mimes:pdf|max:5120',
+        ], [
+            'termin_ids.required' => 'Pilih minimal 1 termin untuk dibayar',
+            'termin_ids.min' => 'Pilih minimal 1 termin untuk dibayar',
+        ]);
 
+        try {
+            DB::beginTransaction();
 
+            // Ambil PO dari PR
+            $po = $pr->po;
+            if (!$po) {
+                throw new \Exception('PO tidak ditemukan untuk PR ini.');
+            }
 
+            // 1. Reset semua termin yang sebelumnya terkait dengan payment ini
+            $oldTermins = Termin::where('payment_id', $payment->id)->get();
+            foreach ($oldTermins as $termin) {
+                $termin->payment_id = null;
+                $termin->save();
+            }
 
+            Log::info('Termin lama di-reset:', [
+                'payment_id' => $payment->id,
+                'count' => $oldTermins->count()
+            ]);
+
+            // 2. Validasi termin baru yang dipilih
+            $selectedTermins = Termin::whereIn('id', $request->termin_ids)
+                                    ->where('po_id', $po->id)
+                                    ->whereNull('payment_id') // pastikan belum dibayar
+                                    ->get();
+
+            Log::info('Termin baru yang valid:', [
+                'requested_ids' => $request->termin_ids,
+                'found_count' => $selectedTermins->count(),
+                'found_ids' => $selectedTermins->pluck('id')->toArray()
+            ]);
+
+            if ($selectedTermins->isEmpty()) {
+                throw new \Exception('Termin yang dipilih tidak valid atau sudah dibayar oleh payment lain');
+            }
+
+            // 3. Hitung ulang total nilai payment
+            $totalNilaiPayment = $selectedTermins->sum('nilai_pembayaran');
+
+            // 4. Update data payment
+            $data = [
+                'gr_id'           => $request->gr_id,
+                'tanggal_payment' => $request->tanggal_payment,
+                'nomor_payment'   => $request->nomor_payment,
+                'nilai_payment'   => $totalNilaiPayment,
+            ];
+
+            // 5. Upload file baru atau pertahankan yang lama
+            foreach (['invoice', 'receipt', 'nodin_payment', 'bill'] as $fileField) {
+                if ($request->hasFile($fileField)) {
+                    // Hapus file lama jika ada
+                    if ($payment->$fileField) {
+                        Storage::disk('public')->delete($payment->$fileField);
+                    }
+                    $data[$fileField] = $request->file($fileField)->store('payments', 'public');
+                    
+                    Log::info("File {$fileField} di-upload:", [
+                        'path' => $data[$fileField]
+                    ]);
+                }
+            }
+
+            // 6. Update payment
+            $payment->update($data);
+
+            Log::info('Payment di-update:', [
+                'payment_id' => $payment->id,
+                'nilai_payment' => $totalNilaiPayment
+            ]);
+
+            // 7. Link termin baru ke payment ini
+            $updatedCount = 0;
+            foreach ($selectedTermins as $termin) {
+                $termin->payment_id = $payment->id;
+                if ($termin->save()) {
+                    $updatedCount++;
+                }
+            }
+
+            Log::info('Termin baru di-link:', [
+                'expected' => $selectedTermins->count(),
+                'success' => $updatedCount
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('realisasi.index')
+                            ->with('success', "Payment Request berhasil diperbarui! {$updatedCount} termin terkait (Total: Rp " . number_format($totalNilaiPayment, 0, ',', '.') . ")");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error Update Payment:', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+            
+            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
+                        ->withInput();
+        }
+    }
 
 
 

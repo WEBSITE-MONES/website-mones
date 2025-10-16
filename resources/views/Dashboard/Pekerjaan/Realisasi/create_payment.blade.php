@@ -3,260 +3,233 @@
 @section('title', 'Input Payment Request')
 
 @push('styles')
-{{-- CSS Khusus untuk Input File Modern --}}
-<style>
-.custom-file-upload {
-    border: 2px dashed #0d6efd;
-    border-radius: .5rem;
-    padding: 1.5rem;
-    text-align: center;
-    cursor: pointer;
-    background-color: #f8f9fa;
-    transition: all .3s ease;
-}
-
-.custom-file-upload:hover {
-    background-color: #e9ecef;
-    border-color: #0b5ed7;
-}
-
-.custom-file-upload .icon {
-    font-size: 2.5rem;
-    color: #0d6efd;
-    margin-bottom: .5rem;
-}
-
-.custom-file-upload .file-text {
-    display: block;
-    font-weight: 600;
-    color: #495057;
-}
-
-.custom-file-upload .file-name {
-    display: block;
-    font-size: .875rem;
-    color: #0b5ed7;
-    font-weight: 500;
-    margin-top: .5rem;
-}
-</style>
+<link rel="stylesheet" href="{{ asset('assets/css/payment.css') }}">
 @endpush
 
 @section('content')
 <div class="page-inner">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="page-title">Input Payment Request</h2>
-            <h5 class="fw-normal text-muted">Lengkapi detail pembayaran dan lampirkan dokumen yang diperlukan.</h5>
+            <h2 class="page-title"><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Input Payment Request
+            </h2>
+            <h5 class="fw-normal text-muted">Pilih termin yang akan dibayar dan lengkapi dokumen pendukung.</h5>
         </div>
-        <a href="{{ url()->previous() }}" class="btn btn-light btn-sm d-none d-md-block">
+        <a href="{{ url()->previous() }}" class="btn btn-light btn-sm d-flex align-items-center">
             <i class="fas fa-arrow-left me-2"></i> Kembali
         </a>
     </div>
 
-    <form action="{{ route('realisasi.storePayment', $pr->id) }}" method="POST" enctype="multipart/form-data">
+    @if($termins->isEmpty())
+    <div class="alert alert-warning border-0 shadow-sm">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle fa-3x me-4 text-warning"></i>
+            <div>
+                <h5 class="mb-1 fw-bold">Tidak Ada Termin Tersedia</h5>
+                <p class="mb-0">Semua termin sudah lunas atau belum ada termin yang dibuat untuk Purchase Order ini.</p>
+            </div>
+        </div>
+    </div>
+    @else
+
+    {{-- FORM UTAMA --}}
+    <form action="{{ route('realisasi.storePayment', $pr->id) }}" method="POST" enctype="multipart/form-data"
+        id="paymentForm" novalidate>
         @csrf
+        <input type="hidden" name="gr_id" value="{{ $gr->id }}">
+
+        <div id="validation-alert" class="alert alert-danger d-none align-items-center" role="alert">
+            <i class="fas fa-exclamation-circle me-3"></i>
+            <div id="validation-message"></div>
+        </div>
 
         <div class="row">
             <div class="col-lg-8">
-                {{-- KARTU 1: INFORMASI UTAMA & LAMPIRAN --}}
+                {{-- KARTU 1: PILIH TERMIN --}}
                 <div class="card card-round shadow-sm border-0 mb-4">
                     <div class="card-body p-4">
-                        <h5 class="card-title fw-bold mb-4 border-bottom pb-2">
-                            <i class="fas fa-info-circle text-primary me-2"></i>Informasi Utama
-                        </h5>
-
-
-
-
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-3">
-                                <label for="tanggal_payment" class="form-label">Tanggal Payment Request</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
-                                    <input type="date" name="tanggal_payment" class="form-control"
-                                        value="{{ old('tanggal_payment', date('Y-m-d')) }}" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="nomor_payment" class="form-label">Nomor Payment Request</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
-                                    <input type="text" name="nomor_payment" class="form-control"
-                                        value="{{ old('nomor_payment') }}" placeholder="Masukkan nomor..." required>
-                                </div>
-                            </div>
-                            <div class="col-md-12 mb-3">
-                                <label for="gr_id" class="form-label">Pilih GR</label>
-                                <select name="gr_id" id="gr_id" class="form-select" required>
-                                    <option value="{{ $gr->id }}" selected>
-                                        Rp {{ number_format($gr->nilai_gr, 0, ',', '.') }}
-                                    </option>
-                                </select>
-                            </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
+                            <h5 class="card-title fw-bold mb-0">
+                                <i class="fas fa-layer-group text-primary me-2"></i>
+                                Termin yang Akan Dibayar
+                            </h5>
+                            <span class="badge bg-primary-subtle text-primary-emphasis" id="selectedCount">0 Termin
+                                Dipilih</span>
+                        </div>
+                        <div class="alert alert-info border-0 mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Tips:</strong> Anda dapat memilih lebih dari satu termin untuk digabungkan dalam
+                            satu payment request.
                         </div>
 
-                        <hr class="my-4">
+                        <div class="termin-selection-container">
+                            @foreach($termins as $termin)
+                            <div class="form-check termin-option">
+                                <input class="form-check-input termin-checkbox" type="checkbox" name="termin_ids[]"
+                                    value="{{ $termin->id }}" id="termin-{{ $termin->id }}"
+                                    data-nilai="{{ $termin->nilai_pembayaran }}" data-uraian="{{ $termin->uraian }}">
+                                <label class="form-check-label" for="termin-{{ $termin->id }}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="termin-details">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <span class="termin-name">{{ $termin->uraian }}</span>
+                                                @if($termin->persentase)
+                                                <span
+                                                    class="badge bg-secondary-subtle text-secondary-emphasis ms-2">{{ $termin->persentase }}%</span>
+                                                @endif
+                                            </div>
+                                            @if($termin->syarat_pembayaran)
+                                            <small class="text-muted d-block">
+                                                <i class="fas fa-clipboard-check me-1"></i>
+                                                Syarat Pembayaran: <strong>{{ $termin->syarat_pembayaran }}</strong>
+                                            </small>
+                                            @endif
+                                        </div>
+                                        <div class="termin-value">
+                                            Rp {{ number_format($termin->nilai_pembayaran, 0, ',', '.') }}
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            @endforeach
+                        </div>
+                        @error('termin_ids')
+                        <div class="alert alert-danger mt-3">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
 
-                        <h5 class="card-title fw-bold mb-4 border-bottom pb-2">
-                            <i class="fas fa-paperclip text-primary me-2"></i>Lampiran Dokumen Pembayaran (.pdf)
+                {{-- KARTU 2: INFORMASI PEMBAYARAN --}}
+                <div class="card card-round shadow-sm border-0 mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="card-title fw-bold mb-4 border-bottom pb-3">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            Informasi Pembayaran
                         </h5>
-
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Invoice</label>
-                                <div class="custom-file-upload">
-                                    <input type="file" id="invoice" name="invoice" class="d-none file-input"
-                                        accept=".pdf">
-                                    <label for="invoice" class="w-100">
-                                        <i class="fas fa-cloud-upload-alt icon"></i>
-                                        <span class="file-text">Pilih file...</span>
-                                        <span class="file-name text-success"></span>
-                                    </label>
-                                </div>
+                                <label for="tanggal_payment" class="form-label fw-semibold">Tanggal Payment <span
+                                        class="text-danger">*</span></label>
+                                <input type="date" name="tanggal_payment" id="tanggal_payment"
+                                    class="form-control form-control-lg"
+                                    value="{{ old('tanggal_payment', date('Y-m-d')) }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Kwitansi</label>
-                                <div class="custom-file-upload">
-                                    <input type="file" id="receipt" name="receipt" class="d-none file-input"
+                                <label for="nomor_payment" class="form-label fw-semibold">Nomor Payment Request <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="nomor_payment" id="nomor_payment"
+                                    class="form-control form-control-lg" value="{{ old('nomor_payment') }}"
+                                    placeholder="Contoh: PAY/2024/001" required>
+                                @error('nomor_payment')
+                                <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- KARTU 3: LAMPIRAN DOKUMEN --}}
+                <div class="card card-round shadow-sm border-0 mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="card-title fw-bold mb-4 border-bottom pb-3">
+                            <i class="fas fa-paperclip text-primary me-2"></i>
+                            Lampiran Dokumen (.pdf)
+                        </h5>
+                        <div class="row">
+                            @php
+                            function renderFileUpload($id, $name, $label, $icon) {
+                            @endphp
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold"><i
+                                        class="fas {{ $icon }} me-2 text-primary"></i>{{ $label }}</label>
+                                <div class="custom-file-container">
+                                    <label for="{{ $id }}" class="custom-file-upload-label">
+                                        <div class="text-center">
+                                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                            <p class="upload-text">Pilih file PDF</p>
+                                        </div>
+                                    </label>
+                                    <div class="file-info-container d-none">
+                                        <i class="fas fa-file-pdf file-icon"></i>
+                                        <span class="file-name"></span>
+                                        <button type="button" class="btn-remove-file">&times;</button>
+                                    </div>
+                                    <input type="file" id="{{ $id }}" name="{{ $name }}" class="d-none file-input"
                                         accept=".pdf">
-                                    <label for="receipt" class="w-100">
-                                        <i class="fas fa-cloud-upload-alt icon"></i>
-                                        <span class="file-text">Pilih file...</span>
-                                        <span class="file-name text-success"></span>
-                                    </label>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Nodin Permohonan Pembayaran</label>
-                                <div class="custom-file-upload">
-                                    <input type="file" id="nodin_payment" name="nodin_payment" class="d-none file-input"
-                                        accept=".pdf">
-                                    <label for="nodin_payment" class="w-100">
-                                        <i class="fas fa-cloud-upload-alt icon"></i>
-                                        <span class="file-text">Pilih file...</span>
-                                        <span class="file-name text-success"></span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Surat Tagihan</label>
-                                <div class="custom-file-upload">
-                                    <input type="file" id="bill" name="bill" class="d-none file-input" accept=".pdf">
-                                    <label for="bill" class="w-100">
-                                        <i class="fas fa-cloud-upload-alt icon"></i>
-                                        <span class="file-text">Pilih file...</span>
-                                        <span class="file-name text-success"></span>
-                                    </label>
-                                </div>
-                            </div>
+                            @php
+                            }
+                            @endphp
+
+                            {{ renderFileUpload('invoice', 'invoice', 'Invoice', 'fa-file-invoice') }}
+                            {{ renderFileUpload('receipt', 'receipt', 'Kwitansi', 'fa-receipt') }}
+                            {{ renderFileUpload('nodin_payment', 'nodin_payment', 'Nodin Permohonan Pembayaran', 'fa-file-signature') }}
+                            {{ renderFileUpload('bill', 'bill', 'Surat Tagihan', 'fa-file-contract') }}
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-4">
-                {{-- KARTU 2: BIAYA & TOTAL --}}
-                <div class="card card-round shadow-sm border-0 mb-4 sticky-lg-top" style="top: 20px;">
-                    <div class="card-body p-4">
-                        <h5 class="card-title fw-bold mb-4 border-bottom pb-2">
-                            <i class="fas fa-dollar-sign text-primary me-2"></i> Detail Pembayaran
-                        </h5>
-
-                        {{-- Bagian Detail Payment, dibuat lebih bersih tanpa tabel --}}
-                        <div id="paymentTable">
-                            <div class="mb-2">
-                                <label class="form-label">Deskripsi</label>
-                                <input type="text" name="payment[0][deskripsi]" class="form-control"
-                                    value="Pembayaran GR" readonly>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Nilai</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">Rp</span>
-                                    <input type="number" name="payment[0][nilai]" class="form-control nilai-input"
-                                        value="{{ $gr->nilai_gr ?? 0 }}" min="0" step="1">
+                <div class="sticky-sidebar">
+                    <div class="card card-round shadow-sm border-0 mb-4">
+                        <div class="payment-summary-header">
+                            <h6 class="text-white-50 mb-1">TOTAL NILAI PAYMENT</h6>
+                            <h2 class="fw-bolder mb-0" id="grandTotalPayment">Rp 0</h2>
+                        </div>
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold mb-3 border-bottom pb-2"><i class="fas fa-list-check me-2"></i>Rincian
+                                Termin</h6>
+                            <div id="selectedTerminsList">
+                                <div class="text-center text-muted py-4" id="emptyState">
+                                    <i class="fas fa-hand-pointer fa-3x mb-3 opacity-50"></i>
+                                    <p class="mb-0 small">Belum ada termin yang dipilih.</p>
                                 </div>
                             </div>
+                            <hr class="my-4">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>
+                                    <i class="fas fa-save me-2"></i> Buat Payment Request
+                                </button>
+                                <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i> Batal
+                                </a>
+                            </div>
                         </div>
+                    </div>
 
-                        <hr>
-
-                        <div class="text-center bg-light p-3 rounded">
-                            <h6 class="text-muted mb-1">TOTAL NILAI PAYMENT</h6>
-                            <input type="hidden" name="nilai_payment" id="nilai_payment"
-                                value="{{ old('nilai_payment', $gr->nilai_gr ?? 0) }}">
-                            <h3 class="fw-bold text-success mb-0" id="grandTotalPayment">
-                                Rp {{ number_format(old('nilai_payment', $gr->nilai_gr ?? 0), 0, ',', '.') }}
-                            </h3>
-                        </div>
-
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i>Simpan
-                                Payment</button>
-                            <a href="{{ url()->previous() }}" class="btn btn-outline-danger"><i
-                                    class="fas fa-times me-2"></i>Batal</a>
+                    {{-- INFO GR CARD --}}
+                    <div class="card card-round shadow-sm border-0">
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-archive text-primary me-2"></i>Informasi GR</h6>
+                            @php
+                            $totalPaid = \App\Models\Termin::where('po_id',
+                            $pr->id)->whereNotNull('payment_id')->sum('nilai_pembayaran');
+                            $totalUnpaid = \App\Models\Termin::where('po_id',
+                            $pr->id)->whereNull('payment_id')->sum('nilai_pembayaran');
+                            @endphp
+                            <div class="info-item">
+                                <small>Total Nilai GR</small>
+                                <strong class="text-primary">Rp {{ number_format($gr->nilai_gr, 0, ',', '.') }}</strong>
+                            </div>
+                            <div class="info-item">
+                                <small>Sudah Dibayar</small>
+                                <strong class="text-success">Rp {{ number_format($totalPaid, 0, ',', '.') }}</strong>
+                            </div>
+                            <div class="info-item">
+                                <small>Belum Dibayar</small>
+                                <strong class="text-danger">Rp {{ number_format($totalUnpaid, 0, ',', '.') }}</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </form>
+    @endif
 </div>
 @endsection
 
 @push('scripts')
-{{-- Script asli Anda untuk kalkulasi, TIDAK DIUBAH SAMA SEKALI --}}
-<script>
-function formatRupiah(angka) {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        maximumFractionDigits: 0
-    }).format(angka);
-}
-
-function parseNumber(value) {
-    if (!value) return 0;
-    return Number(String(value).replace(/[^\d\-]/g, '')) || 0;
-}
-
-function updateGrandTotalPayment() {
-    let total = 0;
-    document.querySelectorAll("#paymentTable .nilai-input").forEach(input => {
-        total += parseNumber(input.value);
-    });
-
-    const grandEl = document.getElementById("grandTotalPayment");
-    if (grandEl) grandEl.textContent = formatRupiah(total);
-
-    const nilaiInput = document.getElementById("nilai_payment");
-    if (nilaiInput) nilaiInput.value = total;
-}
-
-document.addEventListener("input", function(e) {
-    if (e.target && e.target.matches("#paymentTable .nilai-input")) {
-        updateGrandTotalPayment();
-    }
-});
-
-document.addEventListener("DOMContentLoaded", function() {
-    updateGrandTotalPayment();
-});
-</script>
-
-{{-- Script tambahan untuk UI/UX file input --}}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.file-input').forEach(input => {
-        input.addEventListener('change', function(e) {
-            const fileName = e.target.files[0] ? e.target.files[0].name : 'Pilih file...';
-            const nextSibling = e.target.nextElementSibling.querySelector('.file-name');
-            if (nextSibling) {
-                nextSibling.textContent = fileName;
-            }
-        });
-    });
-});
-</script>
+<script src="{{ asset('assets/js/payment.js') }}"></script>
 @endpush

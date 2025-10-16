@@ -18,41 +18,36 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table id="kontrakTable" class="display table table-striped table-hover">
+                        <table id="kontrakTable" class="display table table-striped table-hover align-middle">
                             <thead>
                                 <tr>
-                                    <th>No</th>
-                                    <th>Nama Kontrak</th>
+                                    <th class="text-center" style="width: 80px;">Action</th>
+                                    <th>Keterangan</th>
                                     <th>Tanggal</th>
                                     <th>File</th>
-                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {{-- Contoh data dummy --}}
+                                @foreach($kontraks as $kontrak)
                                 <tr>
-                                    <td>1</td>
-                                    <td>Kontrak Proyek A</td>
-                                    <td>01-09-2024</td>
-                                    <td>
-                                        <a href="#" class="btn btn-info btn-sm" target="_blank">
-                                            <i class="fa fa-file"></i> Lihat
-                                        </a>
-                                    </td>
-                                    <td>
-                                        <div class="dropdown dropend">
-                                            <button class="btn btn-light btn-sm" type="button" id="aksiDropdown1"
-                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                    <td class="text-center">
+                                        <div class="dropdown dropstart">
+                                            <button class="btn btn-light btn-sm" type="button"
+                                                id="aksiDropdown{{ $kontrak->id }}" data-bs-toggle="dropdown"
+                                                aria-expanded="false">
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </button>
-                                            <ul class="dropdown-menu" aria-labelledby="aksiDropdown1">
+                                            <ul class="dropdown-menu" aria-labelledby="aksiDropdown{{ $kontrak->id }}">
                                                 <li>
-                                                    <a href="#" class="dropdown-item">
+                                                    <a href="#" class="dropdown-item" data-bs-toggle="modal"
+                                                        data-bs-target="#modalEditKontrak{{ $kontrak->id }}">
                                                         <i class="fa fa-edit text-primary"></i> Edit
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <form action="#" method="POST"
+                                                    <form
+                                                        action="{{ route('pekerjaan.data.kontrak.destroy', [$pekerjaan->id, $kontrak->id]) }}"
+                                                        method="POST"
                                                         onsubmit="return confirm('Apakah Anda yakin ingin menghapus kontrak ini?');">
                                                         @csrf
                                                         @method('DELETE')
@@ -64,42 +59,89 @@
                                             </ul>
                                         </div>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td>2</td>
-                                    <td>Kontrak Proyek B</td>
-                                    <td>15-09-2024</td>
+                                    <td>{{ $kontrak->keterangan }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($kontrak->tanggal_kontrak)->format('d-m-Y') }}</td>
                                     <td>
-                                        <a href="#" class="btn btn-info btn-sm" target="_blank">
+                                        @if($kontrak->file_path)
+                                        <a href="{{ asset('storage/' . $kontrak->file_path) }}"
+                                            class="btn btn-info btn-sm" target="_blank">
                                             <i class="fa fa-file"></i> Lihat
                                         </a>
-                                    </td>
-                                    <td>
-                                        <div class="dropdown dropend">
-                                            <button class="btn btn-light btn-sm" type="button" id="aksiDropdown2"
-                                                data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu" aria-labelledby="aksiDropdown2">
-                                                <li>
-                                                    <a href="#" class="dropdown-item">
-                                                        <i class="fa fa-edit text-primary"></i> Edit
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <form action="#" method="POST"
-                                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus kontrak ini?');">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="fa fa-times"></i> Hapus
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                            </ul>
-                                        </div>
+                                        @else
+                                        <span class="text-muted">Tidak ada file</span>
+                                        @endif
                                     </td>
                                 </tr>
+
+                                {{-- Modal Edit Kontrak --}}
+                                <div class="modal fade" id="modalEditKontrak{{ $kontrak->id }}" tabindex="-1"
+                                    aria-labelledby="modalEditKontrakLabel{{ $kontrak->id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="modalEditKontrakLabel{{ $kontrak->id }}">
+                                                    Edit Kontrak</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+                                            <form
+                                                action="{{ route('pekerjaan.data.kontrak.update', [$pekerjaan->id, $kontrak->id]) }}"
+                                                method="POST" enctype="multipart/form-data">
+                                                @csrf
+                                                @method('PUT')
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="keterangan" class="form-label">Keterangan</label>
+                                                        <select name="keterangan" class="form-select" required>
+                                                            <option value="">-- Pilih Keterangan --</option>
+                                                            <option value="Kontrak Pekerjaan"
+                                                                {{ $kontrak->keterangan == 'Kontrak Pekerjaan' ? 'selected' : '' }}>
+                                                                Kontrak Pekerjaan</option>
+                                                            <option value="RAB"
+                                                                {{ $kontrak->keterangan == 'RAB' ? 'selected' : '' }}>
+                                                                RAB</option>
+                                                            <option value="RKS"
+                                                                {{ $kontrak->keterangan == 'RKS' ? 'selected' : '' }}>
+                                                                RKS</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label for="tanggal_kontrak" class="form-label">Tanggal
+                                                            Kontrak</label>
+                                                        <input type="date" name="tanggal_kontrak" class="form-control"
+                                                            value="{{ $kontrak->tanggal_kontrak }}" required>
+                                                    </div>
+
+                                                    @if($kontrak->file_path)
+                                                    <div class="mb-3">
+                                                        <label class="form-label">File Sebelumnya</label><br>
+                                                        <a href="{{ asset('storage/' . $kontrak->file_path) }}"
+                                                            target="_blank" class="btn btn-outline-info btn-sm">
+                                                            <i class="fa fa-file"></i> Lihat File Lama
+                                                        </a>
+                                                    </div>
+                                                    @endif
+
+                                                    <div class="mb-3">
+                                                        <label for="file_kontrak" class="form-label">Upload File Baru
+                                                            (Opsional)</label>
+                                                        <input type="file" name="file_kontrak" class="form-control"
+                                                            accept=".pdf,.doc,.docx,.jpg,.png">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-light"
+                                                        data-bs-dismiss="modal">Batal</button>
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fa fa-save me-1"></i> Simpan Perubahan
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -117,29 +159,37 @@
                 <h5 class="modal-title" id="modalKontrakLabel">Tambah Kontrak</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <form>
+            <form action="{{ route('pekerjaan.data.kontrak.store', $pekerjaan->id) }}" method="POST"
+                enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
                     <div class="mb-3">
-                        <label for="nama_kontrak" class="form-label">Nama Kontrak</label>
-                        <input type="text" id="nama_kontrak" class="form-control" placeholder="Masukkan nama kontrak">
+                        <label for="keterangan" class="form-label">Keterangan</label>
+                        <select name="keterangan" id="keterangan" class="form-select" required>
+                            <option value="">-- Pilih Keterangan --</option>
+                            <option value="Kontrak Pekerjaan">Kontrak Pekerjaan</option>
+                            <option value="RAB">RAB</option>
+                            <option value="RKS">RKS</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="tanggal_kontrak" class="form-label">Tanggal Kontrak</label>
-                        <input type="date" id="tanggal_kontrak" class="form-control">
+                        <input type="date" id="tanggal_kontrak" name="tanggal_kontrak" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label for="file_kontrak" class="form-label">Upload File Kontrak</label>
-                        <input type="file" id="file_kontrak" class="form-control" accept=".pdf,.doc,.docx,.jpg,.png">
+                        <input type="file" id="file_kontrak" name="file_kontrak" class="form-control"
+                            accept=".pdf,.doc,.docx,.jpg,.png">
                         <small class="text-muted">Format: PDF, Word, JPG, PNG</small>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary">
-                    <i class="fa fa-upload me-1"></i> Simpan
-                </button>
-            </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-upload me-1"></i> Simpan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -147,16 +197,16 @@
 @push('scripts')
 <script>
 $('#kontrakTable').DataTable({
-    pageLength: -1,
+    pageLength: 10,
     responsive: true,
     language: {
         paginate: {
-            previous: "Previous",
-            next: "Next"
+            previous: "Sebelumnya",
+            next: "Berikutnya"
         },
         info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
         search: "_INPUT_",
-        searchPlaceholder: "Search...",
+        searchPlaceholder: "Cari...",
         lengthMenu: "Tampilkan _MENU_ data"
     }
 });

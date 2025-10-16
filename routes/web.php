@@ -11,6 +11,7 @@ use App\Http\Controllers\Dashboard\PekerjaanDetailController;
 use App\Http\Controllers\Dashboard\RealisasiController;
 use App\Http\Controllers\Dashboard\WeatherController;
 use App\Http\Controllers\Dashboard\GeoController;
+use App\Http\Controllers\Dashboard\LaporanController;
 use App\Http\Middleware\RoleMiddleware;
 
 
@@ -29,6 +30,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 // ====================== DASHBOARD ======================
 Route::prefix('dashboard')->middleware('auth')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 
     // Semua role bisa lihat dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
@@ -75,7 +78,7 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
 
     // GR
     Route::get('/create-gr/{pr}', [RealisasiController::class, 'createGR'])->name('realisasi.createGR');
-    Route::post('/store-gr/{pr}', [RealisasiController::class, 'storeGR'])->name('realisasi.storeGR');
+    Route::post('/store-gr/{pr}/{po}', [RealisasiController::class, 'storeGR'])->name('realisasi.storeGR');
     Route::get('/edit-gr/{pr}', [RealisasiController::class, 'editGR'])->name('realisasi.editGR');
     Route::put('/update-gr/{pr}/{gr}', [RealisasiController::class, 'updateGR'])->name('realisasi.updateGR');
 
@@ -95,13 +98,28 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
 });
 
 
+     // ====================== LAPORAN ======================
+    Route::prefix('laporan')->name('laporan.')->group(function () {
+        Route::get('/', [LaporanController::class, 'index'])->name('index');
+    });
+
     // ====================== RENCANA PEKERJAAN ======================
     Route::get('/pekerjaan', [PekerjaanController::class, 'index'])->name('pekerjaan.index');
+    Route::get('/pekerjaan/json/{id}', [PekerjaanController::class, 'getJsonDetails'])->name('pekerjaan.json.detail');
 
     // DETAIL PEKERJAAN (prefix pekerjaan/{id})
     Route::prefix('pekerjaan/{id}')->group(function () {
 
         Route::get('/detail', [PekerjaanDetailController::class, 'index'])->name('pekerjaan.detail');
+
+        // ---------- SUB PEKERJAAN ----------
+        // menampilkan daftar sub pekerjaan untuk pekerjaan {id}
+        Route::get('/sub-pekerjaan', [PekerjaanDetailController::class, 'subPekerjaan'])
+        ->name('pekerjaan.sub.index');
+
+        // menampilkan progress fisik untuk sub tertentu (prefix sudah menyertakan {id} pekerjaan)
+        Route::get('/sub-pekerjaan/{sub}/progress', [PekerjaanDetailController::class, 'progresFisikSub'])
+        ->name('pekerjaan.sub.progress');
 
         // ---------- PROGRES INVESTASI ----------
         Route::get('/progres-fisik', [PekerjaanDetailController::class, 'progresFisik'])->name('pekerjaan.progres.fisik');
@@ -117,10 +135,61 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
 
         // ---------- DATA INVESTASI ----------
         Route::get('/data-kontrak', [PekerjaanDetailController::class, 'kontrak'])->name('pekerjaan.data.kontrak');
-        Route::get('/data-gambar', [PekerjaanDetailController::class, 'gambar'])->name('pekerjaan.data.gambar');
-        Route::get('/data-laporan', [PekerjaanDetailController::class, 'laporan'])->name('pekerjaan.data.laporan');
-        Route::get('/data-korespondensi', [PekerjaanDetailController::class, 'korespondensi'])->name('pekerjaan.data.korespondensi');
+        Route::post('/data-kontrak/store', [PekerjaanDetailController::class, 'storeKontrak'])
+        ->name('pekerjaan.data.kontrak.store');
+        Route::delete('/data-kontrak/{kontrak}/delete', [PekerjaanDetailController::class, 'destroyKontrak'])
+        ->name('pekerjaan.data.kontrak.destroy');
+        Route::put('/data-kontrak/{kontrak}/update', [PekerjaanDetailController::class, 'updateKontrak'])
+        ->name('pekerjaan.data.kontrak.update');
 
+
+        Route::get('/data-gambar', [PekerjaanDetailController::class, 'gambar'])->name('pekerjaan.data.gambar');
+        Route::post('/data-gambar/store', [PekerjaanDetailController::class, 'storeGambar'])->name('pekerjaan.data.gambar.store');
+        Route::get('/data-gambar/{gambar}/approve', [PekerjaanDetailController::class, 'approveGambar'])->name('pekerjaan.data.gambar.approve');
+        Route::get('/data-gambar/{gambar}/reject', [PekerjaanDetailController::class, 'rejectGambar'])->name('pekerjaan.data.gambar.reject');
+        Route::delete('/data-gambar/{gambar}/delete', [PekerjaanDetailController::class, 'destroyGambar'])->name('pekerjaan.data.gambar.destroy');
+        
+        // ---------- DATA KORESPONDENSI ----------
+        Route::get('/data-korespondensi', [PekerjaanDetailController::class, 'korespondensi'])->name('pekerjaan.data.korespondensi');
+        Route::post('/data-korespondensi/store', [PekerjaanDetailController::class, 'storeKorespondensi'])->name('pekerjaan.data.korespondensi.store');
+        Route::put('/data-korespondensi/{korespondensi}/update', [PekerjaanDetailController::class, 'updateKorespondensi'])->name('pekerjaan.data.korespondensi.update');
+        Route::delete('/data-korespondensi/{korespondensi}/delete', [PekerjaanDetailController::class, 'destroyKorespondensi'])->name('pekerjaan.data.korespondensi.destroy');
+
+        // ---------- DOKUMEN INVESTASI ----------
+        Route::get('/dokumen-investasi', [PekerjaanDetailController::class, 'dokumenInvestasi'])
+            ->name('pekerjaan.data.dokumen_investasi');
+
+        Route::post('/dokumen-investasi/store', [PekerjaanDetailController::class, 'storeDokumenInvestasi'])
+            ->name('pekerjaan.data.dokumen_investasi.store');
+
+        Route::put('/dokumen-investasi/{dokumen}/update', [PekerjaanDetailController::class, 'updateDokumenInvestasi'])
+            ->name('pekerjaan.data.dokumen_investasi.update');
+
+        Route::delete('/dokumen-investasi/{dokumen}/delete', [PekerjaanDetailController::class, 'destroyDokumenInvestasi'])
+            ->name('pekerjaan.data.dokumen_investasi.destroy');
+        
+        // LAPORAN
+        Route::get('/data-laporan', [PekerjaanDetailController::class, 'laporan'])->name('pekerjaan.data.laporan');
+
+        // Laporan
+        Route::get('/laporan-approval', [PekerjaanDetailController::class, 'laporanApproval'])
+        ->name('pekerjaan.laporan.approval');
+
+        Route::post('/laporan-approval/store', [PekerjaanDetailController::class, 'storeLaporanApproval'])
+        ->name('pekerjaan.laporan.approval.store');
+
+        Route::delete('/laporan-approval/{laporan}/delete', [PekerjaanDetailController::class, 'destroyLaporanApproval'])
+        ->name('pekerjaan.laporan.approval.destroy');
+
+        Route::get('/laporan-approval/{laporan}/approve', [PekerjaanDetailController::class, 'approveLaporanApproval'])
+        ->name('pekerjaan.laporan.approval.approve');
+        Route::get('/laporan-approval/{laporan}/reject', [PekerjaanDetailController::class, 'rejectLaporanApproval'])
+        ->name('pekerjaan.laporan.approval.reject');
+
+        
+        Route::get('/laporan-qa-qc', [PekerjaanDetailController::class, 'laporanQaQc'])->name('pekerjaan.laporan.qa');
+        Route::get('/laporan-dokumentasi', [PekerjaanDetailController::class, 'laporanDokumentasi'])->name('pekerjaan.laporan.dokumentasi');
+        
         // ---------- STATUS INVESTASI ----------
         Route::get('/status-perencanaan', [PekerjaanDetailController::class, 'perencanaan'])->name('pekerjaan.status.perencanaan');
         Route::get('/status-pelelangan', [PekerjaanDetailController::class, 'pelelangan'])->name('pekerjaan.status.pelelangan');

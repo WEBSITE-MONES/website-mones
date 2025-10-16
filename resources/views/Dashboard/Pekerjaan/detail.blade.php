@@ -2,44 +2,6 @@
 
 @section('title', 'Detail Pekerjaan')
 
-@push('styles')
-{{-- CSS Kustom untuk efek hover dan style ikon --}}
-<style>
-.stat-card {
-    border-left: 5px solid var(--primary);
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
-}
-
-.action-list-item {
-    transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
-    border-bottom: 1px solid #eee;
-}
-
-.action-list-item:hover {
-    background-color: #f8f9fa;
-    transform: translateX(5px);
-}
-
-.action-list-item .icon-circle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-}
-
-.bg-primary-light {
-    background-color: rgba(var(--primary-rgb), 0.1);
-}
-</style>
-@endpush
-
 @section('content')
 <div class="page-inner">
 
@@ -48,16 +10,16 @@
         <h4 class="page-title">Detail Investasi</h4>
         <ul class="breadcrumbs">
             <li class="nav-home">
-                <a href="#"><i class="flaticon-home"></i></a>
+                <a href="#"><i class="icon-home"></i></a>
             </li>
             <li class="separator">
-                <i class="flaticon-right-arrow"></i>
+                <i class="icon-arrow-right"></i>
             </li>
             <li class="nav-item">
                 <a href="{{ route('pekerjaan.index') }}">Daftar Pekerjaan</a>
             </li>
             <li class="separator">
-                <i class="flaticon-right-arrow"></i>
+                <i class="icon-arrow-right"></i>
             </li>
             <li class="nav-item">
                 <a href="#">Detail</a>
@@ -66,9 +28,6 @@
         <div class="ms-auto">
             <a href="{{ route('pekerjaan.index') }}" class="btn btn-sm btn-outline-secondary me-2">
                 <i class="fas fa-arrow-left me-1"></i> Kembali
-            </a>
-            <a href="{{ route('pekerjaan.edit', $pekerjaan->id) }}" class="btn btn-sm btn-primary">
-                <i class="fas fa-edit me-1"></i> Edit Data
             </a>
         </div>
     </div>
@@ -85,8 +44,6 @@
                         <i class="fas fa-calendar-alt ms-2 me-1"></i> Tahun {{ $pekerjaan->tahun_usulan }}
                     </p>
                 </div>
-                {{-- Anda bisa menambahkan logic untuk status pekerjaan di sini --}}
-                {{-- <span class="badge bg-success fs-6">Pelaksanaan</span> --}}
             </div>
 
             <hr>
@@ -104,7 +61,6 @@
                     <div class="card stat-card shadow-sm h-100">
                         <div class="card-body">
                             <h6 class="card-title text-muted fw-semibold">PENYERAPAN DANA</h6>
-                            {{-- Ganti '0' dengan variabel penyerapan dana jika ada --}}
                             <h4 class="fw-bolder">Rp {{ number_format($pekerjaan->rkap ?? 0,0,',','.') }}</h4>
                         </div>
                     </div>
@@ -113,7 +69,6 @@
                     <div class="card stat-card shadow-sm h-100">
                         <div class="card-body">
                             <h6 class="card-title text-muted fw-semibold">PROGRES FISIK</h6>
-                            {{-- Ganti '0' dengan variabel progres fisik jika ada --}}
                             @php $progresFisik = 0; @endphp
                             <div class="progress" style="height: 25px;">
                                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
@@ -131,7 +86,6 @@
 
     {{-- 3. KARTU AKSI --}}
     <div class="row">
-        {{-- Kolom Progress Investasi --}}
         <div class="col-lg-6 mb-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-header bg-light border-bottom">
@@ -140,7 +94,7 @@
                     </h5>
                 </div>
                 <div class="list-group list-group-flush">
-                    <a href="{{ route('pekerjaan.progres.fisik', $pekerjaan->id) }}"
+                    <a href="{{ route('pekerjaan.sub.index', $pekerjaan->id) }}"
                         class="list-group-item list-group-item-action d-flex align-items-center py-3 action-list-item">
                         <span class="icon-circle bg-primary-light text-primary me-3"><i
                                 class="fas fa-chart-bar"></i></span>
@@ -205,12 +159,32 @@
                     <a href="{{ route('pekerjaan.data.korespondensi', $pekerjaan->id) }}"
                         class="list-group-item list-group-item-action d-flex align-items-center py-3 action-list-item">
                         <span class="icon-circle bg-primary-light text-primary me-3"><i
-                                class="fas fa-envelope-open-text"></i></span>
+                                class="fas fa-file-alt"></i></span>
                         <div class="flex-grow-1">
                             <h6 class="mb-1 fw-semibold">Korespondensi</h6>
                             <small class="text-muted">Persuratan, berita acara, dsb</small>
                         </div>
                         <i class="fas fa-chevron-right text-muted ms-2" aria-hidden="true"></i>
+                    </a>
+                    <a href="{{ route('pekerjaan.data.dokumen_investasi', $pekerjaan->id) }}"
+                        class="list-group-item list-group-item-action d-flex align-items-center py-3 action-list-item">
+                        <span class="icon-circle bg-primary-light text-primary me-3"><i
+                                class="fas fa-file-alt"></i></span>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 fw-semibold">Dokumen Usulan Investasi</h6>
+                            <small class="text-muted">Dokumen justifikasi & kelayakan</small>
+                        </div>
+                        <i class="fas fa-chevron-right text-muted ms-2" aria-hidden="true"></i>
+                    </a>
+                    <a href="#"
+                        class="list-group-item list-group-item-action d-flex align-items-center py-3 action-list-item">
+                        <span class="icon-circle bg-primary-light text-primary me-3"><i
+                                class="fas fa-file-alt"></i></span>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 fw-semibold">Dokumen Pengadaan</h6>
+                            <small class="text-muted">Dokumen lelang & penunjukan</small>
+                        </div>
+                        <i class="fas fa-chevron-right text-muted ms-2 " aria-hidden="true"></i>
                     </a>
                 </div>
             </div>
