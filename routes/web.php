@@ -97,7 +97,6 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     Route::delete('/{pr}/destroy', [RealisasiController::class, 'destroy'])->name('realisasi.destroy');
 });
 
-
      // ====================== LAPORAN ======================
     Route::prefix('laporan')->name('laporan.')->group(function () {
         Route::get('/', [LaporanController::class, 'index'])->name('index');
@@ -196,6 +195,35 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
         Route::get('/status-pelaksanaan', [PekerjaanDetailController::class, 'pelaksanaan'])->name('pekerjaan.status.pelaksanaan');
         Route::get('/status-selesai', [PekerjaanDetailController::class, 'selesai'])->name('pekerjaan.status.selesai');
     });
+
+
+    // ini baru kutambahkan
+    Route::middleware(['auth'])->group(function () {
+        
+        // Laporan Investasi Routes
+        Route::prefix('laporan')->name('laporan.')->group(function () {
+            
+            // List & Create
+            Route::get('/', [LaporanController::class, 'index'])->name('index');
+            Route::get('/create', [LaporanController::class, 'create'])->name('create');
+            Route::post('/store', [LaporanController::class, 'store'])->name('store');
+            
+            // Detail & Actions
+            Route::get('/{id}', [LaporanController::class, 'show'])->name('show');
+            Route::post('/{id}/submit', [LaporanController::class, 'submitForApproval'])->name('submit');
+            
+            // Approval Actions
+            Route::post('/{id}/approve', [LaporanController::class, 'approve'])->name('approve');
+            Route::post('/{id}/reject', [LaporanController::class, 'reject'])->name('reject');
+            
+            // Export
+            Route::get('/{id}/export-pdf', [LaporanController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('/{id}/export-excel', [LaporanController::class, 'exportExcel'])->name('export.excel');
+        });
+        
+    });
+    
+    // end
 
     // ====================== SUPERADMIN ONLY ======================
     Route::middleware(['role:superadmin'])->group(function() {

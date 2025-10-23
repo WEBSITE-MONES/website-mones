@@ -22,7 +22,27 @@
                 </li>
             </ul>
         </div>
+        <div>
+            <a href="{{ route('laporan.create') }}" class="btn btn-primary rounded-pill px-4">
+                <i class="fa fa-plus"></i> Buat Laporan Baru
+            </a>
+        </div>
     </div>
+
+    {{-- ALERT MESSAGES --}}
+    @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>Sukses!</strong> {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Error!</strong> {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    @endif
 
     {{-- KONTEN UTAMA --}}
     <div class="row">
@@ -38,18 +58,20 @@
                             {{-- Dropdown Jenis Laporan --}}
                             <div class="input-group" style="width: 240px;">
                                 <span class="input-group-text bg-light"><i class="fa fa-file-alt"></i></span>
-                                <select class="form-select" id="jenisLaporan">
-                                    <option value="rekap_activa">Laporan (Rekap Activa)</option>
-                                    <option value="rekap_rincian">Laporan (Rekap Rincian)</option>
+                                <select class="form-select" id="jenisLaporan" name="jenis">
+                                    <option value="rekap_activa" {{ $jenis == 'rekap_activa' ? 'selected' : '' }}>
+                                        Laporan (Rekap Activa)</option>
+                                    <option value="rekap_rincian" {{ $jenis == 'rekap_rincian' ? 'selected' : '' }}>
+                                        Laporan (Rekap Rincian)</option>
                                 </select>
                             </div>
 
                             {{-- Dropdown Tahun --}}
                             <div class="input-group" style="width: 150px;">
                                 <span class="input-group-text bg-light"><i class="fa fa-filter"></i></span>
-                                <select class="form-select" id="tahunFilter">
+                                <select class="form-select" id="tahunFilter" name="tahun">
                                     @for($i = date('Y'); $i >= 2020; $i--)
-                                    <option value="{{ $i }}">{{ $i }}</option>
+                                    <option value="{{ $i }}" {{ $tahun == $i ? 'selected' : '' }}>{{ $i }}</option>
                                     @endfor
                                 </select>
                             </div>
@@ -61,30 +83,42 @@
                         <table id="tabelLaporan" class="table table-hover align-middle">
                             <thead class="bg-light">
                                 <tr class="text-center">
-                                    <th style="width: 120px;">Action</th>
+                                    <th style="width: 200px;">Action</th>
+                                    <th>Kode Laporan</th>
                                     <th>Periode</th>
+                                    <th>Jenis Laporan</th>
                                     <th>Status Approval</th>
+                                    <th>Tanggal Dibuat</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                @forelse($laporan as $index => $item)
                                 <tr>
                                     <td class="text-center">
-                                        <a href="#" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                        <a href="{{ route('laporan.show', $item->id) }}"
+                                            class="btn btn-sm btn-outline-primary rounded-pill px-3">
                                             <i class="fa fa-list"></i> Lihat Laporan
                                         </a>
                                     </td>
-                                    <td>Laporan s.d Januari</td>
-                                    <td><span class="badge bg-success">Approved</span></td>
-                                </tr>
-                                <tr>
-                                    <td class="text-center">
-                                        <a href="#" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                            <i class="fa fa-list"></i> Lihat Laporan
-                                        </a>
+                                    <td><strong>{{ $item->kode_laporan }}</strong></td>
+                                    <td>{{ $item->periode_label }}</td>
+                                    <td>
+                                        <span class="badge bg-info text-white">
+                                            {{ $item->jenis_laporan == 'rekap_activa' ? 'Rekap Activa' : 'Rekap Rincian' }}
+                                        </span>
                                     </td>
-                                    <td>Laporan s.d Februari</td>
-                                    <td><span class="badge bg-warning text-dark">Pending</span></td>
+                                    <td class="text-center">{!! $item->status_badge !!}</td>
+                                    <td class="text-center">{{ $item->tanggal_dibuat->format('d M Y') }}</td>
+
                                 </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        <i class="fa fa-inbox fa-2x mb-2"></i>
+                                        <p>Belum ada laporan untuk filter yang dipilih</p>
+                                    </td>
+                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -101,6 +135,10 @@
 $(document).ready(function() {
     const dataTableOptions = {
         responsive: true,
+        ordering: true,
+        order: [
+            [5, 'desc']
+        ],
         language: {
             paginate: {
                 previous: "<i>Previous</i>",
@@ -117,12 +155,11 @@ $(document).ready(function() {
     };
     $('#tabelLaporan').DataTable(dataTableOptions);
 
-    // Event filter
+    // Event filter - reload page with new params
     $('#jenisLaporan, #tahunFilter').on('change', function() {
         const jenis = $('#jenisLaporan').val();
         const tahun = $('#tahunFilter').val();
-        console.log("Filter berubah:", jenis, tahun);
-        // TODO: panggil AJAX/filter data di sini nanti
+        window.location.href = `{{ route('laporan.index') }}?jenis=${jenis}&tahun=${tahun}`;
     });
 });
 </script>

@@ -297,7 +297,8 @@
 <div class="modal fade" id="importProgressModal" tabindex="-1" aria-labelledby="importProgressModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <form action="{{ route('realisasi.importExcel', $po->id) }}" method="POST" enctype="multipart/form-data">
+        <form id="importForm" action="{{ route('realisasi.importExcel', $po->id) }}" method="POST"
+            enctype="multipart/form-data">
             @csrf
             <div class="modal-content border-0 rounded-4 shadow-lg">
                 <div class="modal-header bg-primary text-white rounded-top-4">
@@ -325,7 +326,7 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i> Batal
                     </button>
-                    <button type="submit" class="btn btn-success shadow-sm">
+                    <button type="submit" id="btnImport" class="btn btn-success shadow-sm">
                         <i class="fas fa-upload me-1"></i> Proses Import
                     </button>
                 </div>
@@ -340,73 +341,112 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Cari semua elemen toggle pada tree
-    const toggles = document.querySelectorAll('.tree-toggle');
+    // ===== Import Excel client-side validation & UX =====
+    const importForm = document.getElementById('importForm');
+    if (importForm) {
+        const fileInput = importForm.querySelector('input[type="file"][name="file"]');
+        const btnImport = document.getElementById('btnImport');
 
-    toggles.forEach(toggle => {
-        toggle.addEventListener('click', function(e) {
-            // Mencegah link berpindah halaman
-            e.preventDefault();
-
-            const parentRow = this.closest('tr');
-            const parentId = parentRow.dataset.id;
-
-            // Cari semua baris yang merupakan anak langsung dari baris yang di-klik
-            const childRows = document.querySelectorAll(`tr[data-parent-id="${parentId}"]`);
-
-            // Fungsi rekursif untuk menyembunyikan semua turunan
-            const hideAllDescendants = (parentIdToHide) => {
-                const descendants = document.querySelectorAll(
-                    `tr[data-parent-id="${parentIdToHide}"]`);
-                descendants.forEach(descendant => {
-                    descendant.classList.add('d-none'); // Sembunyikan turunan
-
-                    // Reset ikonnya jika ia juga punya anak
-                    const descendantToggleIcon = descendant.querySelector(
-                        '.tree-toggle i');
-                    if (descendantToggleIcon) {
-                        descendantToggleIcon.classList.remove('bi-chevron-up');
-                        descendantToggleIcon.classList.add('bi-chevron-down');
+        // Show selected filename (optional, progressive enhancement)
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0];
+                const infoEl = this.closest('.modal-body').querySelector('.file-info');
+                if (infoEl) {
+                    if (file) {
+                        infoEl.textContent =
+                            `Dipilih: ${file.name} — ${Math.round(file.size / 1024)} KB`;
+                    } else {
+                        infoEl.textContent = '';
                     }
-
-                    // Lanjutkan ke level berikutnya
-                    hideAllDescendants(descendant.dataset.id);
-                });
-            };
-
-            // Ubah visibilitas (tampil/sembunyi) baris anak
-            childRows.forEach(child => {
-                child.classList.toggle('d-none');
-
-                // Jika baris anak ditutup, sembunyikan juga semua turunannya
-                if (child.classList.contains('d-none')) {
-                    hideAllDescendants(child.dataset.id);
                 }
             });
+        }
 
-            // Ganti ikon dari 'bawah' ke 'atas' atau sebaliknya
-            const icon = this.querySelector('i');
-            if (icon) {
-                icon.classList.toggle('bi-chevron-down');
-                icon.classList.toggle('bi-chevron-up');
+        importForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Basic checks
+            const file = fileInput ? fileInput.files[0] : null;
+
+            // Validation rules
+            const maxSizeBytes = 5 * 1024 * 1024; // 5 MB
+            const allowedExt = ['xlsx', 'xls', 'csv'];
+
+            if (!file) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File Belum Dipilih',
+                    text: 'Silakan pilih file Excel (.xlsx, .xls) atau CSV terlebih dahulu.',
+                    confirmButtonColor: '#d33'
+                });
+                return;
             }
-        });
-    });
-});
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Fix for modal backdrop issue
-    const importModal = document.getElementById('importProgressModal');
-    if (importModal) {
-        importModal.addEventListener('hidden.bs.modal', function() {
-            const backdrops = document.querySelectorAll('.modal-backdrop');
-            backdrops.forEach(backdrop => backdrop.remove());
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
+            // Check extension
+            const fileName = file.name;
+            const ext = fileName.split('.').pop().toLowerCase();
+            if (!allowedExt.includes(ext)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Format File Tidak Didukung',
+                    html: 'Hanya menerima file dengan ekstensi: <strong>.xlsx, .xls, .csv</strong>.<br>Silakan cek kembali file Anda.',
+                    confirmButtonColor: '#d33'
+                });
+                return;
+            }
+
+            // Check size
+            if (file.size > maxSizeBytes) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Ukuran File Terlalu Besar',
+                    html: `Maksimum ukuran file adalah <strong>5 MB</strong>. File Anda berukuran ${Math.round(file.size/1024)} KB.`,
+                    confirmButtonColor: '#d33'
+                });
+                return;
+            }
+
+            // Optional: preview first few bytes or perform additional checks (omitted here)
+
+            // Ask confirmation
+            Swal.fire({
+                title: 'Konfirmasi Import',
+                html: `<p>Anda akan mengimpor file berikut:</p>
+                       <ul class="text-start">
+                         <li><strong>Nama:</strong> ${fileName}</li>
+                         <li><strong>Ukuran:</strong> ${Math.round(file.size/1024)} KB</li>
+                       </ul>
+                       <p class="mt-2">Lanjutkan proses impor?</p>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-upload"></i> Ya, Proses',
+                cancelButtonText: '<i class="fas fa-times"></i> Batal',
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Disable button and show spinner
+                    btnImport.disabled = true;
+                    const originalHtml = btnImport.innerHTML;
+                    btnImport.innerHTML =
+                        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Memproses...';
+
+                    importForm.submit();
+
+                }
+            });
         });
     }
-    // Add logic for chart.js here
+
+    // Small enhancement: show file-info placeholder element if not present
+    const modalBody = document.querySelector('#importProgressModal .modal-body');
+    if (modalBody && !modalBody.querySelector('.file-info')) {
+        const info = document.createElement('small');
+        info.className = 'd-block mt-2 text-muted file-info';
+        modalBody.appendChild(info);
+    }
 });
 </script>
+
 @endpush

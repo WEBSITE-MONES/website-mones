@@ -600,7 +600,7 @@ class RealisasiController extends Controller
 
             return redirect()->back()
                 ->with('error', 'Terjadi error saat import: '.$e->getMessage())
-                ->with('activeTab', 'rekapProgress'); // tetap ke tab 2 meski error
+                ->with('activeTab', 'rekapProgress'); 
         }
     }
 
