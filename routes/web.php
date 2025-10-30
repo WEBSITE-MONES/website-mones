@@ -12,6 +12,7 @@ use App\Http\Controllers\Dashboard\RealisasiController;
 use App\Http\Controllers\Dashboard\WeatherController;
 use App\Http\Controllers\Dashboard\GeoController;
 use App\Http\Controllers\Dashboard\LaporanController;
+use App\Http\Controllers\LandingPage\ProgresController;
 use App\Http\Middleware\RoleMiddleware;
 
 
@@ -255,4 +256,16 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
 
     // Semua role bisa lihat detail pekerjaan
     Route::get('/pekerjaan/{id}', [PekerjaanController::class, 'show'])->name('pekerjaan.show');
+});
+
+
+// ======================= PWA MOBILE ===================
+Route::prefix('landingpage')->name('landingpage.')->middleware(['auth'])->group(function () {
+    
+    // Home/Dashboard PWA
+    Route::get('/beranda', [ProgresController::class, 'index'])->name('index');
+    Route::get('/pelaporan', [ProgresController::class, 'pelaporan'])->name('index.pelaporan');
+    Route::get('/pelaporanform', [ProgresController::class, 'pelaporanform'])->name('index.palaporanform');
+    Route::get('/pelaporanform-edit', [ProgresController::class, 'pelaporanformedit'])->name('index.palaporanformedit');
+        
 });

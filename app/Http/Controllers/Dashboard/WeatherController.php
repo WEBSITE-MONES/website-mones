@@ -23,7 +23,7 @@ class WeatherController extends Controller
 
         // Simpan hasil cuaca selama 10 menit
         $weather = Cache::remember($cacheKey, 600, function () use ($lat, $lon) {
-            $apiKey = config('services.openweather.key'); // ambil dari config/services.php
+            $apiKey = config('services.openweather.key'); 
             $url = "https://api.openweathermap.org/data/2.5/weather?lat={$lat}&lon={$lon}&units=metric&lang=id&appid={$apiKey}";
 
             try {

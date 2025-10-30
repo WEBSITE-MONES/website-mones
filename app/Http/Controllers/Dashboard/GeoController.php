@@ -14,14 +14,12 @@ class GeoController extends Controller
     {
         // Gunakan cache lebih lama untuk hindari rate limit
         $cacheKey = "user_location_default";
-
-        // Cache 1 jam (3600 detik) karena ipapi.co gratis cuma 1000 req/day
         $loc = Cache::remember($cacheKey, 3600, function () {
             try {
                 // Pakai IP 'me' atau langsung fallback (karena rate limited)
                 $response = Http::timeout(5)
                     ->withOptions(['verify' => false])
-                    ->get("https://ipapi.co/json/"); // Tanpa IP, otomatis detect
+                    ->get("https://ipapi.co/json/"); 
 
                 if ($response->successful()) {
                     $json = $response->json();
