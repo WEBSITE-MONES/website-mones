@@ -31,8 +31,20 @@ function setupEventListeners() {
 async function loadReports() {
   showLoading(true);
 
+  // ⚠️ MODE DEVELOPMENT: Langsung gunakan dummy data
+  console.warn("⚠️ Development Mode: Menggunakan dummy data");
+  
+  // Simulate loading delay untuk UX yang lebih realistis
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  loadDummyData();
+  showLoading(false);
+
+  /* 
+  // 🔄 UNCOMMENT KODE INI KETIKA BACKEND SUDAH SIAP:
+  // ====================================================
   try {
-    const response = await fetch("/app/progress-harian", {
+    const response = await fetch("/landingpage/api/progress-harian", {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -67,22 +79,11 @@ async function loadReports() {
     }
   } catch (error) {
     console.error("Error loading reports:", error);
-
-    // Jika route belum ada, gunakan dummy data
-    if (
-      error.message.includes("Failed to fetch") ||
-      error.message.includes("tidak mengembalikan JSON")
-    ) {
-      console.warn(
-        "⚠️ API belum tersedia, menggunakan dummy data untuk testing"
-      );
-      loadDummyData();
-    } else {
-      showErrorMessage(error.message || "Gagal memuat data laporan");
-    }
+    showErrorMessage(error.message || "Gagal memuat data laporan");
   } finally {
     showLoading(false);
   }
+  */
 }
 
 // ==================== LOAD DUMMY DATA (untuk testing) ====================
@@ -191,6 +192,58 @@ function loadDummyData() {
       status: "approved",
       fotos: [],
     },
+    {
+      id: 5,
+      tanggal: "2025-10-25",
+      pelapor: "Dewi Kusuma",
+      pekerjaan: "instalasi_crane",
+      jenis_pekerjaan: "Pemasangan Rel Crane",
+      volume: 45,
+      satuan: "meter",
+      deskripsi: "Instalasi rel crane container sektor A",
+      latitude: -5.1388,
+      longitude: 119.4215,
+      cuaca_suhu: 32,
+      cuaca_deskripsi: "Panas",
+      cuaca_kelembaban: 68,
+      jam_kerja: 7,
+      kondisi_lapangan: "normal",
+      kendala: "Alignment perlu penyesuaian",
+      solusi: "Kalibrasi ulang dengan alat ukur laser",
+      rencana_besok: "Pengecoran base plate",
+      jumlah_pekerja: 18,
+      alat_berat: "Mobile Crane, Forklift",
+      material: "Rel Baja: 15 batang",
+      status: "approved",
+      fotos: [
+        { id: 3, url: "https://placehold.co/400x300/28a745/fff?text=Crane+1" },
+      ],
+    },
+    {
+      id: 6,
+      tanggal: "2025-10-24",
+      pelapor: "Eko Prasetyo",
+      pekerjaan: "perbaikan_jalan",
+      jenis_pekerjaan: "Overlay Jalan",
+      volume: 180,
+      satuan: "m²",
+      deskripsi: "Perbaikan permukaan jalan akses utama",
+      latitude: -5.1256,
+      longitude: 119.4178,
+      cuaca_suhu: 29,
+      cuaca_deskripsi: "Berawan",
+      cuaca_kelembaban: 77,
+      jam_kerja: 8,
+      kondisi_lapangan: "normal",
+      kendala: null,
+      solusi: null,
+      rencana_besok: "Marking dan pengecatan marka jalan",
+      jumlah_pekerja: 14,
+      alat_berat: "Asphalt Finisher, Tandem Roller",
+      material: "Aspal: 8 ton",
+      status: "submitted",
+      fotos: [],
+    },
   ];
 
   filteredReports = [...allReports];
@@ -198,15 +251,6 @@ function loadDummyData() {
   updateSummaryCards();
   renderTable();
   renderPagination();
-
-  // Show info that using dummy data
-  Swal.fire({
-    icon: "info",
-    title: "Mode Testing",
-    text: "Menggunakan data dummy karena API belum tersedia",
-    timer: 3000,
-    showConfirmButton: false,
-  });
 }
 
 // ==================== UPDATE SUMMARY CARDS ====================
@@ -307,17 +351,17 @@ function renderTable() {
           <ul class="dropdown-menu dropdown-menu-end action-dropdown-menu">
             <li><a class="dropdown-item" href="#" onclick="viewDetail(${
               report.id
-            })">
+            }); return false;">
               <i class="bi bi-eye-fill"></i> Lihat Detail
             </a></li>
-            <li><a class="dropdown-item" href="pelaporan-form_edit.html?id=${
+            <li><a class="dropdown-item" href="{{ route('landingpage.index.dokumentasi') }}?id=${
               report.id
             }">
               <i class="bi bi-pencil-fill"></i> Edit
             </a></li>
             <li><a class="dropdown-item text-danger" href="#" onclick="deleteReport(${
               report.id
-            })">
+            }); return false;">
               <i class="bi bi-trash-fill"></i> Hapus
             </a></li>
           </ul>
@@ -533,6 +577,7 @@ function deleteReport(reportId) {
 }
 
 async function performDelete(reportId) {
+  // ⚠️ MODE DEVELOPMENT: Simulasi delete untuk dummy data
   Swal.fire({
     title: "Menghapus...",
     html: "Mohon tunggu",
@@ -542,12 +587,36 @@ async function performDelete(reportId) {
     },
   });
 
+  // Simulate delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  // Remove from dummy data
+  allReports = allReports.filter(r => r.id !== reportId);
+  filteredReports = filteredReports.filter(r => r.id !== reportId);
+
+  Swal.fire({
+    icon: "success",
+    title: "Terhapus!",
+    text: "Laporan berhasil dihapus",
+    timer: 2000,
+    showConfirmButton: false,
+  });
+
+  updateSummaryCards();
+  renderTable();
+  renderPagination();
+
+  /* 
+  // 🔄 UNCOMMENT KODE INI KETIKA BACKEND SUDAH SIAP:
+  // ====================================================
   try {
-    const response = await fetch(`/app/progress-harian/${reportId}`, {
+    const response = await fetch(`/landingpage/api/progress-harian/${reportId}`, {
       method: "DELETE",
       headers: {
         "X-CSRF-TOKEN":
           document.querySelector('meta[name="csrf-token"]')?.content || "",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
       },
     });
 
@@ -575,6 +644,7 @@ async function performDelete(reportId) {
       text: error.message || "Terjadi kesalahan saat menghapus laporan",
     });
   }
+  */
 }
 
 // ==================== HELPER FUNCTIONS ====================

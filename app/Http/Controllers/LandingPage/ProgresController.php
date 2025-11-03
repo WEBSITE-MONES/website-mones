@@ -23,4 +23,8 @@ class ProgresController extends Controller
     {
         return view('LandingPage.pelaporan-form_edit');
     }
+    public function dokumentasi()
+    {
+        return view('LandingPage.dokumentasi');
+    }
 }

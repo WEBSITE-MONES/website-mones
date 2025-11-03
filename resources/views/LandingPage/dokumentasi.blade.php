@@ -43,10 +43,10 @@
 
             <nav id="navmenu" class="navmenu">
                 <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="pelaporan.html">Pelaporan</a></li>
+                    <li><a href={{ route('landingpage.index') }}>Home</a></li>
+                    <li><a href={{ route('landingpage.index.pelaporan') }}>Pelaporan</a></li>
                     <li><a href="#services">Gambar</a></li>
-                    <li><a href="dokumentasi.html" class="active">Dokumentasi</a></li>
+                    <li><a href={{ route('landingpage.index.dokumentasi') }} class="active">Dokumentasi</a></li>
                     <li><a href="#team">Korespondensi</a></li>
                 </ul>
                 <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
@@ -437,7 +437,8 @@
 
         <div class="container copyright text-center mt-4">
             <p>© <span>Copyright</span> <strong class="px-1 sitename">PT. Pelabuhan Indonesia (Persero)</strong>
-                <span>All Rights Reserved</span></p>
+                <span>All Rights Reserved</span>
+            </p>
         </div>
     </footer>
 

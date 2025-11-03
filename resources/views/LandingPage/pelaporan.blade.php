@@ -38,16 +38,16 @@
 
             <nav id="navmenu" class="navmenu">
                 <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="pelaporan.html" class="active">Pelaporan</a></li>
-                    <li><a href="#services">Gambar</a></li>
-                    li><a href="dokumentasi.html">Dokumentasi</a></li>
+                    <li><a href={{ route('landingpage.index') }}>Home</a></li>
+                    <li><a href="{{ route('landingpage.index') }}">Home</a></li>
+                    <li><a href="{{ route('landingpage.index.pelaporan') }}" class="active">Pelaporan</a></li>
+                    <li><a href="{{ route('landingpage.index.dokumentasi') }}">Dokumentasi</a></li>
                     <li><a href="#team">Korespondensi</a></li>
                 </ul>
                 <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
             </nav>
 
-            <a class="btn-getstarted" href="pelaporan-form.html">
+            <a class="btn-getstarted" href="{{ route('landingpage.index.pelaporanform') }}">
                 <i class="bi bi-plus-circle"></i> Laporan Baru
             </a>
 
@@ -247,7 +247,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="assets/js/main.js"></script>
-    <script src="{{ asset("assets/js/ringkasan.js") }}"></script>
+    <script src="assets/js/ringkasan.js"></script>
 
 </body>
 

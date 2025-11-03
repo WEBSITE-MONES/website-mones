@@ -1,0 +1,65 @@
+<?php
+
+return [
+    'name' => env('P-Mones', 'Monitoring Investasi'),
+    'short_name' => 'MonInv',
+    'start_url' => '/landingpage/beranda',
+    'scope' => '/landingpage',
+    'background_color' => '#ffffff',
+    'theme_color' => '#4F46E5',
+    'display' => 'standalone',
+    'orientation' => 'portrait',
+    'status_bar' => 'black-translucent',
+    'splash' => [
+        '640x1136' => '/images/splash/splash-640x1136.png',
+        '750x1334' => '/images/splash/splash-750x1334.png',
+        '828x1792' => '/images/splash/splash-828x1792.png',
+    ],
+    'icons' => [
+        '72x72' => [
+            'path' => '/images/icons/icon-72x72.png',
+            'purpose' => 'any'
+        ],
+        '96x96' => [
+            'path' => '/images/icons/icon-96x96.png',
+            'purpose' => 'any'
+        ],
+        '128x128' => [
+            'path' => '/images/icons/icon-128x128.png',
+            'purpose' => 'any'
+        ],
+        '144x144' => [
+            'path' => '/images/icons/icon-144x144.png',
+            'purpose' => 'any'
+        ],
+        '152x152' => [
+            'path' => '/images/icons/icon-152x152.png',
+            'purpose' => 'any'
+        ],
+        '192x192' => [
+            'path' => '/images/icons/icon-192x192.png',
+            'purpose' => 'any'
+        ],
+        '384x384' => [
+            'path' => '/images/icons/icon-384x384.png',
+            'purpose' => 'any'
+        ],
+        '512x512' => [
+            'path' => '/images/icons/icon-512x512.png',
+            'purpose' => 'any'
+        ],
+    ],
+    'shortcuts' => [
+        [
+            'name' => 'Beranda',
+            'description' => 'Lihat Dashboard',
+            'url' => '/landingpage/beranda',
+        ],
+        [
+            'name' => 'Pelaporan',
+            'description' => 'Buat Laporan',
+            'url' => '/landingpage/pelaporan',
+        ]
+    ],
+    'custom' => []
+];

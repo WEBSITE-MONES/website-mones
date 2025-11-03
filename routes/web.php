@@ -260,12 +260,17 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
 
 
 // ======================= PWA MOBILE ===================
-Route::prefix('landingpage')->name('landingpage.')->middleware(['auth'])->group(function () {
-    
-    // Home/Dashboard PWA
+Route::prefix('landingpage')->name('landingpage.')->group(function () {
     Route::get('/beranda', [ProgresController::class, 'index'])->name('index');
     Route::get('/pelaporan', [ProgresController::class, 'pelaporan'])->name('index.pelaporan');
-    Route::get('/pelaporanform', [ProgresController::class, 'pelaporanform'])->name('index.palaporanform');
-    Route::get('/pelaporanform-edit', [ProgresController::class, 'pelaporanformedit'])->name('index.palaporanformedit');
-        
+    Route::get('/pelaporanform', [ProgresController::class, 'pelaporanform'])->name('index.pelaporanform');
+    Route::get('/pelaporanform-edit', [ProgresController::class, 'pelaporanformedit'])->name('index.pelaporanformedit');
+    Route::get('/dokumentasi', [ProgresController::class, 'dokumentasi'])->name('index.dokumentasi');
+    
+    // 🆕 Tambahkan ini nanti untuk API
+    Route::get('/api/progress-harian', [ProgresController::class, 'apiGetReports'])->name('api.reports');
+    Route::delete('/api/progress-harian/{id}', [ProgresController::class, 'apiDeleteReport'])->name('api.delete');
+    
+    Route::middleware(['auth'])->group(function () {  
+    });
 });
