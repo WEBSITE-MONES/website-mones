@@ -66,7 +66,6 @@
         </a>
     </div>
 
-    {{-- ALERT KESALAHAN VALIDASI --}}
     @if($errors->any())
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <h4 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Terjadi Kesalahan!</h4>

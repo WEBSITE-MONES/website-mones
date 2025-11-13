@@ -4,6 +4,9 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <!-- ✅ CSRF Token untuk AJAX -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <title>Pelaporan Progress Harian - P-Mones</title>
     <meta name="description" content="">
     <meta name="keywords" content="">
@@ -30,6 +33,160 @@
     <link href="assets/css/main.css" rel="stylesheet">
     <!-- Pelaporan CSS -->
     <link href="assets/css/pelaporan.css" rel="stylesheet">
+    <style>
+    .btn-outline-light {
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        color: #fff;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-light:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.8);
+        color: #fff;
+    }
+
+    .user-menu-btn {
+        display: flex;
+        align-items: center;
+        background: transparent;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        padding: 8px 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+
+    .user-menu-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .dropdown-menu-custom {
+        display: none;
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        min-width: 280px;
+        z-index: 1000;
+        animation: slideDown 0.3s ease;
+    }
+
+    .dropdown-menu-custom.show {
+        display: block;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dropdown-header {
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px 12px 0 0;
+        color: #fff;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .user-avatar {
+        font-size: 50px;
+        line-height: 1;
+    }
+
+    .user-details {
+        flex: 1;
+    }
+
+    .user-name {
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+
+    .user-email {
+        font-size: 13px;
+        opacity: 0.9;
+        margin-bottom: 6px;
+    }
+
+    .badge-role {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .dropdown-divider {
+        height: 1px;
+        background: #eee;
+        margin: 8px 0;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        color: #333;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        font-size: 14px;
+    }
+
+    .dropdown-item i {
+        font-size: 18px;
+        width: 20px;
+        text-align: center;
+    }
+
+    .dropdown-item:hover {
+        background: #f8f9fa;
+    }
+
+    .logout-btn {
+        color: #dc3545;
+    }
+
+    .logout-btn:hover {
+        background: #fff5f5;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .user-menu-btn {
+            padding: 8px;
+        }
+
+        .btn-outline-light {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+    }
+    </style>
 </head>
 
 <body>
@@ -38,22 +195,85 @@
     <header id="header" class="header d-flex align-items-center fixed-top">
         <div class="container-fluid container-xl position-relative d-flex align-items-center">
 
-            <a href="index.html" class="logo d-flex align-items-center me-auto">
+            <a href="{{ route('landingpage.index') }}" class="logo d-flex align-items-center me-auto">
                 <h1 class="sitename">P-Mones</h1>
             </a>
 
             <nav id="navmenu" class="navmenu">
                 <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="pelaporan.html" class="active">Pelaporan</a></li>
+                    <li><a href="{{ route('landingpage.index') }}">Home</a></li>
+                    <li><a href="{{ route('landingpage.index.pelaporan') }}" class="active">Pelaporan</a></li>
+                    <li><a href="{{ route('landingpage.index.dokumentasi') }}">Dokumentasi</a></li>
                     <li><a href="#services">Gambar</a></li>
-                    li><a href="dokumentasi.html">Dokumentasi</a></li>
                     <li><a href="#team">Korespondensi</a></li>
                 </ul>
                 <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
             </nav>
 
-            <a class="btn-getstarted" href="index.html">Kembali</a>
+            @auth
+            {{-- User sudah login - Tampilkan tombol kembali & user dropdown --}}
+            <div class="d-flex align-items-center gap-2">
+                {{-- Tombol Kembali --}}
+                <a class="btn btn-outline-light btn-sm" href="{{ route('landingpage.index.pelaporan') }}">
+                    <i class="bi bi-arrow-left"></i> Kembali
+                </a>
+
+                {{-- User Dropdown --}}
+                <div class="user-dropdown" style="position: relative;">
+                    <button class="btn-getstarted user-menu-btn" id="userMenuBtn" type="button">
+                        <i class="bi bi-person-circle" style="font-size: 18px;"></i>
+                        <span class="d-none d-md-inline ms-2">{{ Auth::user()->name }}</span>
+                        <i class="bi bi-chevron-down d-none d-md-inline" style="font-size: 12px; margin-left: 5px;"></i>
+                    </button>
+
+                    <div id="userDropdownMenu" class="dropdown-menu-custom">
+                        <div class="dropdown-header">
+                            <div class="user-info">
+                                <div class="user-avatar">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                                <div class="user-details">
+                                    <div class="user-name">{{ Auth::user()->name }}</div>
+                                    <div class="user-email">{{ Auth::user()->email }}</div>
+                                    <div class="user-role">
+                                        <span class="badge-role">{{ ucfirst(Auth::user()->role) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+
+                        <a href="{{ route('account.index') }}" class="dropdown-item">
+                            <i class="bi bi-person"></i>
+                            <span>Profile Saya</span>
+                        </a>
+
+                        <a href="{{ route('account.setting') }}" class="dropdown-item">
+                            <i class="bi bi-gear"></i>
+                            <span>Pengaturan</span>
+                        </a>
+
+                        <div class="dropdown-divider"></div>
+
+                        <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+                            @csrf
+                            <button type="submit" class="dropdown-item logout-btn">
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Logout</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+
+            @else
+            {{-- User belum login - Redirect --}}
+            <script>
+            window.location.href = "{{ route('login') }}";
+            </script>
+            @endauth
 
         </div>
     </header>
@@ -88,25 +308,57 @@
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <label for="pelapor" class="form-label">Nama Pelapor (Berdasarkan Akun yang
-                                        diarahkan)<span class="required">*</span></label>
+                                    <label for="pelapor" class="form-label">Nama Pelapor <span
+                                            class="required">*</span></label>
                                     <input type="text" class="form-control" id="pelapor" name="pelapor"
-                                        placeholder="Masukkan nama pelapor" required>
+                                        value="{{ Auth::user()->name }}" readonly style="background-color: #f8f9fa;">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Otomatis terisi berdasarkan akun yang login
+                                    </small>
                                 </div>
                             </div>
 
+                            <!-- 1. Pilih Pekerjaan -->
                             <div class="mb-3">
-                                <label for="pekerjaan" class="form-label">Nama Pekerjaan / Proyek (Pilih pekerjaan dan
-                                    nanti muncul sub pekerjaan yang ada di pekerjaan itu)<span
-                                        class="required">*</span></label>
+                                <label for="pekerjaan" class="form-label">
+                                    Nama Pekerjaan / Proyek <span class="required">*</span>
+                                </label>
                                 <select class="form-select" id="pekerjaan" name="pekerjaan" required>
                                     <option value="">-- Pilih Pekerjaan --</option>
-                                    <option value="revitalisasi_pelabuhan">Pekerjaan Revitalisasi Pelabuhan</option>
-                                    <option value="pembangunan_dermaga">Pembangunan Dermaga Baru</option>
-                                    <option value="renovasi_gudang">Renovasi Gudang Logistik</option>
-                                    <option value="instalasi_crane">Instalasi Crane Container</option>
-                                    <option value="perbaikan_jalan">Perbaikan Jalan Akses</option>
+                                    @foreach($pekerjaan as $p)
+                                    <option value="{{ $p->id }}">
+                                        {{ $p->nama_investasi }}
+                                        @if($p->wilayah) - {{ $p->wilayah->nama_wilayah }}@endif
+                                    </option>
+                                    @endforeach
                                 </select>
+                            </div>
+
+                            <!-- 2. Pilih PO (muncul setelah pilih pekerjaan) -->
+                            <div class="mb-3" id="poWrapper" style="display: none;">
+                                <label for="po" class="form-label">
+                                    Nomor PO / Kontrak <span class="required">*</span>
+                                </label>
+                                <select class="form-select" id="po" name="po_id" required>
+                                    <option value="">-- Pilih PO --</option>
+                                </select>
+                                <small class="text-muted" id="poInfo"></small>
+                            </div>
+
+                            <!-- 3. Pilih Item Pekerjaan (muncul setelah pilih PO) -->
+                            <div class="mb-3" id="itemPekerjaanWrapper" style="display: none;">
+                                <label for="pekerjaan_item" class="form-label">
+                                    Item Pekerjaan yang Dikerjakan <span class="required">*</span>
+                                </label>
+                                <select class="form-select" id="pekerjaan_item" name="pekerjaan_item_id" required>
+                                    <option value="">-- Pilih Item Pekerjaan --</option>
+                                </select>
+                                <div id="itemInfo" class="mt-2" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <strong>Info Item:</strong>
+                                        <div id="itemDetails"></div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- GPS Location (Auto Detect - Hidden Fields) -->
@@ -341,7 +593,8 @@
 
         <div class="container copyright text-center mt-4">
             <p>© <span>Copyright</span> <strong class="px-1 sitename">PT. Pelabuhan Indonesia (Persero)</strong>
-                <span>All Rights Reserved</span></p>
+                <span>All Rights Reserved</span>
+            </p>
         </div>
     </footer>
 
@@ -359,6 +612,150 @@
     <!-- Pelaporan JS -->
     <script src="assets/js/pelaporan.js"></script>
     <script src="assets/js/main.js"></script>
+
+    <script>
+    // 1. Saat pilih Pekerjaan → Load PO
+    document.getElementById('pekerjaan').addEventListener('change', function() {
+        const pekerjaanId = this.value;
+        console.log('Pekerjaan ID:', pekerjaanId);
+
+        const poWrapper = document.getElementById('poWrapper');
+        const poSelect = document.getElementById('po');
+        const itemWrapper = document.getElementById('itemPekerjaanWrapper');
+
+        if (pekerjaanId) {
+            poWrapper.style.display = 'block';
+            poSelect.innerHTML = '<option value="">⏳ Memuat PO...</option>';
+            poSelect.disabled = true;
+            itemWrapper.style.display = 'none';
+
+            // ✅ UBAH URL INI - Tambahkan prefix 'landingpage'
+            const url = `/landingpage/api/po/pekerjaan/${pekerjaanId}`;
+            console.log('Fetching URL:', url);
+
+            fetch(url)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    console.log('Result:', result);
+                    poSelect.disabled = false;
+
+                    if (result.success && result.data.length > 0) {
+                        poSelect.innerHTML = '<option value="">-- Pilih PO --</option>';
+
+                        result.data.forEach(po => {
+                            const option = document.createElement('option');
+                            option.value = po.id;
+                            option.textContent = `${po.nomor_po} - ${po.pelaksana || 'N/A'}`;
+                            option.dataset.tanggal = po.tanggal_po;
+                            option.dataset.pelaksana = po.pelaksana;
+                            poSelect.appendChild(option);
+                        });
+                    } else {
+                        poSelect.innerHTML = '<option value="">⚠️ Tidak ada PO tersedia</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch Error:', error);
+                    poSelect.disabled = false;
+                    poSelect.innerHTML = '<option value="">❌ Gagal memuat data</option>';
+                });
+        } else {
+            poWrapper.style.display = 'none';
+            itemWrapper.style.display = 'none';
+        }
+    });
+
+    // 2. Saat pilih PO → Load Item Pekerjaan
+    document.getElementById('po').addEventListener('change', function() {
+        const poId = this.value;
+        const itemWrapper = document.getElementById('itemPekerjaanWrapper');
+        const itemSelect = document.getElementById('pekerjaan_item');
+        const poInfo = document.getElementById('poInfo');
+
+        if (poId) {
+            const selectedOption = this.options[this.selectedIndex];
+            poInfo.innerHTML =
+                `<i class="bi bi-info-circle"></i> Pelaksana: ${selectedOption.dataset.pelaksana || 'N/A'} | Tanggal: ${selectedOption.dataset.tanggal || 'N/A'}`;
+
+            itemWrapper.style.display = 'block';
+            itemSelect.innerHTML = '<option value="">⏳ Memuat item pekerjaan...</option>';
+            itemSelect.disabled = true;
+
+            // ✅ UBAH URL INI - Tambahkan prefix 'landingpage'
+            fetch(`/landingpage/api/pekerjaan-items/po/${poId}`)
+                .then(response => {
+                    console.log('Items Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    console.log('Items Result:', result);
+                    itemSelect.disabled = false;
+
+                    if (result.success && result.data.length > 0) {
+                        itemSelect.innerHTML = '<option value="">-- Pilih Item Pekerjaan --</option>';
+
+                        result.data.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.id;
+                            option.innerHTML = item.display;
+                            option.dataset.kode = item.kode;
+                            option.dataset.nama = item.nama;
+                            option.dataset.volume = item.volume;
+                            option.dataset.satuan = item.satuan;
+                            option.dataset.bobot = item.bobot;
+                            option.dataset.level = item.level;
+
+                            if (item.has_children) {
+                                option.disabled = true;
+                                option.style.fontWeight = 'bold';
+                                option.style.color = '#666';
+                            }
+
+                            itemSelect.appendChild(option);
+                        });
+                    } else {
+                        itemSelect.innerHTML = '<option value="">⚠️ Tidak ada item pekerjaan</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Items Error:', error);
+                    itemSelect.disabled = false;
+                    itemSelect.innerHTML = '<option value="">❌ Gagal memuat data</option>';
+                });
+        } else {
+            itemWrapper.style.display = 'none';
+            poInfo.innerHTML = '';
+        }
+    });
+
+    // 3. Saat pilih Item Pekerjaan → Tampilkan Info
+    document.getElementById('pekerjaan_item').addEventListener('change', function() {
+        const itemInfo = document.getElementById('itemInfo');
+        const itemDetails = document.getElementById('itemDetails');
+
+        if (this.value) {
+            const selectedOption = this.options[this.selectedIndex];
+            itemDetails.innerHTML = `
+                <strong>Kode:</strong> ${selectedOption.dataset.kode}<br>
+                <strong>Nama:</strong> ${selectedOption.dataset.nama}<br>
+                <strong>Volume:</strong> ${selectedOption.dataset.volume} ${selectedOption.dataset.satuan}<br>
+                <strong>Bobot:</strong> ${selectedOption.dataset.bobot}%
+            `;
+            itemInfo.style.display = 'block';
+        } else {
+            itemInfo.style.display = 'none';
+        }
+    });
+    </script>
 
 </body>
 

@@ -1,4 +1,4 @@
-// ==================== PELAPORAN PROGRESS HARIAN JS - FIXED ====================
+// ==================== PELAPORAN PROGRESS HARIAN JS - WITH LOCATION NAME ====================
 
 // Set tanggal default ke hari ini
 document.getElementById('tanggal').valueAsDate = new Date();
@@ -7,6 +7,7 @@ document.getElementById('tanggal').valueAsDate = new Date();
 let userLocation = null;
 let uploadedFiles = [];
 let currentGPSCoords = null;
+let currentLocationName = null; // ✅ TAMBAHAN: Simpan nama lokasi
 
 // OpenWeather API Key
 const OPENWEATHER_API_KEY = 'eb63c86a920d5776c62b7dd6641e95c0';
@@ -51,6 +52,62 @@ function showSuccess(title, text) {
   });
 }
 
+// ==================== GET LOCATION NAME FROM COORDINATES ====================
+async function getLocationNameFromCoords(lat, lon) {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=id`,
+      {
+        headers: {
+          'User-Agent': 'P-Mones-App/1.0'
+        }
+      }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      const address = data.address || {};
+      
+      // ✅ Format alamat yang user-friendly (prioritas dari spesifik ke umum)
+      const parts = [];
+      
+      if (address.road || address.street) {
+        parts.push(address.road || address.street);
+      }
+      
+      if (address.suburb || address.village || address.neighbourhood) {
+        parts.push(address.suburb || address.village || address.neighbourhood);
+      }
+      
+      if (address.city || address.town || address.county) {
+        parts.push(address.city || address.town || address.county);
+      }
+      
+      if (address.state) {
+        parts.push(address.state);
+      }
+      
+      // Gabungkan parts yang ada
+      if (parts.length > 0) {
+        return parts.join(', ');
+      }
+      
+      // Fallback ke display_name (potong jika terlalu panjang)
+      if (data.display_name) {
+        return data.display_name.length > 80 
+          ? data.display_name.substring(0, 77) + '...' 
+          : data.display_name;
+      }
+    }
+    
+  } catch (error) {
+    console.error('Reverse geocoding error:', error);
+  }
+  
+  // Fallback ke koordinat
+  return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+}
+
 // ==================== GET LOCATION FROM GPS (LIVE) ====================
 async function getUserLocation() {
   const weatherInfo = document.getElementById('weatherInfo');
@@ -80,6 +137,11 @@ async function getUserLocation() {
       document.getElementById('latitude').value = lat;
       document.getElementById('longitude').value = lon;
       
+      // ✅ PERBAIKAN: Ambil nama lokasi dari koordinat
+      console.log('🔍 Mencari nama lokasi...');
+      currentLocationName = await getLocationNameFromCoords(lat, lon);
+      console.log('📍 Lokasi ditemukan:', currentLocationName);
+      
       try {
         const geoResponse = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
@@ -103,7 +165,8 @@ async function getUserLocation() {
             region: region,
             country: country,
             latitude: lat,
-            longitude: lon
+            longitude: lon,
+            locationName: currentLocationName // ✅ Simpan nama lokasi
           };
         }
         
@@ -111,6 +174,7 @@ async function getUserLocation() {
         console.error('Reverse geocoding error:', error);
       }
       
+      // Update weather dengan nama lokasi
       getWeatherDataLive(lat, lon);
     },
     (error) => {
@@ -150,48 +214,61 @@ async function useFallbackLocation() {
       throw new Error(data.reason || 'IP API Error');
     }
     
+    const lat = data.latitude || -5.1477;
+    const lon = data.longitude || 119.4327;
+    
+    // ✅ Ambil nama lokasi dari koordinat
+    currentLocationName = await getLocationNameFromCoords(lat, lon);
+    
     userLocation = {
       city: data.city || 'Makassar',
       region: data.region || 'Sulawesi Selatan',
       country: data.country_name || 'Indonesia',
-      latitude: data.latitude || -5.1477,
-      longitude: data.longitude || 119.4327
+      latitude: lat,
+      longitude: lon,
+      locationName: currentLocationName
     };
     
     currentGPSCoords = {
-      latitude: userLocation.latitude,
-      longitude: userLocation.longitude,
+      latitude: lat,
+      longitude: lon,
       accuracy: null,
       timestamp: new Date().toISOString()
     };
     
-    document.getElementById('latitude').value = userLocation.latitude;
-    document.getElementById('longitude').value = userLocation.longitude;
+    document.getElementById('latitude').value = lat;
+    document.getElementById('longitude').value = lon;
     
-    getWeatherDataLive(userLocation.latitude, userLocation.longitude);
+    getWeatherDataLive(lat, lon);
     
   } catch (error) {
     console.error('Fallback location error:', error);
+    
+    const lat = -5.1477;
+    const lon = 119.4327;
+    
+    currentLocationName = await getLocationNameFromCoords(lat, lon);
     
     userLocation = {
       city: 'Makassar',
       region: 'Sulawesi Selatan',
       country: 'Indonesia',
-      latitude: -5.1477,
-      longitude: 119.4327
+      latitude: lat,
+      longitude: lon,
+      locationName: currentLocationName
     };
     
     currentGPSCoords = {
-      latitude: -5.1477,
-      longitude: 119.4327,
+      latitude: lat,
+      longitude: lon,
       accuracy: null,
       timestamp: new Date().toISOString()
     };
     
-    document.getElementById('latitude').value = -5.1477;
-    document.getElementById('longitude').value = 119.4327;
+    document.getElementById('latitude').value = lat;
+    document.getElementById('longitude').value = lon;
     
-    getWeatherDataLive(-5.1477, 119.4327);
+    getWeatherDataLive(lat, lon);
   }
 }
 
@@ -213,11 +290,14 @@ async function getWeatherDataLive(lat, lon) {
     const iconCode = data.weather[0].icon;
     const weatherIcon = getWeatherIcon(iconCode);
     
+    // ✅ Tampilkan nama lokasi, bukan koordinat
+    const displayLocation = currentLocationName || (userLocation ? userLocation.city : 'Unknown');
+    
     document.getElementById('weatherInfo').innerHTML = `
       <div class="weather-icon">${weatherIcon}</div>
       <div class="weather-details">
         <h5>${temperature}°C - ${description}</h5>
-        <p>Kelembaban: ${humidity}% | Lokasi: ${userLocation ? userLocation.city : 'Unknown'}</p>
+        <p>Kelembaban: ${humidity}% | 📍 ${displayLocation}</p>
       </div>
     `;
     
@@ -258,19 +338,15 @@ const uploadArea = document.getElementById('uploadArea');
 const fotoInput = document.getElementById('fotoInput');
 const photoPreview = document.getElementById('photoPreview');
 
-// FIXED: Upload area click handler
 uploadArea.addEventListener('click', () => {
-  // Check if camera is available
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    // Show choice dialog
     showConfirm(
       'Pilih Sumber Foto',
       'Ambil foto menggunakan kamera atau pilih dari galeri?',
-      () => openCamera(),      // Confirm = Kamera
-      () => fotoInput.click()   // Cancel = Galeri
+      () => openCamera(),
+      () => fotoInput.click()
     );
   } else {
-    // No camera support, directly open file picker
     fotoInput.click();
   }
 });
@@ -294,28 +370,25 @@ fotoInput.addEventListener('change', (e) => {
   handleFiles(e.target.files);
 });
 
-// ==================== OPEN CAMERA - FIXED ====================
+// ==================== OPEN CAMERA ====================
 async function openCamera() {
   try {
-    // Request camera access
     const stream = await navigator.mediaDevices.getUserMedia({ 
       video: { 
-        facingMode: 'environment', // Use back camera on mobile
+        facingMode: 'environment',
         width: { ideal: 1920 },
         height: { ideal: 1080 }
       } 
     });
     
-    // Create video element
     const video = document.createElement('video');
     video.srcObject = stream;
     video.autoplay = true;
-    video.playsInline = true; // Important for iOS
+    video.playsInline = true;
     video.style.width = '100%';
     video.style.maxWidth = '600px';
     video.style.borderRadius = '10px';
     
-    // Create modal
     const modal = document.createElement('div');
     modal.style.cssText = `
       position: fixed;
@@ -332,7 +405,6 @@ async function openCamera() {
       padding: 20px;
     `;
     
-    // Create capture button
     const captureBtn = document.createElement('button');
     captureBtn.innerHTML = '📸 Ambil Foto';
     captureBtn.style.cssText = `
@@ -347,7 +419,6 @@ async function openCamera() {
       font-weight: bold;
     `;
     
-    // Create close button
     const closeBtn = document.createElement('button');
     closeBtn.innerHTML = '❌ Tutup';
     closeBtn.style.cssText = `
@@ -366,7 +437,6 @@ async function openCamera() {
     modal.appendChild(closeBtn);
     document.body.appendChild(modal);
     
-    // Capture button click handler
     captureBtn.addEventListener('click', () => {
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
@@ -383,8 +453,8 @@ async function openCamera() {
         
         const file = new File([blob], fileName, { type: 'image/jpeg' });
         
-        // Attach GPS and weather data
         file.gpsData = currentGPSCoords;
+        file.locationName = currentLocationName; // ✅ Simpan nama lokasi
         file.weatherData = {
           temperature: document.getElementById('cuaca_suhu').value,
           description: document.getElementById('cuaca_deskripsi').value,
@@ -394,15 +464,13 @@ async function openCamera() {
         uploadedFiles.push(file);
         displayPhoto(file);
         
-        // Stop camera stream
         stream.getTracks().forEach(track => track.stop());
         document.body.removeChild(modal);
         
-        showSuccess('Berhasil!', 'Foto berhasil diambil dengan GPS coordinates');
+        showSuccess('Berhasil!', `Foto berhasil diambil di ${currentLocationName || 'lokasi saat ini'}`);
       }, 'image/jpeg', 0.9);
     });
     
-    // Close button click handler
     closeBtn.addEventListener('click', () => {
       stream.getTracks().forEach(track => track.stop());
       document.body.removeChild(modal);
@@ -426,12 +494,12 @@ async function openCamera() {
 }
 
 // ==================== HANDLE FILES ====================
-function handleFiles(files) {
+async function handleFiles(files) {
   for (let file of files) {
     if (file.type.startsWith('image/') && file.size <= 5242880) {
-      // Attach GPS data if not already attached
       if (currentGPSCoords && !file.gpsData) {
         file.gpsData = currentGPSCoords;
+        file.locationName = currentLocationName; // ✅ Simpan nama lokasi
         file.weatherData = {
           temperature: document.getElementById('cuaca_suhu').value,
           description: document.getElementById('cuaca_deskripsi').value,
@@ -454,10 +522,15 @@ function displayPhoto(file) {
     const div = document.createElement('div');
     div.className = 'preview-item';
     
-    const gpsLabel = file.gpsData ? 
-      `<small style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7); color:white; padding:3px; font-size:9px;">
-        📍 ${file.gpsData.latitude.toFixed(4)}, ${file.gpsData.longitude.toFixed(4)}
-      </small>` : '';
+    // ✅ Tampilkan nama lokasi, bukan koordinat
+    const gpsLabel = file.locationName ? 
+      `<small style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.8); color:white; padding:5px; font-size:10px; line-height:1.3;">
+        📍 ${file.locationName}
+      </small>` : 
+      (file.gpsData ? 
+        `<small style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7); color:white; padding:3px; font-size:9px;">
+          📍 ${file.gpsData.latitude.toFixed(4)}, ${file.gpsData.longitude.toFixed(4)}
+        </small>` : '');
     
     div.innerHTML = `
       <img src="${e.target.result}" alt="Preview">
@@ -485,12 +558,24 @@ function removePhoto(btn, fileName) {
 document.getElementById('progressForm').addEventListener('submit', function(e) {
   e.preventDefault();
   
+  // Validasi foto minimal 2
   if (uploadedFiles.length < 2) {
     showAlert('warning', 'Foto Kurang', 'Minimal upload 2 foto dokumentasi!');
     return;
   }
 
+  // Validasi GPS coordinates harus ada
+  if (!document.getElementById('latitude').value || !document.getElementById('longitude').value) {
+    showAlert('error', 'GPS Belum Siap', 'Mohon tunggu hingga GPS coordinates terdeteksi!');
+    return;
+  }
+
   const formData = new FormData(this);
+  
+  // ✅ Tambahkan nama lokasi ke form data
+  if (currentLocationName) {
+    formData.append('location_name', currentLocationName);
+  }
   
   // Append photos with GPS data
   uploadedFiles.forEach((file, index) => {
@@ -503,6 +588,10 @@ document.getElementById('progressForm').addEventListener('submit', function(e) {
       formData.append(`foto_${index}_gps_timestamp`, file.gpsData.timestamp);
     }
     
+    if (file.locationName) {
+      formData.append(`foto_${index}_location_name`, file.locationName);
+    }
+    
     if (file.weatherData) {
       formData.append(`foto_${index}_weather`, JSON.stringify(file.weatherData));
     }
@@ -513,7 +602,6 @@ document.getElementById('progressForm').addEventListener('submit', function(e) {
   submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Mengirim...';
   submitBtn.disabled = true;
 
-  // Show loading
   Swal.fire({
     title: 'Mengirim Laporan...',
     html: 'Mohon tunggu, data sedang diproses',
@@ -523,15 +611,20 @@ document.getElementById('progressForm').addEventListener('submit', function(e) {
     }
   });
 
-  // Simulate API call (replace with actual endpoint)
-  fetch('/app/progress-harian/store', {
+  fetch('/landingpage/api/progress-harian/store', {
     method: 'POST',
     body: formData,
     headers: {
       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
     }
   })
-  .then(response => response.json())
+  .then(response => {
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Server tidak mengembalikan JSON');
+    }
+    return response.json();
+  })
   .then(data => {
     submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
@@ -540,51 +633,61 @@ document.getElementById('progressForm').addEventListener('submit', function(e) {
       Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
-        text: 'Laporan progress harian berhasil dikirim dengan GPS & weather data!',
+        text: `Laporan berhasil dikirim dari ${currentLocationName || 'lokasi Anda'}!`,
         confirmButtonColor: '#1d6ba8'
       }).then(() => {
-        resetForm(false);
+        window.location.href = '/landingpage/pelaporan';
       });
     } else {
-      showAlert('error', 'Gagal', data.message || 'Terjadi kesalahan saat mengirim laporan');
+      throw new Error(data.message || 'Terjadi kesalahan saat mengirim laporan');
     }
   })
   .catch(error => {
     console.error('Error:', error);
     submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
-    showAlert('error', 'Error', 'Gagal mengirim laporan. Silakan coba lagi.');
+    Swal.fire({
+      icon: 'error',
+      title: 'Gagal',
+      text: error.message || 'Terjadi kesalahan saat mengirim laporan. Silakan coba lagi.'
+    });
   });
 });
 
 // ==================== RESET FORM ====================
 function resetForm(needConfirm = true) {
   if (needConfirm) {
-    showConfirm(
-      'Konfirmasi',
-      'Yakin ingin membatalkan? Semua data akan dihapus.',
-      () => {
-        document.getElementById('progressForm').reset();
-        uploadedFiles = [];
-        photoPreview.innerHTML = '';
-        photoPreview.classList.remove('active');
-        document.getElementById('tanggal').valueAsDate = new Date();
-        getUserLocation();
-      },
-      null
-    );
+    Swal.fire({
+      title: 'Konfirmasi',
+      text: 'Yakin ingin membatalkan? Semua data akan dihapus.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#1d6ba8',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Ya, Batalkan',
+      cancelButtonText: 'Tidak'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        performReset();
+      }
+    });
   } else {
-    document.getElementById('progressForm').reset();
-    uploadedFiles = [];
-    photoPreview.innerHTML = '';
-    photoPreview.classList.remove('active');
-    document.getElementById('tanggal').valueAsDate = new Date();
-    getUserLocation();
+    performReset();
   }
+}
+
+function performReset() {
+  document.getElementById('progressForm').reset();
+  uploadedFiles = [];
+  photoPreview.innerHTML = '';
+  photoPreview.classList.remove('active');
+  document.getElementById('tanggal').valueAsDate = new Date();
+  getUserLocation();
 }
 
 // ==================== INITIALIZE ON LOAD ====================
 window.addEventListener('DOMContentLoaded', function() {
-  getUserLocation();
-  console.log('📍 Pelaporan Progress');
+  console.log('📍 Initializing Pelaporan Progress dengan Location Name...');
+  getUserLocation(); 
+  console.log('✅ GPS & Weather data loading...');
 });

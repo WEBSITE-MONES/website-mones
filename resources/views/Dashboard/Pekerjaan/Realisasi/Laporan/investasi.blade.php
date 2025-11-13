@@ -2,6 +2,21 @@
 
 @section('title', 'Laporan Investasi')
 
+@push('styles')
+<style>
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.action-buttons .btn {
+    white-space: nowrap;
+}
+</style>
+@endpush
+
 @section('content')
 <div class="page-inner">
     {{-- HEADER HALAMAN --}}
@@ -22,7 +37,12 @@
                 </li>
             </ul>
         </div>
-        <div>
+        <div class="d-flex gap-2">
+            @can('role', ['admin', 'superadmin'])
+            <a href="{{ route('laporan.approval-settings.index') }}" class="btn btn-outline-primary rounded-pill px-4">
+                <i class="fa fa-cog"></i> Pengaturan Approval
+            </a>
+            @endcan
             <a href="{{ route('laporan.create') }}" class="btn btn-primary rounded-pill px-4">
                 <i class="fa fa-plus"></i> Buat Laporan Baru
             </a>
@@ -83,7 +103,7 @@
                         <table id="tabelLaporan" class="table table-hover align-middle">
                             <thead class="bg-light">
                                 <tr class="text-center">
-                                    <th style="width: 200px;">Action</th>
+                                    <th style="width: 250px;">Action</th>
                                     <th>Kode Laporan</th>
                                     <th>Periode</th>
                                     <th>Jenis Laporan</th>
@@ -94,11 +114,32 @@
                             <tbody>
                                 @forelse($laporan as $index => $item)
                                 <tr>
-                                    <td class="text-center">
-                                        <a href="{{ route('laporan.show', $item->id) }}"
-                                            class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                            <i class="fa fa-list"></i> Lihat Laporan
-                                        </a>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{{ route('laporan.show', $item->id) }}"
+                                                class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                                data-bs-toggle="tooltip" title="Lihat Detail">
+                                                <i class="fa fa-eye"></i> Lihat
+                                            </a>
+
+                                            @if($item->status_approval !== 'approved')
+                                            <form action="{{ route('laporan.destroy', $item->id) }}" method="POST"
+                                                class="d-inline delete-form">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                                                    data-bs-toggle="tooltip" title="Hapus Laporan">
+                                                    <i class="fa fa-trash"></i> Hapus
+                                                </button>
+                                            </form>
+                                            @else
+                                            <span class="badge bg-success" data-bs-toggle="tooltip"
+                                                title="Laporan yang sudah approved tidak dapat dihapus">
+                                                <i class="fa fa-lock"></i> Locked
+                                            </span>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td><strong>{{ $item->kode_laporan }}</strong></td>
                                     <td>{{ $item->periode_label }}</td>
@@ -109,11 +150,10 @@
                                     </td>
                                     <td class="text-center">{!! $item->status_badge !!}</td>
                                     <td class="text-center">{{ $item->tanggal_dibuat->format('d M Y') }}</td>
-
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted">
+                                    <td colspan="6" class="text-center py-4 text-muted">
                                         <i class="fa fa-inbox fa-2x mb-2"></i>
                                         <p>Belum ada laporan untuk filter yang dipilih</p>
                                     </td>
@@ -129,10 +169,17 @@
     </div>
 </div>
 
-{{-- SCRIPT DATATABLES --}}
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // DataTable
     const dataTableOptions = {
         responsive: true,
         ordering: true,
@@ -155,11 +202,46 @@ $(document).ready(function() {
     };
     $('#tabelLaporan').DataTable(dataTableOptions);
 
-    // Event filter - reload page with new params
+    // Event filter
     $('#jenisLaporan, #tahunFilter').on('change', function() {
         const jenis = $('#jenisLaporan').val();
         const tahun = $('#tahunFilter').val();
         window.location.href = `{{ route('laporan.index') }}?jenis=${jenis}&tahun=${tahun}`;
+    });
+
+    // Confirm delete
+    $('.delete-form').on('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+
+        Swal.fire({
+            title: 'Konfirmasi Hapus',
+            html: `
+                <div class="text-start">
+                    <p class="mb-2">Anda yakin ingin menghapus laporan ini?</p>
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle"></i>
+                        <strong>Perhatian:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Data laporan akan dihapus permanen</li>
+                            <li>Semua detail dan approval akan ikut terhapus</li>
+                            <li>Aksi ini tidak dapat dibatalkan</li>
+                        </ul>
+                    </div>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: '<i class="fa fa-trash"></i> Ya, Hapus!',
+            cancelButtonText: '<i class="fa fa-times"></i> Batal',
+            width: '500px'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
     });
 });
 </script>

@@ -1,6 +1,5 @@
-// ==================== RINGKASAN LAPORAN JS ====================
+// ==================== RINGKASAN LAPORAN JS (FIXED STATUS) ====================
 
-// Global variables
 let allReports = [];
 let filteredReports = [];
 let currentPage = 1;
@@ -10,39 +9,29 @@ const itemsPerPage = 10;
 window.addEventListener("DOMContentLoaded", function () {
   loadReports();
   setupEventListeners();
+  
+  // ✅ Auto-refresh setiap 30 detik
+  setInterval(() => {
+    console.log('🔄 Auto-refreshing data...');
+    loadReports();
+  }, 30000);
 });
 
 // ==================== SETUP EVENT LISTENERS ====================
 function setupEventListeners() {
-  // Filter button
   document.getElementById("btnFilter").addEventListener("click", applyFilters);
 
-  // Enter key on filter inputs
-  ["filterPekerjaan", "filterTanggalMulai", "filterTanggalAkhir"].forEach(
-    (id) => {
-      document.getElementById(id).addEventListener("keypress", (e) => {
-        if (e.key === "Enter") applyFilters();
-      });
-    }
-  );
+  ["filterPekerjaan", "filterTanggalMulai", "filterTanggalAkhir"].forEach((id) => {
+    document.getElementById(id).addEventListener("keypress", (e) => {
+      if (e.key === "Enter") applyFilters();
+    });
+  });
 }
 
-// ==================== LOAD REPORTS FROM API ====================
+// ==================== LOAD REPORTS FROM API (REAL DATA) ====================
 async function loadReports() {
   showLoading(true);
 
-  // ⚠️ MODE DEVELOPMENT: Langsung gunakan dummy data
-  console.warn("⚠️ Development Mode: Menggunakan dummy data");
-  
-  // Simulate loading delay untuk UX yang lebih realistis
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  loadDummyData();
-  showLoading(false);
-
-  /* 
-  // 🔄 UNCOMMENT KODE INI KETIKA BACKEND SUDAH SIAP:
-  // ====================================================
   try {
     const response = await fetch("/landingpage/api/progress-harian", {
       headers: {
@@ -51,18 +40,13 @@ async function loadReports() {
       },
     });
 
-    // Check if response is JSON
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
-      throw new Error(
-        "Server tidak mengembalikan JSON. Pastikan route API sudah benar."
-      );
+      throw new Error("Server tidak mengembalikan JSON. Pastikan route API sudah benar.");
     }
 
     if (!response.ok) {
-      throw new Error(
-        `HTTP Error: ${response.status} - ${response.statusText}`
-      );
+      throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -83,187 +67,21 @@ async function loadReports() {
   } finally {
     showLoading(false);
   }
-  */
-}
-
-// ==================== LOAD DUMMY DATA (untuk testing) ====================
-function loadDummyData() {
-  allReports = [
-    {
-      id: 1,
-      tanggal: "2025-10-28",
-      pelapor: "Budi Santoso",
-      pekerjaan: "pembangunan_dermaga",
-      jenis_pekerjaan: "Pengecoran Pile Cap P-10",
-      volume: 12.5,
-      satuan: "m³",
-      deskripsi: "Pekerjaan pengecoran Pile Cap P-10 selesai 100%",
-      latitude: -5.1198,
-      longitude: 119.4305,
-      cuaca_suhu: 29,
-      cuaca_deskripsi: "Berawan",
-      cuaca_kelembaban: 80,
-      jam_kerja: 7.5,
-      kondisi_lapangan: "normal",
-      kendala: "Material terlambat 2 jam",
-      solusi: "Koordinasi ulang dengan supplier",
-      rencana_besok: "Melanjutkan pembesian P-11",
-      jumlah_pekerja: 15,
-      alat_berat: "Concrete Pump, Mixer",
-      material: "Semen 50 sak, Pasir 5 m³",
-      status: "approved",
-      fotos: [
-        { id: 1, url: "https://placehold.co/400x300/1d6ba8/fff?text=Foto+1" },
-        { id: 2, url: "https://placehold.co/400x300/2b7ab5/fff?text=Foto+2" },
-      ],
-    },
-    {
-      id: 2,
-      tanggal: "2025-10-28",
-      pelapor: "Citra Lestari",
-      pekerjaan: "revitalisasi_pelabuhan",
-      jenis_pekerjaan: "Pemasangan Fender",
-      volume: 8,
-      satuan: "unit",
-      deskripsi: "Pemasangan fender type A selesai",
-      latitude: -5.1477,
-      longitude: 119.4327,
-      cuaca_suhu: 31,
-      cuaca_deskripsi: "Cerah",
-      cuaca_kelembaban: 75,
-      jam_kerja: 8,
-      kondisi_lapangan: "normal",
-      kendala: null,
-      solusi: null,
-      rencana_besok: "Lanjut pemasangan bollard",
-      jumlah_pekerja: 10,
-      alat_berat: "Crane 20 ton",
-      material: "Fender type A: 8 unit",
-      status: "submitted",
-      fotos: [],
-    },
-    {
-      id: 3,
-      tanggal: "2025-10-27",
-      pelapor: "Andi Wijaya",
-      pekerjaan: "renovasi_gudang",
-      jenis_pekerjaan: "Pengecatan Dinding",
-      volume: 250,
-      satuan: "m²",
-      deskripsi: "Pengecatan dinding gudang bagian utara",
-      latitude: -5.152,
-      longitude: 119.428,
-      cuaca_suhu: 28,
-      cuaca_deskripsi: "Berawan",
-      cuaca_kelembaban: 82,
-      jam_kerja: 6,
-      kondisi_lapangan: "becek",
-      kendala: "Hujan ringan menghambat pekerjaan",
-      solusi: "Menunggu cuaca membaik",
-      rencana_besok: "Melanjutkan pengecatan",
-      jumlah_pekerja: 8,
-      alat_berat: null,
-      material: "Cat 20 liter",
-      status: "revision",
-      fotos: [],
-    },
-    {
-      id: 4,
-      tanggal: "2025-10-26",
-      pelapor: "Budi Santoso",
-      pekerjaan: "pembangunan_dermaga",
-      jenis_pekerjaan: "Pembesian Pile Cap",
-      volume: 150,
-      satuan: "kg",
-      deskripsi: "Pembesian pile cap P-9 selesai",
-      latitude: -5.1198,
-      longitude: 119.4305,
-      cuaca_suhu: 30,
-      cuaca_deskripsi: "Cerah",
-      cuaca_kelembaban: 70,
-      jam_kerja: 8,
-      kondisi_lapangan: "normal",
-      kendala: null,
-      solusi: null,
-      rencana_besok: "Persiapan bekisting",
-      jumlah_pekerja: 12,
-      alat_berat: null,
-      material: "Besi D16: 100 batang",
-      status: "approved",
-      fotos: [],
-    },
-    {
-      id: 5,
-      tanggal: "2025-10-25",
-      pelapor: "Dewi Kusuma",
-      pekerjaan: "instalasi_crane",
-      jenis_pekerjaan: "Pemasangan Rel Crane",
-      volume: 45,
-      satuan: "meter",
-      deskripsi: "Instalasi rel crane container sektor A",
-      latitude: -5.1388,
-      longitude: 119.4215,
-      cuaca_suhu: 32,
-      cuaca_deskripsi: "Panas",
-      cuaca_kelembaban: 68,
-      jam_kerja: 7,
-      kondisi_lapangan: "normal",
-      kendala: "Alignment perlu penyesuaian",
-      solusi: "Kalibrasi ulang dengan alat ukur laser",
-      rencana_besok: "Pengecoran base plate",
-      jumlah_pekerja: 18,
-      alat_berat: "Mobile Crane, Forklift",
-      material: "Rel Baja: 15 batang",
-      status: "approved",
-      fotos: [
-        { id: 3, url: "https://placehold.co/400x300/28a745/fff?text=Crane+1" },
-      ],
-    },
-    {
-      id: 6,
-      tanggal: "2025-10-24",
-      pelapor: "Eko Prasetyo",
-      pekerjaan: "perbaikan_jalan",
-      jenis_pekerjaan: "Overlay Jalan",
-      volume: 180,
-      satuan: "m²",
-      deskripsi: "Perbaikan permukaan jalan akses utama",
-      latitude: -5.1256,
-      longitude: 119.4178,
-      cuaca_suhu: 29,
-      cuaca_deskripsi: "Berawan",
-      cuaca_kelembaban: 77,
-      jam_kerja: 8,
-      kondisi_lapangan: "normal",
-      kendala: null,
-      solusi: null,
-      rencana_besok: "Marking dan pengecatan marka jalan",
-      jumlah_pekerja: 14,
-      alat_berat: "Asphalt Finisher, Tandem Roller",
-      material: "Aspal: 8 ton",
-      status: "submitted",
-      fotos: [],
-    },
-  ];
-
-  filteredReports = [...allReports];
-
-  updateSummaryCards();
-  renderTable();
-  renderPagination();
 }
 
 // ==================== UPDATE SUMMARY CARDS ====================
 function updateSummaryCards() {
   const total = allReports.length;
-  const approved = allReports.filter((r) => r.status === "approved").length;
-  const pending = allReports.filter((r) => r.status === "submitted").length;
-  const revision = allReports.filter((r) => r.status === "revision").length;
+  
+  // ✅ PERBAIKAN: Gunakan status_approval dari database
+  const approved = allReports.filter((r) => r.status_approval === "approved").length;
+  const pending = allReports.filter((r) => r.status_approval === "pending").length;
+  const rejected = allReports.filter((r) => r.status_approval === "rejected").length;
 
   document.getElementById("totalLaporan").textContent = total;
   document.getElementById("totalDisetujui").textContent = approved;
   document.getElementById("totalPending").textContent = pending;
-  document.getElementById("totalRevisi").textContent = revision;
+  document.getElementById("totalRevisi").textContent = rejected;
 }
 
 // ==================== APPLY FILTERS ====================
@@ -273,12 +91,10 @@ function applyFilters() {
   const tanggalAkhir = document.getElementById("filterTanggalAkhir").value;
 
   filteredReports = allReports.filter((report) => {
-    // Filter by pekerjaan
     if (pekerjaan && report.pekerjaan !== pekerjaan) {
       return false;
     }
 
-    // Filter by tanggal
     if (tanggalMulai && report.tanggal < tanggalMulai) {
       return false;
     }
@@ -294,7 +110,6 @@ function applyFilters() {
   renderTable();
   renderPagination();
 
-  // Show filter result message
   Swal.fire({
     icon: "success",
     title: "Filter Diterapkan",
@@ -320,7 +135,6 @@ function renderTable() {
     return;
   }
 
-  // Pagination
   const start = (currentPage - 1) * itemsPerPage;
   const end = start + itemsPerPage;
   const paginatedData = filteredReports.slice(start, end);
@@ -329,19 +143,28 @@ function renderTable() {
     .map(
       (report) => `
     <tr>
-      <td>${formatDate(report.tanggal)}</td>
-      <td>${getPekerjaanName(report.pekerjaan)}</td>
-      <td>${report.pelapor}</td>
       <td>
-        <small class="text-muted">
-          <i class="bi bi-geo-alt-fill"></i>
+        <div class="fw-semibold">${formatDate(report.tanggal)}</div>
+        <small class="text-muted">${report.tanggal}</small>
+      </td>
+      <td>
+        <div class="fw-semibold" style="color: #2c5aa0;">${report.kode_pekerjaan}</div>
+        <small class="text-muted">${report.nama_pekerjaan}</small>
+      </td>
+      <td>
+        <div class="fw-semibold">${report.pelapor}</div>
+      </td>
+      <td>
+        <div class="fw-semibold" style="font-size: 0.9rem;">
+          <i class="bi bi-geo-alt-fill text-primary"></i>
+          ${report.lokasi_nama}
+        </div>
+        <small class="text-muted" style="font-size: 0.75rem;">
           ${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}
         </small>
       </td>
       <td>
-        <span class="status-badge ${getStatusClass(report.status)}">
-          ${getStatusText(report.status)}
-        </span>
+        ${getStatusBadge(report.status_approval)}
       </td>
       <td class="text-center">
         <div class="dropdown">
@@ -349,19 +172,13 @@ function renderTable() {
             <i class="bi bi-three-dots-vertical"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-end action-dropdown-menu">
-            <li><a class="dropdown-item" href="#" onclick="viewDetail(${
-              report.id
-            }); return false;">
+            <li><a class="dropdown-item" href="#" onclick="viewDetail(${report.id}); return false;">
               <i class="bi bi-eye-fill"></i> Lihat Detail
             </a></li>
-            <li><a class="dropdown-item" href="{{ route('landingpage.index.dokumentasi') }}?id=${
-              report.id
-            }">
+            <li><a class="dropdown-item" href="/landingpage/pelaporanform-edit?id=${report.id}">
               <i class="bi bi-pencil-fill"></i> Edit
             </a></li>
-            <li><a class="dropdown-item text-danger" href="#" onclick="deleteReport(${
-              report.id
-            }); return false;">
+            <li><a class="dropdown-item text-danger" href="#" onclick="deleteReport(${report.id}); return false;">
               <i class="bi bi-trash-fill"></i> Hapus
             </a></li>
           </ul>
@@ -371,6 +188,115 @@ function renderTable() {
   `
     )
     .join("");
+}
+
+// ==================== UPDATE VIEW DETAIL MODAL ====================
+function viewDetail(reportId) {
+  const report = allReports.find((r) => r.id === reportId);
+
+  if (!report) {
+    Swal.fire("Error", "Laporan tidak ditemukan", "error");
+    return;
+  }
+
+  const weatherInfo = report.cuaca_deskripsi
+    ? `${report.cuaca_deskripsi}, ${report.cuaca_suhu}°C, Kelembaban: ${report.cuaca_kelembaban}%`
+    : "Data tidak tersedia";
+
+  let photosHtml = "";
+  if (report.fotos && report.fotos.length > 0) {
+    photosHtml = '<div class="row g-2 mt-2">';
+    report.fotos.forEach((foto) => {
+      photosHtml += `
+        <div class="col-4">
+          <img src="${foto.url}" class="img-fluid rounded" alt="Foto" style="cursor: pointer;" onclick="window.open('${foto.url}', '_blank')">
+        </div>
+      `;
+    });
+    photosHtml += "</div>";
+  } else {
+    photosHtml = '<p class="text-muted">Tidak ada foto</p>';
+  }
+
+  Swal.fire({
+    title: "<strong>Detail Laporan Progress Harian</strong>",
+    html: `
+      <div class="text-start">
+        <div class="mb-3">
+          <strong>Tanggal:</strong> ${formatDate(report.tanggal)}<br>
+          <strong>Pelapor:</strong> ${report.pelapor}<br>
+          <strong>Proyek:</strong> ${report.nama_proyek || '-'}<br>
+          <strong>Item Pekerjaan:</strong> ${report.kode_pekerjaan} - ${report.nama_pekerjaan}<br>
+          <strong>Status:</strong> ${getStatusBadge(report.status_approval)}
+        </div>
+        <hr>
+        <div class="mb-3">
+          <strong>Lokasi:</strong><br>
+          <i class="bi bi-geo-alt-fill text-primary"></i> ${report.lokasi_nama}<br>
+          <small class="text-muted">
+            Koordinat: ${report.latitude.toFixed(6)}, ${report.longitude.toFixed(6)}
+          </small>
+        </div>
+        <hr>
+        <div class="mb-3">
+          <strong>Deskripsi Pekerjaan:</strong><br>
+          ${report.jenis_pekerjaan || report.deskripsi}
+        </div>
+        <div class="mb-3">
+          <strong>Volume:</strong> ${report.volume || "-"} ${report.satuan || ""}
+        </div>
+        <hr>
+        <div class="mb-3">
+          <strong>Cuaca:</strong> ${weatherInfo}<br>
+          <strong>Jam Kerja:</strong> ${report.jam_kerja || "-"} jam<br>
+          <strong>Kondisi Lapangan:</strong> ${report.kondisi_lapangan || "-"}
+        </div>
+        ${report.kendala ? `<div class="mb-3"><strong>Kendala:</strong><br>${report.kendala}</div>` : ""}
+        ${report.solusi ? `<div class="mb-3"><strong>Solusi:</strong><br>${report.solusi}</div>` : ""}
+        <hr>
+        <div class="mb-3">
+          <strong>Rencana Besok:</strong><br>
+          ${report.rencana_besok}
+        </div>
+        <hr>
+        <div>
+          <strong>Dokumentasi Foto:</strong>
+          ${photosHtml}
+        </div>
+      </div>
+    `,
+    width: "800px",
+    confirmButtonText: "Tutup",
+    confirmButtonColor: "#2c5aa0",
+  });
+}
+// ==================== GET STATUS BADGE (FIXED) ====================
+function getStatusBadge(status) {
+  const statusConfig = {
+    'approved': {
+      class: 'badge bg-success',
+      icon: 'bi-check-circle-fill',
+      text: 'Disetujui'
+    },
+    'pending': {
+      class: 'badge bg-warning text-dark',
+      icon: 'bi-clock-fill',
+      text: 'Menunggu Approval'
+    },
+    'rejected': {
+      class: 'badge bg-danger',
+      icon: 'bi-x-circle-fill',
+      text: 'Ditolak'
+    }
+  };
+
+  const config = statusConfig[status] || statusConfig['pending'];
+
+  return `
+    <span class="${config.class}">
+      <i class="bi ${config.icon}"></i> ${config.text}
+    </span>
+  `;
 }
 
 // ==================== RENDER PAGINATION ====================
@@ -385,22 +311,14 @@ function renderPagination() {
 
   let html = "";
 
-  // Previous button
   html += `
     <li class="page-item ${currentPage === 1 ? "disabled" : ""}">
-      <a class="page-link" href="#" onclick="changePage(${
-        currentPage - 1
-      }); return false;">Sebelumnya</a>
+      <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">Sebelumnya</a>
     </li>
   `;
 
-  // Page numbers
   for (let i = 1; i <= totalPages; i++) {
-    if (
-      i === 1 ||
-      i === totalPages ||
-      (i >= currentPage - 1 && i <= currentPage + 1)
-    ) {
+    if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
       html += `
         <li class="page-item ${i === currentPage ? "active" : ""}">
           <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
@@ -411,12 +329,9 @@ function renderPagination() {
     }
   }
 
-  // Next button
   html += `
     <li class="page-item ${currentPage === totalPages ? "disabled" : ""}">
-      <a class="page-link" href="#" onclick="changePage(${
-        currentPage + 1
-      }); return false;">Selanjutnya</a>
+      <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">Selanjutnya</a>
     </li>
   `;
 
@@ -426,14 +341,11 @@ function renderPagination() {
 // ==================== CHANGE PAGE ====================
 function changePage(page) {
   const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
-
   if (page < 1 || page > totalPages) return;
 
   currentPage = page;
   renderTable();
   renderPagination();
-
-  // Scroll to top
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -446,12 +358,10 @@ function viewDetail(reportId) {
     return;
   }
 
-  // Build weather info
   const weatherInfo = report.cuaca_deskripsi
     ? `${report.cuaca_deskripsi}, ${report.cuaca_suhu}°C, Kelembaban: ${report.cuaca_kelembaban}%`
     : "Data tidak tersedia";
 
-  // Build photos HTML
   let photosHtml = "";
   if (report.fotos && report.fotos.length > 0) {
     photosHtml = '<div class="row g-2 mt-2">';
@@ -474,78 +384,43 @@ function viewDetail(reportId) {
         <div class="mb-3">
           <strong>Tanggal:</strong> ${formatDate(report.tanggal)}<br>
           <strong>Pelapor:</strong> ${report.pelapor}<br>
-          <strong>Pekerjaan:</strong> ${getPekerjaanName(report.pekerjaan)}
+          <strong>Pekerjaan:</strong> ${getPekerjaanName(report.pekerjaan)}<br>
+          <strong>Status:</strong> ${getStatusBadge(report.status_approval)}
         </div>
-        
         <hr>
-        
         <div class="mb-3">
           <strong>Lokasi GPS:</strong><br>
           <small class="text-muted">
             <i class="bi bi-geo-alt-fill"></i> 
-            Lat: ${report.latitude.toFixed(6)}, Lon: ${report.longitude.toFixed(
-      6
-    )}
+            Lat: ${report.latitude.toFixed(6)}, Lon: ${report.longitude.toFixed(6)}
           </small>
         </div>
-        
         <hr>
-        
         <div class="mb-3">
           <strong>Jenis Pekerjaan:</strong><br>
           ${report.jenis_pekerjaan}
         </div>
-        
         <div class="mb-3">
-          <strong>Volume:</strong> ${report.volume || "-"} ${
-      report.satuan || ""
-    }
+          <strong>Volume:</strong> ${report.volume || "-"} ${report.satuan || ""}
         </div>
-        
         <div class="mb-3">
           <strong>Deskripsi:</strong><br>
           ${report.deskripsi}
         </div>
-        
         <hr>
-        
         <div class="mb-3">
           <strong>Cuaca:</strong> ${weatherInfo}<br>
           <strong>Jam Kerja:</strong> ${report.jam_kerja || "-"} jam<br>
           <strong>Kondisi Lapangan:</strong> ${report.kondisi_lapangan || "-"}
         </div>
-        
-        ${
-          report.kendala
-            ? `
-          <div class="mb-3">
-            <strong>Kendala:</strong><br>
-            ${report.kendala}
-          </div>
-        `
-            : ""
-        }
-        
-        ${
-          report.solusi
-            ? `
-          <div class="mb-3">
-            <strong>Solusi:</strong><br>
-            ${report.solusi}
-          </div>
-        `
-            : ""
-        }
-        
+        ${report.kendala ? `<div class="mb-3"><strong>Kendala:</strong><br>${report.kendala}</div>` : ""}
+        ${report.solusi ? `<div class="mb-3"><strong>Solusi:</strong><br>${report.solusi}</div>` : ""}
         <hr>
-        
         <div class="mb-3">
           <strong>Rencana Besok:</strong><br>
           ${report.rencana_besok}
         </div>
-        
         <hr>
-        
         <div>
           <strong>Dokumentasi Foto:</strong>
           ${photosHtml}
@@ -577,7 +452,6 @@ function deleteReport(reportId) {
 }
 
 async function performDelete(reportId) {
-  // ⚠️ MODE DEVELOPMENT: Simulasi delete untuk dummy data
   Swal.fire({
     title: "Menghapus...",
     html: "Mohon tunggu",
@@ -587,35 +461,12 @@ async function performDelete(reportId) {
     },
   });
 
-  // Simulate delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  // Remove from dummy data
-  allReports = allReports.filter(r => r.id !== reportId);
-  filteredReports = filteredReports.filter(r => r.id !== reportId);
-
-  Swal.fire({
-    icon: "success",
-    title: "Terhapus!",
-    text: "Laporan berhasil dihapus",
-    timer: 2000,
-    showConfirmButton: false,
-  });
-
-  updateSummaryCards();
-  renderTable();
-  renderPagination();
-
-  /* 
-  // 🔄 UNCOMMENT KODE INI KETIKA BACKEND SUDAH SIAP:
-  // ====================================================
   try {
     const response = await fetch(`/landingpage/api/progress-harian/${reportId}`, {
       method: "DELETE",
       headers: {
-        "X-CSRF-TOKEN":
-          document.querySelector('meta[name="csrf-token"]')?.content || "",
-        "Accept": "application/json",
+        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.content || "",
+        Accept: "application/json",
         "Content-Type": "application/json",
       },
     });
@@ -631,7 +482,6 @@ async function performDelete(reportId) {
         showConfirmButton: false,
       });
 
-      // Reload data
       loadReports();
     } else {
       throw new Error(data.message || "Gagal menghapus laporan");
@@ -644,26 +494,12 @@ async function performDelete(reportId) {
       text: error.message || "Terjadi kesalahan saat menghapus laporan",
     });
   }
-  */
 }
 
 // ==================== HELPER FUNCTIONS ====================
 function formatDate(dateString) {
   const date = new Date(dateString);
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "Mei",
-    "Jun",
-    "Jul",
-    "Agu",
-    "Sep",
-    "Okt",
-    "Nov",
-    "Des",
-  ];
+  const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
   return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
@@ -676,26 +512,6 @@ function getPekerjaanName(value) {
     perbaikan_jalan: "Perbaikan Jalan Akses",
   };
   return names[value] || value;
-}
-
-function getStatusClass(status) {
-  const classes = {
-    approved: "status-approved",
-    submitted: "status-submitted",
-    revision: "status-revision",
-    draft: "status-draft",
-  };
-  return classes[status] || "status-draft";
-}
-
-function getStatusText(status) {
-  const texts = {
-    approved: "Disetujui",
-    submitted: "Terkirim",
-    revision: "Perlu Revisi",
-    draft: "Draft",
-  };
-  return texts[status] || "Unknown";
 }
 
 function showLoading(show) {
@@ -728,5 +544,3 @@ function showErrorMessage(message) {
     </tr>
   `;
 }
-
-console.log("📊 Ringkasan Laporan - Ready! 🚀");

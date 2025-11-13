@@ -1,151 +1,255 @@
-<div class="table-responsive bg-white rounded-3 shadow-sm p-3">
-    <table id="rekapTable" class="table table-bordered table-hover align-middle mb-0" style="min-width: 1800px;">
-        <thead class="text-center align-middle sticky-top" style="top: -1px;">
+<div class="table-responsive">
+    <table class="table table-sm table-bordered table-hover align-middle mb-0" id="progressTable">
+        <thead class="table-light sticky-top">
+            <tr>
+                <th rowspan="3" class="text-center align-middle" style="min-width: 60px;">No</th>
+                <th rowspan="3" class="text-center align-middle" style="min-width: 120px;">Kode WBS</th>
+                <th rowspan="3" class="text-center align-middle" style="min-width: 250px;">Uraian Pekerjaan</th>
+                <th rowspan="3" class="text-center align-middle" style="min-width: 100px;">Volume</th>
+                <th rowspan="3" class="text-center align-middle" style="min-width: 80px;">Satuan</th>
+                <th rowspan="3" class="text-center align-middle" style="min-width: 100px;">Bobot (%)</th>
 
-            @php
-            $totalDynamicColspan = ($masterMinggu && $masterMinggu->count() > 0) ? $masterMinggu->count() * 3 : 1;
-            @endphp
-
-
-            {{-- Baris 1: Header Utama --}}
-            <tr class="table-blue">
-                <th rowspan="4" style="width:50px;">No</th>
-                <th rowspan="4" style="width:250px;">Jenis Pekerjaan</th>
-                <th rowspan="4" style="width:80px;">Volume</th>
-                <th rowspan="4" style="width:70px;">Sat</th>
-                <th rowspan="4" style="width:100px;">Bobot (%)</th>
-                <th colspan="{{ $totalDynamicColspan }}">JADWAL PELAKSANAAN PEKERJAAN</th>
-            </tr>
-
-            {{-- Baris 2: Bulan --}}
-            <tr class="table-primary">
-                @foreach ($monthMap as $bulan => $data)
-                @php
-                $jumlahMinggu = count($data['minggus']);
-                $colspan = $jumlahMinggu * 3;
-                @endphp
-                <th colspan="{{ $colspan }}" class="fw-medium">
-                    {{ strtoupper($bulan) }}
+                {{-- Header Bulan --}}
+                @foreach($monthMap as $monthName => $monthData)
+                <th colspan="{{ $monthData['colspan'] }}" class="text-center bg-primary text-white">
+                    {{ $monthName }}
                 </th>
                 @endforeach
             </tr>
 
-            {{-- Baris 3: Minggu --}}
-            <tr class="table-light">
-                @foreach ($monthMap as $data)
-                @foreach ($data['minggus'] as $minggu)
-                <th colspan="3" class="fw-normal">{{ $minggu->kode_minggu }}</th>
+            {{-- Header Minggu --}}
+            <tr>
+                @foreach($monthMap as $monthData)
+                @foreach($monthData['minggus'] as $minggu)
+                <th colspan="2" class="text-center bg-info text-white" style="min-width: 150px;">
+                    {{ $minggu->kode_minggu }}
+                </th>
                 @endforeach
                 @endforeach
             </tr>
 
-            {{-- Baris 4: Detail per minggu --}}
-            <tr class="table-light">
-                @foreach ($monthMap as $data)
-                @foreach ($data['minggus'] as $minggu)
-                <th class="fw-semibold small text-primary-emphasis" style="background-color: #cfe2ff;">Rencana (%)</th>
-                <th class="fw-semibold small text-dark-emphasis" style="background-color: #e2e3e5;">Volume Realisasi
-                </th>
-                <th class="fw-semibold small text-success-emphasis" style="background-color: #d1e7dd;">Realisasi (%)
+            {{-- Header Range Tanggal --}}
+            <tr>
+                @foreach($masterMinggu as $minggu)
+                <th colspan="2" class="text-center bg-light">
+                    <small>{{ $minggu->tanggal_awal->format('d M') }} -
+                        {{ $minggu->tanggal_akhir->format('d M') }}</small>
                 </th>
                 @endforeach
+            </tr>
+
+            {{-- Header Rencana/Realisasi --}}
+            <tr class="table-secondary">
+                <th colspan="6" class="text-center">Item Pekerjaan</th>
+                @foreach($masterMinggu as $minggu)
+                <th class="text-center" style="width: 75px;">Rencana</th>
+                <th class="text-center" style="width: 75px;">Realisasi</th>
                 @endforeach
             </tr>
         </thead>
-
         <tbody>
-            @php $GLOBALS['rowNo'] = 0; @endphp
-            @foreach ($items as $item)
-            @include('Dashboard.Pekerjaan.Realisasi.partials.progress_table_row', [
-            'item' => $item,
-            'level' => 0,
-            'po' => $po,
-            'masterMinggu' => $masterMinggu
-            ])
-            @endforeach
+            @php
+            // ✅ Fungsi render dengan collapse/expand
+            function renderItems($items, $masterMinggu, $progressDetailsMap, $parentNumber = '', $parentId = '', $level
+            = 0) {
+            $counter = 1;
+
+            foreach ($items as $item) {
+            $isParent = $item->children->count() > 0;
+
+            // Generate nomor hierarki
+            $currentNumber = $parentNumber ? $parentNumber . '.' . $counter : $counter;
+
+            // Generate unique ID untuk collapse
+            $rowId = 'row-' . $item->id;
+            $parentClass = $parentId ? 'child-of-' . $parentId : '';
+
+            // Nama item
+            $namaItem = $item->jenis_pekerjaan_utama ?:
+            ($item->sub_pekerjaan ?:
+            ($item->sub_sub_pekerjaan ?: 'Item'));
+
+            // Row class
+            $rowClass = $isParent ? 'fw-bold bg-light parent-row' : '';
+            $rowClass .= ' ' . $parentClass;
+            $rowClass .= ' level-' . $level;
+
+            echo '<tr class="' . trim($rowClass) . '" data-id="' . $rowId . '" data-level="' . $level . '">';
+
+                // Nomor
+                echo '<td class="text-center">' . $currentNumber . '</td>';
+
+                // Kode WBS
+                echo '<td>' . $item->kode_pekerjaan . '</td>';
+
+                // Uraian dengan toggle icon
+                echo '<td>';
+
+                    // Indentasi
+                    echo str_repeat('<span class="ms-3"></span>', $level);
+
+                    // Toggle icon untuk parent
+                    if ($isParent) {
+                    echo '<i class="fas fa-chevron-down toggle-icon me-2" style="cursor: pointer; color: #007bff;"
+                        onclick="toggleChildren(\'' . $rowId . '\')"></i>';
+                    } else {
+                    echo '<span class="me-4"></span>';
+                    }
+
+                    echo $namaItem;
+                    echo '</td>';
+
+                // Volume, Satuan, Bobot
+                echo '<td class="text-end">' . number_format($item->volume, 2) . '</td>';
+                echo '<td class="text-center">' . $item->sat . '</td>';
+                echo '<td class="text-end">' . number_format($item->bobot, 2) . '%</td>';
+
+                // Loop minggu
+                foreach ($masterMinggu as $minggu) {
+                $detail = $progressDetailsMap[$item->id][$minggu->id] ?? null;
+                $rencana = $detail ? number_format($detail->bobot_rencana, 2) : '0.00';
+                $realisasi = $detail ? number_format($detail->bobot_realisasi, 2) : '0.00';
+
+                // Rencana
+                echo '<td class="text-center text-primary fw-semibold">' . $rencana . '%</td>';
+
+                // Realisasi dengan badge
+                $badgeClass = 'bg-secondary';
+                if ($detail && $detail->bobot_realisasi > 0) {
+                if ($detail->bobot_realisasi >= $detail->bobot_rencana) {
+                $badgeClass = 'bg-success';
+                } else {
+                $badgeClass = 'bg-warning';
+                }
+                }
+
+                echo '<td class="text-center">';
+                    echo '<span class="badge ' . $badgeClass . ' text-white">' . $realisasi . '%</span>';
+                    echo '</td>';
+                }
+
+                echo '</tr>';
+
+            // Render children
+            if ($isParent) {
+            renderItems($item->children, $masterMinggu, $progressDetailsMap, $currentNumber, $rowId, $level + 1);
+            }
+
+            $counter++;
+            }
+            }
+
+            renderItems($items, $masterMinggu, $progressDetailsMap);
+            @endphp
         </tbody>
 
-        <tfoot class="fw-bold text-center">
-            {{-- 1. Rencana per minggu --}}
-            <tr class="table-primary-subtle">
-                <td colspan="5">RENCANA MINGGUAN (%)</td>
-                @foreach ($masterMinggu as $minggu)
+        {{-- Footer Summary --}}
+        <tfoot class="table-light">
+            {{-- Baris 1: RENCANA PEKERJAAN --}}
+            <tr class="bg-warning">
+                <th colspan="6" class="text-center fw-bold">RENCANA PEKERJAAN</th>
+                @foreach($masterMinggu as $minggu)
                 @php
-                $totalRencana = $po->progresses->sum(function ($p) use ($minggu) {
-                $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
-                return (float) ($detail?->bobot_rencana ?? 0);
-                });
+                $totalRencana = 0;
+                foreach($po->progresses as $p) {
+                if(!$p->pekerjaan_item_id) continue;
+                $d = $p->details->firstWhere('minggu_id', $minggu->id);
+                if($d) {
+                $totalRencana += (float) $d->bobot_rencana;
+                }
+                }
                 @endphp
-                <td colspan="3" class="text-end">{{ number_format($totalRencana, 2) }}</td>
+                <th colspan="2" class="text-center fw-bold">{{ number_format($totalRencana, 2) }}%</th>
                 @endforeach
             </tr>
 
-            {{-- 2. Kumulatif rencana --}}
-            <tr class="table-primary-subtle">
-                <td colspan="5">KUMULATIF RENCANA (%)</td>
-                @php $cumRencana = 0; @endphp
-                @foreach ($masterMinggu as $minggu)
+            {{-- Baris 2: KUMULATIF RENCANA PEKERJAAN --}}
+            <tr>
+                <th colspan="6" class="text-center fw-bold">KUMULATIF RENCANA PEKERJAAN</th>
                 @php
-                $totalRencana = $po->progresses->sum(function ($p) use ($minggu) {
-                $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
-                return (float) ($detail?->bobot_rencana ?? 0);
-                });
-                $cumRencana += $totalRencana;
+                $kumulatifRencana = 0;
                 @endphp
-                <td colspan="3" class="text-end">{{ number_format($cumRencana, 2) }}</td>
+                @foreach($masterMinggu as $minggu)
+                @php
+                $totalRencana = 0;
+                foreach($po->progresses as $p) {
+                if(!$p->pekerjaan_item_id) continue;
+                $d = $p->details->firstWhere('minggu_id', $minggu->id);
+                if($d) {
+                $totalRencana += (float) $d->bobot_rencana;
+                }
+                }
+                $kumulatifRencana += $totalRencana;
+                @endphp
+                <th colspan="2" class="text-center fw-bold">{{ number_format($kumulatifRencana, 2) }}%</th>
                 @endforeach
             </tr>
 
-            {{-- 3. Realisasi per minggu --}}
-            <tr class="table-success-subtle">
-                <td colspan="5">REALISASI MINGGUAN (%)</td>
-                @foreach ($masterMinggu as $minggu)
+            {{-- Baris 3: REALISASI PEKERJAAN --}}
+            <tr class="bg-warning">
+                <th colspan="6" class="text-center fw-bold">REALISASI PEKERJAAN</th>
+                @foreach($masterMinggu as $minggu)
                 @php
-                $totalRealisasi = $po->progresses->sum(function ($p) use ($minggu) {
-                $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
-                return (float) ($detail?->bobot_realisasi ?? 0);
-                });
+                $totalRealisasi = 0;
+                foreach($po->progresses as $p) {
+                if(!$p->pekerjaan_item_id) continue;
+                $d = $p->details->firstWhere('minggu_id', $minggu->id);
+                if($d) {
+                $totalRealisasi += (float) $d->bobot_realisasi;
+                }
+                }
                 @endphp
-                <td colspan="3" class="text-end">{{ number_format($totalRealisasi, 2) }}</td>
+                <th colspan="2" class="text-center fw-bold">{{ number_format($totalRealisasi, 2) }}%</th>
                 @endforeach
             </tr>
 
-            {{-- 4. Kumulatif realisasi --}}
-            <tr class="table-success-subtle">
-                <td colspan="5">KUMULATIF REALISASI (%)</td>
-                @php $cumRealisasi = 0; @endphp
-                @foreach ($masterMinggu as $minggu)
+            {{-- Baris 4: KUMULATIF REALISASI PEKERJAAN --}}
+            <tr>
+                <th colspan="6" class="text-center fw-bold">KUMULATIF REALISASI PEKERJAAN</th>
                 @php
-                $totalRealisasi = $po->progresses->sum(function ($p) use ($minggu) {
-                $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
-                return (float) ($detail?->bobot_realisasi ?? 0);
-                });
-                $cumRealisasi += $totalRealisasi;
+                $kumulatifRealisasi = 0;
                 @endphp
-                <td colspan="3" class="text-end">{{ number_format($cumRealisasi, 2) }}</td>
+                @foreach($masterMinggu as $minggu)
+                @php
+                $totalRealisasi = 0;
+                foreach($po->progresses as $p) {
+                if(!$p->pekerjaan_item_id) continue;
+                $d = $p->details->firstWhere('minggu_id', $minggu->id);
+                if($d) {
+                $totalRealisasi += (float) $d->bobot_realisasi;
+                }
+                }
+                $kumulatifRealisasi += $totalRealisasi;
+                @endphp
+                <th colspan="2" class="text-center fw-bold">{{ number_format($kumulatifRealisasi, 2) }}%</th>
                 @endforeach
             </tr>
 
-            {{-- 5. Deviasi --}}
-            <tr class="table-warning-subtle">
-                <td colspan="5">DEVIASI (%)</td>
-                @php $cumRencana = $cumRealisasi = 0; @endphp
-                @foreach ($masterMinggu as $minggu)
+            {{-- Baris 5: DEVIASI PEKERJAAN --}}
+            <tr class="bg-warning">
+                <th colspan="6" class="text-center fw-bold">DEVIASI PEKERJAAN</th>
                 @php
-                $totalRencana = $po->progresses->sum(function ($p) use ($minggu) {
-                $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
-                return (float) ($detail?->bobot_rencana ?? 0);
-                });
-                $totalRealisasi = $po->progresses->sum(function ($p) use ($minggu) {
-                $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
-                return (float) ($detail?->bobot_realisasi ?? 0);
-                });
-                $cumRencana += $totalRencana;
-                $cumRealisasi += $totalRealisasi;
-                $deviasi = $cumRealisasi - $cumRencana;
-                $deviasiClass = $deviasi >= 0 ? 'text-primary' : 'text-danger';
+                $kumulatifRencana = 0;
+                $kumulatifRealisasi = 0;
                 @endphp
-                <td colspan="3" class="text-end {{ $deviasiClass }}">{{ number_format($deviasi, 2) }}</td>
+                @foreach($masterMinggu as $minggu)
+                @php
+                $totalRencana = 0;
+                $totalRealisasi = 0;
+                foreach($po->progresses as $p) {
+                if(!$p->pekerjaan_item_id) continue;
+                $d = $p->details->firstWhere('minggu_id', $minggu->id);
+                if($d) {
+                $totalRencana += (float) $d->bobot_rencana;
+                $totalRealisasi += (float) $d->bobot_realisasi;
+                }
+                }
+                $kumulatifRencana += $totalRencana;
+                $kumulatifRealisasi += $totalRealisasi;
+                $deviasi = $kumulatifRealisasi - $kumulatifRencana;
+                $deviasiClass = $deviasi >= 0 ? 'text-success' : 'text-danger';
+                @endphp
+                <th colspan="2" class="text-center fw-bold {{ $deviasiClass }}">{{ number_format($deviasi, 2) }}%</th>
                 @endforeach
             </tr>
         </tfoot>

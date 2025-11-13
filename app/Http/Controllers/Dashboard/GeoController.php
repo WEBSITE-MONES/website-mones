@@ -12,11 +12,9 @@ class GeoController extends Controller
 {
     public function getLocation(Request $request)
     {
-        // Gunakan cache lebih lama untuk hindari rate limit
         $cacheKey = "user_location_default";
         $loc = Cache::remember($cacheKey, 3600, function () {
             try {
-                // Pakai IP 'me' atau langsung fallback (karena rate limited)
                 $response = Http::timeout(5)
                     ->withOptions(['verify' => false])
                     ->get("https://ipapi.co/json/"); 

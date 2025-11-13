@@ -7,10 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Models\LaporanInvestasi;
 use App\Models\LaporanApproval;
 use App\Models\LaporanDetail;
 use App\Models\User;
+use App\Models\LaporanApprovalSetting;
 use Barryvdh\DomPDF\Facade\Pdf; 
 use Carbon\Carbon; 
 
@@ -20,37 +22,92 @@ class LaporanController extends Controller
      * Display listing of laporan with filters
      */
     public function index(Request $request)
-    {
-        $jenis = $request->get('jenis', 'rekap_rincian');
-        $tahun = $request->get('tahun', date('Y'));
+{
+    $jenis = $request->get('jenis', 'rekap_activa'); 
+    $tahun = $request->get('tahun', date('Y'));
 
-        $laporan = LaporanInvestasi::where('jenis_laporan', $jenis)
-            ->where('tahun', $tahun)
-            ->with(['approvals', 'pembuatLaporan'])
-            ->orderBy('bulan', 'desc')
-            ->get();
+    $laporan = LaporanInvestasi::where('jenis_laporan', $jenis)
+        ->where('tahun', $tahun)
+        ->with(['approvals', 'pembuatLaporan'])
+        ->orderBy('bulan', 'desc')
+        ->get();
 
-        return view('Dashboard.Pekerjaan.Realisasi.Laporan.investasi', compact('laporan', 'jenis', 'tahun'));
-    }
+    return view('Dashboard.Pekerjaan.Realisasi.Laporan.investasi', compact('laporan', 'jenis', 'tahun'));
+}
 
     /**
-     * Show detail laporan
+     * Show detail laporan - FIXED VERSION
      */
     public function show($id)
     {
-        $laporan = LaporanInvestasi::with(['approvals.user', 'details', 'pembuatLaporan'])->findOrFail($id);
-        
-        // Generate data laporan jika belum ada details
-        if ($laporan->details->isEmpty()) {
-            $data = $this->generateLaporanData($laporan->tahun, $laporan->bulan);
-        } else {
-            $data = $laporan->details;
+        try {
+            // Load dengan eager loading yang benar
+            $laporan = LaporanInvestasi::with([
+                'approvals' => function($query) {
+                    $query->orderBy('urutan');
+                },
+                'approvals.user',
+                'details',
+                'pembuatLaporan'
+            ])->findOrFail($id);
+            
+            // Generate data laporan jika belum ada details
+            if ($laporan->details->isEmpty()) {
+                $data = $this->generateLaporanData($laporan->tahun, $laporan->bulan);
+                
+                // Save details jika ada data
+                if (!empty($data)) {
+                    foreach ($data as $item) {
+                        $detailData = [
+                            'laporan_id' => $laporan->id,
+                            'coa' => $item->coa ?? '-',
+                            'nomor_prodef_sap' => $item->nomor_prodef_sap ?? '-',
+                            'nama_investasi' => $item->nama_investasi ?? '-',
+                            'uraian_pekerjaan' => $item->uraian_pekerjaan ?? '-',
+                            'total_volume' => $item->total_volume ?? 0,
+                            'nilai_rkap' => $item->nilai_rkap ?? 0,
+                            'target_sd_bulan' => $item->target_sd_bulan ?? 0,
+                            'nomor_po' => $item->nomor_po ?? '-',
+                            'tanggal_po' => $item->tanggal_po ?? null,
+                            'pelaksana' => $item->pelaksana ?? '-',
+                            'waktu_pelaksanaan' => $item->waktu_pelaksanaan ?? '-',
+                            'estimated' => $item->estimated ?? '-',
+                            'mulai_kontrak' => $item->mulai_kontrak ?? null,
+                            'selesai_kontrak' => $item->selesai_kontrak ?? null,
+                            'realisasi_fisik' => $item->realisasi_fisik ?? 0,
+                            'realisasi_pembayaran' => $item->realisasi_pembayaran ?? 0,
+                        ];
+                        
+                        LaporanDetail::create($detailData);
+                    }
+                    
+                    // Refresh details
+                    $laporan->load('details');
+                }
+            }
+
+            // Parse tanggal_po untuk setiap detail
+            foreach ($laporan->details as $detail) {
+                if ($detail->tanggal_po && is_string($detail->tanggal_po)) {
+                    try {
+                        $detail->tanggal_po = Carbon::parse($detail->tanggal_po);
+                    } catch (\Exception $e) {
+                        $detail->tanggal_po = null;
+                    }
+                }
+            }
+
+            // Group data by COA untuk tampilan nested
+            $groupedData = $this->groupDataByCOA($laporan->details);
+
+            return view('Dashboard.Pekerjaan.Realisasi.Laporan.detail_laporan_investasi', compact('laporan', 'groupedData'));
+            
+        } catch (\Exception $e) {
+            Log::error('Error showing laporan: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            
+            return back()->with('error', 'Gagal menampilkan laporan: ' . $e->getMessage());
         }
-
-        // Group data by COA untuk tampilan nested
-        $groupedData = $this->groupDataByCOA($data);
-
-        return view('Dashboard.Pekerjaan.Realisasi.Laporan.detail_laporan_investasi', compact('laporan', 'groupedData'));
     }
 
     /**
@@ -65,7 +122,7 @@ class LaporanController extends Controller
     }
 
     /**
-     * Store new laporan
+     * Store new laporan - IMPROVED WITH DETAILED LOGGING
      */
     public function store(Request $request)
     {
@@ -77,8 +134,25 @@ class LaporanController extends Controller
 
         DB::beginTransaction();
         try {
+            Log::info('=== MULAI PROSES BUAT LAPORAN ===');
+            Log::info('Request data:', $request->all());
+            Log::info('User ID: ' . Auth::id());
+
+            // Cek duplikasi
+            $exists = LaporanInvestasi::where([
+                'jenis_laporan' => $request->jenis_laporan,
+                'tahun' => $request->tahun,
+                'bulan' => $request->bulan,
+            ])->exists();
+            
+            if ($exists) {
+                Log::warning('Laporan sudah ada untuk periode ini');
+                return back()->with('error', 'Laporan untuk periode ini sudah ada!')->withInput();
+            }
+
             // Generate kode laporan
             $kode = $this->generateKodeLaporan($request->tahun, $request->bulan);
+            Log::info('Kode laporan generated: ' . $kode);
             
             $namaBulan = [
                 1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
@@ -87,6 +161,7 @@ class LaporanController extends Controller
             ];
 
             // Create laporan
+            Log::info('Creating laporan record...');
             $laporan = LaporanInvestasi::create([
                 'kode_laporan' => $kode,
                 'jenis_laporan' => $request->jenis_laporan,
@@ -95,53 +170,114 @@ class LaporanController extends Controller
                 'periode_label' => "Laporan s.d {$namaBulan[$request->bulan]}",
                 'status_approval' => 'draft',
                 'dibuat_oleh' => Auth::id(),
+                'tanggal_dibuat' => now(),
             ]);
 
+            Log::info('Laporan created with ID: ' . $laporan->id);
+
             // Generate dan simpan data laporan
+            Log::info('Mulai generate data laporan...');
             $data = $this->generateLaporanData($request->tahun, $request->bulan);
             
+            Log::info('Data generated, jumlah records: ' . count($data));
+
             if (empty($data)) {
                 DB::rollBack();
-                return back()->with('error', 'Tidak ada data untuk periode yang dipilih!')->withInput();
+                Log::warning('Tidak ada data untuk periode yang dipilih');
+                return back()->with('error', 'Tidak ada data untuk periode yang dipilih! Pastikan ada data pekerjaan dengan PR pada periode tersebut.')->withInput();
             }
 
+            // Simpan details
+            Log::info('Mulai simpan detail records...');
+            $detailsSaved = 0;
             foreach ($data as $item) {
-                // Sanitize data untuk mencegah NULL values
-                $detailData = [
-                    'laporan_id' => $laporan->id,
-                    'coa' => $item->coa ?? '-',
-                    'nomor_prodef_sap' => $item->nomor_prodef_sap ?? '-',
-                    'nama_investasi' => $item->nama_investasi ?? '-',
-                    'uraian_pekerjaan' => $item->uraian_pekerjaan ?? '-',
-                    'total_volume' => $item->total_volume ?? 0,
-                    'nilai_rkap' => $item->nilai_rkap ?? 0,
-                    'target_sd_bulan' => $item->target_sd_bulan ?? 0,
-                    'nomor_po' => $item->nomor_po ?? '-',
-                    'tanggal_po' => $item->tanggal_po ?? null,
-                    'pelaksana' => $item->pelaksana ?? '-',
-                    'waktu_pelaksanaan' => $item->waktu_pelaksanaan ?? '-',
-                    'estimated' => $item->estimated ?? '-',
-                    'mulai_kontrak' => $item->mulai_kontrak ?? '-',
-                    'selesai_kontrak' => $item->selesai_kontrak ?? '-',
-                    'realisasi_fisik' => $item->realisasi_fisik ?? 0,
-                    'realisasi_pembayaran' => $item->realisasi_pembayaran ?? 0,
-                ];
-                
-                LaporanDetail::create($detailData);
+                try {
+                    $detailData = [
+                        'laporan_id' => $laporan->id,
+                        'coa' => $item->coa ?? '-',
+                        'nomor_prodef_sap' => $item->nomor_prodef_sap ?? '-',
+                        'nama_investasi' => $item->nama_investasi ?? '-',
+                        'uraian_pekerjaan' => $item->uraian_pekerjaan ?? '-',
+                        'total_volume' => $item->total_volume ?? 0,
+                        'nilai_rkap' => $item->nilai_rkap ?? 0,
+                        'target_sd_bulan' => $item->target_sd_bulan ?? 0,
+                        'nomor_po' => $item->nomor_po ?? '-',
+                        'tanggal_po' => $item->tanggal_po ?? null,
+                        'pelaksana' => $item->pelaksana ?? '-',
+                        'waktu_pelaksanaan' => $item->waktu_pelaksanaan ?? '-',
+                        'estimated' => $item->estimated ?? '-',
+                        'mulai_kontrak' => $item->mulai_kontrak ?? null,
+                        'selesai_kontrak' => $item->selesai_kontrak ?? null,
+                        'realisasi_fisik' => $item->realisasi_fisik ?? 0,
+                        'realisasi_pembayaran' => $item->realisasi_pembayaran ?? 0,
+                    ];
+                    
+                    LaporanDetail::create($detailData);
+                    $detailsSaved++;
+                } catch (\Exception $e) {
+                    Log::error('Error saving detail: ' . $e->getMessage());
+                    Log::error('Detail data: ' . json_encode($detailData ?? []));
+                }
             }
+
+            Log::info("Berhasil simpan {$detailsSaved} detail records");
 
             // Create approval records
+            Log::info('Mulai create approval records...');
             $this->createApprovalRecords($laporan->id);
+            Log::info('Approval records created');
 
             DB::commit();
+            Log::info('=== SELESAI PROSES BUAT LAPORAN ===');
 
             return redirect()->route('laporan.show', $laporan->id)
                 ->with('success', 'Laporan berhasil dibuat!');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error creating laporan: ' . $e->getMessage());
-            return back()->with('error', 'Gagal membuat laporan: ' . $e->getMessage())->withInput();
+            Log::error('=== ERROR BUAT LAPORAN ===');
+            Log::error('Error message: ' . $e->getMessage());
+            Log::error('File: ' . $e->getFile() . ' Line: ' . $e->getLine());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return back()
+                ->with('error', 'Gagal membuat laporan: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /**
+     * DELETE LAPORAN - NEW FEATURE
+     */
+    public function destroy($id)
+    {
+        DB::beginTransaction();
+        try {
+            $laporan = LaporanInvestasi::findOrFail($id);
+            
+            // Cek apakah sudah di-approve
+            if ($laporan->status_approval === 'approved') {
+                return back()->with('error', 'Laporan yang sudah di-approve tidak dapat dihapus!');
+            }
+
+            // Hapus details
+            $laporan->details()->delete();
+            
+            // Hapus approvals
+            $laporan->approvals()->delete();
+            
+            // Hapus laporan
+            $laporan->delete();
+
+            DB::commit();
+
+            return redirect()->route('laporan.index')
+                ->with('success', 'Laporan berhasil dihapus!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error deleting laporan: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menghapus laporan: ' . $e->getMessage());
         }
     }
 
@@ -150,25 +286,31 @@ class LaporanController extends Controller
      */
     public function submitForApproval($id)
     {
-        $laporan = LaporanInvestasi::findOrFail($id);
+        DB::beginTransaction();
+        try {
+            $laporan = LaporanInvestasi::findOrFail($id);
 
-        if ($laporan->status_approval !== 'draft') {
-            return back()->with('error', 'Laporan sudah disubmit sebelumnya!');
+            if ($laporan->status_approval !== 'draft') {
+                return back()->with('error', 'Laporan sudah disubmit sebelumnya!');
+            }
+
+            $laporan->update([
+                'status_approval' => 'pending',
+                'tanggal_disubmit' => now(),
+            ]);
+
+            DB::commit();
+
+            return back()->with('success', 'Laporan berhasil disubmit untuk approval!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal submit laporan: ' . $e->getMessage());
         }
-
-        $laporan->update([
-            'status_approval' => 'pending',
-            'tanggal_disubmit' => now(),
-        ]);
-
-        // TODO: Send notification to approvers
-        // Mail::to($approvers)->send(new LaporanSubmitted($laporan));
-
-        return back()->with('success', 'Laporan berhasil disubmit untuk approval!');
     }
 
     /**
-     * Approve laporan
+     * Approve laporan - FIXED VERSION
      */
     public function approve(Request $request, $id)
     {
@@ -186,6 +328,11 @@ class LaporanController extends Controller
                 return back()->with('error', 'Anda tidak memiliki akses untuk approve!');
             }
 
+            // Check if already approved/rejected
+            if ($approval->status !== 'pending') {
+                return back()->with('error', 'Approval ini sudah diproses sebelumnya!');
+            }
+
             $approval->update([
                 'status' => 'approved',
                 'komentar' => $request->komentar,
@@ -194,13 +341,21 @@ class LaporanController extends Controller
 
             // Check if all approvals are approved
             $laporan = LaporanInvestasi::findOrFail($id);
-            $allApproved = $laporan->approvals()->where('status', '!=', 'approved')->count() === 0;
+            $pendingCount = $laporan->approvals()->where('status', 'pending')->count();
+            $rejectedCount = $laporan->approvals()->where('status', 'rejected')->count();
 
-            if ($allApproved) {
+            if ($rejectedCount > 0) {
+                // Ada yang reject, status tetap rejected
+                $laporan->update(['status_approval' => 'rejected']);
+            } elseif ($pendingCount === 0) {
+                // Semua sudah approve
                 $laporan->update([
                     'status_approval' => 'approved',
                     'tanggal_approved' => now(),
                 ]);
+            } else {
+                // Masih ada yang pending
+                $laporan->update(['status_approval' => 'pending']);
             }
 
             DB::commit();
@@ -215,7 +370,7 @@ class LaporanController extends Controller
     }
 
     /**
-     * Reject laporan
+     * Reject laporan - FIXED VERSION
      */
     public function reject(Request $request, $id)
     {
@@ -230,6 +385,10 @@ class LaporanController extends Controller
             
             if ($approval->user_id !== Auth::id()) {
                 return back()->with('error', 'Anda tidak memiliki akses untuk reject!');
+            }
+
+            if ($approval->status !== 'pending') {
+                return back()->with('error', 'Approval ini sudah diproses sebelumnya!');
             }
 
             $approval->update([
@@ -253,35 +412,44 @@ class LaporanController extends Controller
     }
 
     /**
-     * Export to PDF
+     * Export to PDF - FIXED VERSION WITH SIGNATURE
      */
     public function exportPdf($id)
     {
         try {
-            $laporan = LaporanInvestasi::with(['approvals', 'details'])->findOrFail($id);
+            $laporan = LaporanInvestasi::with(['approvals.user', 'details'])->findOrFail($id);
             
             // Validasi data
             if ($laporan->details->isEmpty()) {
                 return back()->with('error', 'Laporan tidak memiliki data detail untuk di-export!');
             }
 
+            // Load approval settings untuk mendapatkan tanda tangan
+            foreach ($laporan->approvals as $approval) {
+                $setting = LaporanApprovalSetting::where('user_id', $approval->user_id)
+                    ->where('role_approval', $approval->role_approval)
+                    ->first();
+                
+                $approval->setting = $setting;
+            }
+
             $groupedData = $this->groupDataByCOA($laporan->details);
 
-            // Generate PDF
+            // Generate PDF dengan options yang benar
             $pdf = Pdf::loadView('Dashboard.Pekerjaan.Realisasi.Laporan.pdf', compact('laporan', 'groupedData'))
                 ->setPaper('a4', 'landscape')
                 ->setOption('isHtml5ParserEnabled', true)
                 ->setOption('isRemoteEnabled', true)
-                ->setOption('defaultFont', 'DejaVu Sans');
+                ->setOption('isPhpEnabled', true)
+                ->setOption('defaultFont', 'DejaVu Sans')
+                ->setOption('chroot', [public_path(), storage_path()]);
 
             // Download PDF
             return $pdf->download("Laporan-Investasi-{$laporan->kode_laporan}.pdf");
             
-            // Atau gunakan stream() untuk preview di browser:
-            // return $pdf->stream("Laporan-Investasi-{$laporan->kode_laporan}.pdf");
-            
         } catch (\Exception $e) {
             Log::error('Error exporting PDF: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
             return back()->with('error', 'Gagal export PDF: ' . $e->getMessage());
         }
     }
@@ -292,7 +460,6 @@ class LaporanController extends Controller
     public function exportExcel($id)
     {
         try {
-            // Cek apakah package Excel sudah terinstall
             if (!class_exists(\Maatwebsite\Excel\Facades\Excel::class)) {
                 return back()->with('error', 'Package Excel belum terinstall. Jalankan: composer require maatwebsite/excel');
             }
@@ -326,118 +493,111 @@ class LaporanController extends Controller
     }
 
     /**
-     * Generate laporan data from database
+     * Generate laporan data - FINAL VERSION
      */
     private function generateLaporanData($tahun, $bulan)
-{
-    try {
-        $data = DB::select("
-            SELECT 
-                pk.coa AS coa,
-                pk.nomor_prodef_sap AS nomor_prodef_sap,
-                pk.nama_investasi AS nama_investasi,
-                COALESCE(sp.nama_sub, '-') AS uraian_pekerjaan,
-                COALESCE(SUM(pi.volume), 0) AS total_volume,
-                COALESCE(rkap.nilai, 0) AS nilai_rkap,
-                COALESCE(SUM(pr.nilai_pr), 0) AS target_sd_bulan,
-                COALESCE(po.nomor_po, '-') AS nomor_po,
-                po.tanggal_po,
-                COALESCE(po.pelaksana, '-') AS pelaksana,
-                COALESCE(po.waktu_pelaksanaan, '-') AS waktu_pelaksanaan,
-                COALESCE(po.estimated, '-') AS estimated,
-                ROUND(COALESCE(AVG(pd.bobot_realisasi), 0), 2) AS realisasi_fisik,
-                COALESCE(SUM(pay.nilai_payment), 0) AS realisasi_pembayaran
-            FROM pekerjaan pk
-            LEFT JOIN sub_pekerjaan sp ON sp.pekerjaan_id = pk.id
-            LEFT JOIN rkap_pekerjaan rkap ON rkap.pekerjaan_id = pk.id
-            LEFT JOIN prs pr ON pr.pekerjaan_id = pk.id
-            LEFT JOIN pos po ON po.pr_id = pr.id
-            LEFT JOIN pekerjaan_items pi ON pi.po_id = po.id
-            LEFT JOIN progress pgs ON pgs.pekerjaan_item_id = pk.id
-            LEFT JOIN progress_details pd ON pd.progress_id = pgs.id
-            LEFT JOIN payments pay ON pay.pr_id = pr.id
-            WHERE YEAR(pr.tanggal_pr) = ?
-              AND MONTH(pr.tanggal_pr) <= ?
-            GROUP BY 
-                pk.id,
-                pk.coa,
-                pk.nomor_prodef_sap,
-                pk.nama_investasi,
-                sp.nama_sub,
-                rkap.nilai,
-                po.nomor_po,
-                po.tanggal_po,
-                po.pelaksana,
-                po.waktu_pelaksanaan,
-                po.estimated
-            ORDER BY pk.coa, pk.nomor_prodef_sap
-        ", [$tahun, $bulan]);
+    {
+        try {
+            Log::info("Generating data for tahun: {$tahun}, bulan: {$bulan}");
 
-        $tryParse = function ($dateStr) {
-            $dateStr = trim($dateStr);
-            if ($dateStr === '' || $dateStr === '-' || strtolower($dateStr) === 'null') {
-                return null;
-            }
+            $data = DB::select("
+                SELECT 
+                    pk.coa,
+                    pk.nomor_prodef_sap,
+                    pk.nama_investasi,
+                    COALESCE(sp.nama_sub, '-') AS uraian_pekerjaan,
+                    
+                    COALESCE((
+                        SELECT SUM(pi.volume)
+                        FROM pekerjaan_items pi
+                        WHERE pi.po_id = po.id
+                    ), 0) AS total_volume,
+                    
+                    COALESCE(rkap.nilai, 0) AS nilai_rkap,
+                    COALESCE(pr.nilai_pr, 0) AS target_sd_bulan,
+                    
+                    COALESCE(po.nomor_po, '-') AS nomor_po,
+                    COALESCE(po.nomor_kontrak, '-') AS nomor_kontrak,
+                    COALESCE(po.nilai_po, 0) AS nilai_po,
+                    po.tanggal_po,
+                    COALESCE(po.pelaksana, '-') AS pelaksana,
+                    COALESCE(po.waktu_pelaksanaan, '-') AS waktu_pelaksanaan,
+                    COALESCE(po.estimated, '-') AS estimated,
+                    
+                    ROUND(COALESCE((
+                        SELECT AVG(pd.bobot_realisasi)
+                        FROM pekerjaan_items pi
+                        JOIN progress pgs ON pgs.pekerjaan_item_id = pi.id
+                        JOIN progress_details pd ON pd.progress_id = pgs.id
+                        WHERE pi.po_id = po.id
+                    ), 0), 2) AS realisasi_fisik,
+                    
+                    COALESCE((
+                        SELECT SUM(pay.nilai_payment)
+                        FROM payments pay
+                        WHERE pay.pr_id = pr.id
+                    ), 0) AS realisasi_pembayaran
 
-            $formats = [
-                DATE_ATOM, // ISO
-                'Y-m-d',
-                'Y/m/d',
-                'd-m-Y',
-                'd/m/Y',
-                'd M Y',  
-                'Y.m.d',
-            ];
+                FROM pekerjaan pk
+                LEFT JOIN sub_pekerjaan sp ON sp.pekerjaan_id = pk.id
+                LEFT JOIN rkap_pekerjaan rkap 
+                    ON rkap.pekerjaan_id = pk.id 
+                    AND rkap.tahun = ?
+                LEFT JOIN prs pr 
+                    ON pr.pekerjaan_id = pk.id
+                    AND pr.sub_pekerjaan_id = sp.id
+                    AND pr.tanggal_pr IS NOT NULL
+                    AND YEAR(pr.tanggal_pr) <= ?
+                    AND MONTH(pr.tanggal_pr) <= ?
+                LEFT JOIN pos po ON po.pr_id = pr.id
+                
+                WHERE pr.id IS NOT NULL
+                
+                ORDER BY pk.coa, pk.nomor_prodef_sap, sp.id, pr.id
+            ", [$tahun, $tahun, $bulan]);
 
-            try {
-                $c = Carbon::parse($dateStr);
-                return $c->format('Y-m-d');
-            } catch (\Exception $e) {
-            }
+            Log::info('Query executed, rows returned: ' . count($data));
 
-            foreach ($formats as $fmt) {
+            $tryParse = function ($dateStr) {
+                if (!$dateStr) return null;
+                $dateStr = trim($dateStr);
+                if ($dateStr === '' || $dateStr === '-' || strtolower($dateStr) === 'null') {
+                    return null;
+                }
                 try {
-                    $c = Carbon::createFromFormat($fmt, $dateStr);
-                    if ($c) return $c->format('Y-m-d');
+                    $c = Carbon::parse($dateStr);
+                    return $c->format('Y-m-d');
                 } catch (\Exception $e) {
-                    // lanjutkan
+                    Log::debug("Failed to parse date: {$dateStr}");
+                    return null;
+                }
+            };
+
+            $splitPattern = '/\s*s[.\-\/\s]?d\s*/i';
+
+            foreach ($data as $item) {
+                $estimated = isset($item->estimated) ? trim($item->estimated) : '';
+                if ($estimated === '' || $estimated === '-') {
+                    $item->mulai_kontrak = null;
+                    $item->selesai_kontrak = null;
+                } else {
+                    $parts = preg_split($splitPattern, $estimated, 2, PREG_SPLIT_NO_EMPTY);
+                    $rawMulai = isset($parts[0]) ? trim($parts[0]) : null;
+                    $rawSelesai = isset($parts[1]) ? trim($parts[1]) : null;
+                    $item->mulai_kontrak = $tryParse($rawMulai) ?? $rawMulai;
+                    $item->selesai_kontrak = $tryParse($rawSelesai) ?? $rawSelesai;
                 }
             }
 
-            return $dateStr;
-        };
-        $splitPattern = '/\s*s[.\-\/\s]?d\s*/i';
+            Log::info('Data parsing completed successfully');
+            return $data;
 
-        foreach ($data as $item) {
-            $estimated = isset($item->estimated) ? trim($item->estimated) : '';
-
-            if ($estimated === '' || $estimated === '-' ) {
-                $item->mulai_kontrak = null;
-                $item->selesai_kontrak = null;
-            } else {
-                $parts = preg_split($splitPattern, $estimated, 2, PREG_SPLIT_NO_EMPTY);
-
-                if (count($parts) === 1) {
-                    $parts = [trim($parts[0])];
-                }
-
-                $rawMulai = isset($parts[0]) ? trim($parts[0]) : null;
-                $rawSelesai = isset($parts[1]) ? trim($parts[1]) : null;
-                $parsedMulai = $rawMulai ? $tryParse($rawMulai) : null;
-                $parsedSelesai = $rawSelesai ? $tryParse($rawSelesai) : null;
-
-                $item->mulai_kontrak = $parsedMulai ?? $rawMulai ?? null;
-                $item->selesai_kontrak = $parsedSelesai ?? $rawSelesai ?? null;
-            }
+        } catch (\Exception $e) {
+            Log::error('Error in generateLaporanData: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            return [];
         }
-
-        return $data;
-
-    } catch (\Exception $e) {
-        Log::error('Error generating laporan data: ' . $e->getMessage());
-        return [];
     }
-}
 
     /**
      * Group data by COA
@@ -470,86 +630,63 @@ class LaporanController extends Controller
     }
 
     /**
-     * Create approval records
+     * Create approval records - IMPROVED WITH LOGGING
      */
     private function createApprovalRecords($laporanId)
     {
-        // Ambil 2 user pertama yang ada di database untuk approval
-        // Berdasarkan data Anda: ID 2 (Admin P-Mones) dan ID 4 (Asrini Muhsin)
-        
-        $approvers = [];
-        
-        // Manager Teknik - gunakan user pertama (ID 2: Admin P-Mones)
-        $managerTeknik = User::find(2);
-        if ($managerTeknik) {
-            $approvers[] = [
-                'user_id' => $managerTeknik->id,
-                'role' => 'manager_teknik',
-                'nama' => strtoupper($managerTeknik->name),
-                'urutan' => 1
-            ];
-        }
-        
-        // Assisten Manager - gunakan user kedua (ID 4: Asrini Muhsin)
-        $assistenManager = User::find(4);
-        if ($assistenManager) {
-            $approvers[] = [
-                'user_id' => $assistenManager->id,
-                'role' => 'assisten_manager',
-                'nama' => strtoupper($assistenManager->name),
-                'urutan' => 2
-            ];
-        }
-        
-        // Fallback: Jika user dengan ID tertentu tidak ada, ambil 2 user pertama
-        if (empty($approvers)) {
-            $users = User::orderBy('id')->limit(2)->get();
-            
-            if ($users->count() >= 2) {
-                $approvers = [
-                    [
-                        'user_id' => $users[0]->id,
-                        'role' => 'manager_teknik',
-                        'nama' => strtoupper($users[0]->name),
-                        'urutan' => 1
-                    ],
-                    [
-                        'user_id' => $users[1]->id,
-                        'role' => 'assisten_manager',
-                        'nama' => strtoupper($users[1]->name),
-                        'urutan' => 2
-                    ],
-                ];
-            } else {
-                // Jika hanya ada 1 user, gunakan user yang login
-                $currentUser = Auth::user();
-                $approvers = [
-                    [
-                        'user_id' => $currentUser->id,
-                        'role' => 'manager_teknik',
-                        'nama' => strtoupper($currentUser->name),
-                        'urutan' => 1
-                    ],
-                    [
-                        'user_id' => $currentUser->id,
-                        'role' => 'assisten_manager',
-                        'nama' => strtoupper($currentUser->name),
-                        'urutan' => 2
-                    ],
-                ];
-            }
-        }
+        try {
+            Log::info('Creating approval records for laporan ID: ' . $laporanId);
 
-        // Create approval records
-        foreach ($approvers as $approver) {
-            LaporanApproval::create([
-                'laporan_id' => $laporanId,
-                'user_id' => $approver['user_id'],
-                'role_approval' => $approver['role'],
-                'nama_approver' => $approver['nama'],
-                'status' => 'pending',
-                'urutan' => $approver['urutan'],
-            ]);
+            $approvalSettings = LaporanApprovalSetting::active()
+                ->ordered()
+                ->get();
+            
+            Log::info('Found ' . $approvalSettings->count() . ' active approval settings');
+
+            if ($approvalSettings->isEmpty()) {
+                Log::warning('No approval settings found, using fallback logic');
+                
+                // Fallback: gunakan user yang login sebagai approver
+                $currentUser = Auth::user();
+                
+                if (!$currentUser) {
+                    Log::error('No authenticated user found');
+                    throw new \Exception('User tidak terautentikasi');
+                }
+                
+                LaporanApproval::create([
+                    'laporan_id' => $laporanId,
+                    'user_id' => $currentUser->id,
+                    'role_approval' => 'manager_teknik',
+                    'nama_approver' => strtoupper($currentUser->name),
+                    'status' => 'pending',
+                    'urutan' => 1,
+                ]);
+                
+                Log::info('Created fallback approval record for user: ' . $currentUser->name);
+                return;
+            }
+
+            // Create from settings
+            foreach ($approvalSettings as $setting) {
+                LaporanApproval::create([
+                    'laporan_id' => $laporanId,
+                    'user_id' => $setting->user_id,
+                    'role_approval' => $setting->role_approval,
+                    'nama_approver' => $setting->nama_approver,
+                    'status' => 'pending',
+                    'urutan' => $setting->urutan,
+                ]);
+                
+                Log::info("Created approval record for: {$setting->nama_approver} (urutan: {$setting->urutan})");
+            }
+
+            Log::info('All approval records created successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Error in createApprovalRecords: ' . $e->getMessage());
+            Log::error('File: ' . $e->getFile() . ' Line: ' . $e->getLine());
+            throw $e; // Re-throw agar rollback terjadi
         }
     }
 }

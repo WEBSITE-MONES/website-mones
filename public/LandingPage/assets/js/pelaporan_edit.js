@@ -1,6 +1,5 @@
-// ==================== PELAPORAN EDIT JS ====================
+// ==================== PELAPORAN EDIT JS - COMPLETE ====================
 
-// Global variables
 let uploadedNewFiles = [];
 let reportId = null;
 let deletedPhotoIds = [];
@@ -21,12 +20,11 @@ async function loadReportData() {
       title: 'Error',
       text: 'ID Laporan tidak ditemukan!'
     }).then(() => {
-      window.location.href = 'ringkasan.html';
+      window.location.href = '/landingpage/pelaporan';
     });
     return;
   }
 
-  // Show loading
   Swal.fire({
     title: 'Memuat Data...',
     html: 'Mohon tunggu',
@@ -37,17 +35,29 @@ async function loadReportData() {
   });
 
   try {
-    // Fetch data from API
-    const response = await fetch(`/app/progress-harian/${reportId}`);
-    const data = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.message || 'Gagal memuat data');
+    const response = await fetch(`/landingpage/api/progress-harian/${reportId}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Server tidak mengembalikan JSON');
+    }
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    // Populate form with data
-    populateForm(data.data);
-    
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || 'Gagal memuat data');
+    }
+
+    populateForm(result.data);
     Swal.close();
 
   } catch (error) {
@@ -57,7 +67,7 @@ async function loadReportData() {
       title: 'Gagal Memuat Data',
       text: error.message || 'Terjadi kesalahan saat memuat data laporan'
     }).then(() => {
-      window.location.href = 'ringkasan.html';
+      window.location.href = '/landingpage/pelaporan';
     });
   }
 }
@@ -70,13 +80,20 @@ function populateForm(data) {
   // Informasi Dasar
   document.getElementById('tanggal').value = data.tanggal;
   document.getElementById('pelapor').value = data.pelapor;
-  document.getElementById('pekerjaan').value = data.pekerjaan;
+  
+  // Note: Pekerjaan/PO/Item tidak bisa diubah (readonly), jadi cukup tampilkan info
+  if (document.getElementById('pekerjaanInfo')) {
+    document.getElementById('pekerjaanInfo').textContent = data.pekerjaan || 'N/A';
+  }
 
   // GPS Location (readonly)
   document.getElementById('latitude').value = data.latitude;
   document.getElementById('longitude').value = data.longitude;
-  document.getElementById('locationDetail').textContent = 
-    `Lat: ${data.latitude}, Lon: ${data.longitude} - ${data.lokasi_nama || 'Unknown'}`;
+  
+  if (document.getElementById('locationDetail')) {
+    document.getElementById('locationDetail').textContent = 
+      `📍 Lat: ${data.latitude.toFixed(6)}, Lon: ${data.longitude.toFixed(6)}`;
+  }
 
   // Progress Pekerjaan
   document.getElementById('jenis_pekerjaan').value = data.jenis_pekerjaan;
@@ -89,12 +106,11 @@ function populateForm(data) {
   document.getElementById('alat_berat').value = data.alat_berat || '';
   document.getElementById('material').value = data.material || '';
 
-  // Cuaca & Lapangan
-  document.getElementById('cuaca_suhu').value = data.cuaca_suhu;
-  document.getElementById('cuaca_deskripsi').value = data.cuaca_deskripsi;
-  document.getElementById('cuaca_kelembaban').value = data.cuaca_kelembaban;
-  document.getElementById('savedWeather').textContent = 
-    `${data.cuaca_deskripsi}, ${data.cuaca_suhu}°C, Kelembaban: ${data.cuaca_kelembaban}%`;
+  // Cuaca & Lapangan (readonly - tampilkan saja)
+  if (document.getElementById('savedWeather')) {
+    document.getElementById('savedWeather').textContent = 
+      `${data.cuaca_deskripsi || 'N/A'}, ${data.cuaca_suhu || '-'}°C, Kelembaban: ${data.cuaca_kelembaban || '-'}%`;
+  }
 
   document.getElementById('jam_kerja').value = data.jam_kerja || '';
   document.getElementById('kondisi_lapangan').value = data.kondisi_lapangan || 'normal';
@@ -153,13 +169,9 @@ function deleteExistingPhoto(photoId, btn) {
     cancelButtonText: 'Batal'
   }).then((result) => {
     if (result.isConfirmed) {
-      // Mark for deletion
       deletedPhotoIds.push(photoId);
-      
-      // Remove from UI
       btn.parentElement.remove();
       
-      // Check if no photos left
       const container = document.getElementById('existingPhotoPreview');
       if (container.children.length === 0) {
         container.innerHTML = '<p class="text-muted">Belum ada foto</p>';
@@ -181,26 +193,28 @@ const uploadArea = document.getElementById('uploadArea');
 const fotoInput = document.getElementById('fotoInput');
 const photoPreview = document.getElementById('photoPreview');
 
-uploadArea.addEventListener('click', () => fotoInput.click());
+if (uploadArea && fotoInput) {
+  uploadArea.addEventListener('click', () => fotoInput.click());
 
-uploadArea.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  uploadArea.style.background = '#e8f4f8';
-});
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.style.background = '#e8f4f8';
+  });
 
-uploadArea.addEventListener('dragleave', () => {
-  uploadArea.style.background = '#f8fbfd';
-});
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.style.background = '#f8fbfd';
+  });
 
-uploadArea.addEventListener('drop', (e) => {
-  e.preventDefault();
-  uploadArea.style.background = '#f8fbfd';
-  handleNewFiles(e.dataTransfer.files);
-});
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.style.background = '#f8fbfd';
+    handleNewFiles(e.dataTransfer.files);
+  });
 
-fotoInput.addEventListener('change', (e) => {
-  handleNewFiles(e.target.files);
-});
+  fotoInput.addEventListener('change', (e) => {
+    handleNewFiles(e.target.files);
+  });
+}
 
 function handleNewFiles(files) {
   for (let file of files) {
@@ -247,7 +261,6 @@ function removeNewPhoto(btn, fileName) {
 document.getElementById('progressEditForm').addEventListener('submit', function(e) {
   e.preventDefault();
 
-  // Collect form data
   const formData = new FormData(this);
   
   // Add deleted photo IDs
@@ -260,7 +273,9 @@ document.getElementById('progressEditForm').addEventListener('submit', function(
     formData.append(`new_photos[${index}]`, file);
   });
 
-  // Show loading
+  // Laravel PUT method workaround
+  formData.append('_method', 'PUT');
+
   const submitBtn = this.querySelector('.btn-submit');
   const originalText = submitBtn.innerHTML;
   submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Menyimpan...';
@@ -276,15 +291,14 @@ document.getElementById('progressEditForm').addEventListener('submit', function(
   });
 
   // Send UPDATE request
-  fetch(`/app/progress-harian/${reportId}`, {
-    method: 'PUT', // atau 'POST' dengan _method: 'PUT' untuk Laravel
+  fetch(`/landingpage/api/progress-harian/${reportId}`, {
+    method: 'POST', // Laravel PUT via POST + _method
     body: formData,
     headers: {
       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
     }
   })
   .then(response => {
-    // Check if response is JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       throw new Error('Server tidak mengembalikan JSON');
@@ -302,7 +316,7 @@ document.getElementById('progressEditForm').addEventListener('submit', function(
         text: 'Perubahan berhasil disimpan',
         confirmButtonColor: '#1d6ba8'
       }).then(() => {
-        window.location.href = 'ringkasan.html';
+        window.location.href = '/landingpage/pelaporan';
       });
     } else {
       throw new Error(data.message || 'Gagal menyimpan perubahan');
@@ -322,22 +336,25 @@ document.getElementById('progressEditForm').addEventListener('submit', function(
 });
 
 // ==================== DELETE REPORT ====================
-document.getElementById('deleteBtn').addEventListener('click', function() {
-  Swal.fire({
-    title: 'Hapus Laporan?',
-    text: 'Laporan yang dihapus tidak dapat dikembalikan!',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#6c757d',
-    confirmButtonText: 'Ya, Hapus!',
-    cancelButtonText: 'Batal'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      performDelete();
-    }
+const deleteBtn = document.getElementById('deleteBtn');
+if (deleteBtn) {
+  deleteBtn.addEventListener('click', function() {
+    Swal.fire({
+      title: 'Hapus Laporan?',
+      text: 'Laporan yang dihapus tidak dapat dikembalikan!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        performDelete();
+      }
+    });
   });
-});
+}
 
 async function performDelete() {
   Swal.fire({
@@ -350,11 +367,12 @@ async function performDelete() {
   });
   
   try {
-    const response = await fetch(`/app/progress-harian/${reportId}`, {
+    const response = await fetch(`/landingpage/api/progress-harian/${reportId}`, {
       method: 'DELETE',
       headers: {
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
       }
     });
     
@@ -372,7 +390,7 @@ async function performDelete() {
         text: 'Laporan berhasil dihapus',
         confirmButtonColor: '#1d6ba8'
       }).then(() => {
-        window.location.href = 'ringkasan.html';
+        window.location.href = '/landingpage/pelaporan';
       });
     } else {
       throw new Error(data.message || 'Gagal menghapus laporan');

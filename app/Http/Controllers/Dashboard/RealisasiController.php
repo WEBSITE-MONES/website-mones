@@ -389,87 +389,102 @@ class RealisasiController extends Controller
         return redirect()->route('realisasi.index')->with('success', 'PO berhasil diperbarui.');
     }
 
+    // INI WILAYAH PROGRESS
+
     // PROGRES
-    // EDIT
-     public function editProgress(Po $po)
-    {
-        // Load progress beserta detail dan pekerjaan item
-        $po->load(['progresses.details', 'progresses.pekerjaanItem']);
+    public function editProgress(Po $po)
+{
+    // Load relasi
+    $po->load(['progresses.details.minggu', 'progresses.pekerjaanItem']);
 
-        // Ambil item pekerjaan top-level
-        $items = PekerjaanItem::where('po_id', $po->id)
-            ->with(['children.children'])
-            ->whereNull('parent_id')
-            ->orderBy('id')
-            ->get();
+    // Ambil progress utama (yang tanpa pekerjaan_item_id)
+    $progressUtama = $po->progresses()->whereNull('pekerjaan_item_id')->first();
 
-        // Ambil progress pertama
-        $progress = $po->progresses()->first();
+    // Ambil master minggu
+    $masterMinggu = MasterMinggu::where('progress_id', $progressUtama->id ?? 0)
+        ->orderBy('tanggal_awal')
+        ->get();
 
-        // Ambil MasterMinggu berdasarkan progress_id
-        $masterMinggu = MasterMinggu::where('progress_id', $progress->id ?? 0)
-            ->orderBy('tanggal_awal')
-            ->get();
+    // Ambil item pekerjaan hierarki
+    $items = PekerjaanItem::where('po_id', $po->id)
+        ->with(['children.children'])
+        ->whereNull('parent_id')
+        ->orderBy('kode_pekerjaan')
+        ->get();
 
-        // Header bulan
-        $monthMap = [];
-        foreach ($masterMinggu as $minggu) {
-            $monthName = $minggu->tanggal_awal->translatedFormat('F Y');
-            if (!isset($monthMap[$monthName])) {
-                $monthMap[$monthName] = ['colspan' => 0, 'minggus' => []];
-            }
-            $monthMap[$monthName]['colspan'] += 5; 
-            $monthMap[$monthName]['minggus'][] = $minggu;
+    // Header bulan untuk tabel
+    $monthMap = [];
+    foreach ($masterMinggu as $minggu) {
+        $monthName = $minggu->tanggal_awal->translatedFormat('F Y');
+        if (!isset($monthMap[$monthName])) {
+            $monthMap[$monthName] = ['colspan' => 0, 'minggus' => []];
         }
-
-        // Range tanggal
-        $dateRanges = $masterMinggu->map(fn($m) => $m->tanggal_awal->format('d M') . ' - ' . $m->tanggal_akhir->format('d M'));
-
-        // Map progress per pekerjaan item
-        $progressMap = $po->progresses->keyBy('pekerjaan_item_id');
-
-        // Hitung kumulatif rencana & realisasi per minggu
-        $totalRencanaPerMinggu = [];
-        $totalRealisasiPerMinggu = [];
-        foreach ($masterMinggu as $minggu) {
-            $r = 0; $re = 0;
-            foreach ($po->progresses as $p) {
-                $d = $p->details->firstWhere('minggu_id', $minggu->id);
-                if ($d) {
-                    $r += (float) $d->bobot_rencana;
-                    $re += (float) $d->bobot_realisasi;
-                }
-            }
-            $totalRencanaPerMinggu[$minggu->id] = $r;
-            $totalRealisasiPerMinggu[$minggu->id] = $re;
-        }
-
-        $rencanaPct = round(array_sum($totalRencanaPerMinggu), 2);
-        $realisasiPct = round(array_sum($totalRealisasiPerMinggu), 2);
-        $deviasiPct = round($realisasiPct - $rencanaPct, 2);
-
-        // Map detail (item + minggu)
-        $progressDetailsMap = [];
-        foreach ($po->progresses as $progress) {
-            foreach ($progress->details as $detail) {
-                $progressDetailsMap[$progress->pekerjaan_item_id][$detail->minggu_id] = $detail;
-            }
-        }
-
-        return view('Dashboard.Pekerjaan.Realisasi.edit_progress', compact(
-            'po',
-            'items',
-            'masterMinggu',
-            'monthMap',
-            'dateRanges',
-            'progressMap',
-            'progressDetailsMap',
-            'rencanaPct',
-            'realisasiPct',
-            'deviasiPct'
-        ));
+        $monthMap[$monthName]['colspan'] += 2; // Rencana + Realisasi
+        $monthMap[$monthName]['minggus'][] = $minggu;
     }
-    // UPDATE PROGRESS BA DAN PCM
+
+    // Range tanggal
+    $dateRanges = $masterMinggu->map(fn($m) => 
+        $m->tanggal_awal->format('d M') . ' - ' . $m->tanggal_akhir->format('d M')
+    );
+
+    // ✅ HITUNG KUMULATIF RENCANA & REALISASI
+    $totalRencanaPerMinggu = [];
+    $totalRealisasiPerMinggu = [];
+    
+    foreach ($masterMinggu as $minggu) {
+        $rencana = 0;
+        $realisasi = 0;
+        
+        foreach ($po->progresses as $p) {
+            if (!$p->pekerjaan_item_id) continue; 
+            
+            $detail = $p->details->firstWhere('minggu_id', $minggu->id);
+            if ($detail) {
+                $rencana += (float) $detail->bobot_rencana;
+                $realisasi += (float) $detail->bobot_realisasi;
+            }
+        }
+        
+        $totalRencanaPerMinggu[$minggu->id] = $rencana;
+        $totalRealisasiPerMinggu[$minggu->id] = $realisasi;
+    }
+
+    // Kumulatif total
+    $rencanaPct = round(array_sum($totalRencanaPerMinggu), 2);
+    $realisasiPct = round(array_sum($totalRealisasiPerMinggu), 2);
+    $deviasiPct = round($realisasiPct - $rencanaPct, 2);
+
+    // Map detail per item per minggu
+    $progressDetailsMap = [];
+    foreach ($po->progresses as $progress) {
+        if (!$progress->pekerjaan_item_id) continue;
+        
+        foreach ($progress->details as $detail) {
+            $progressDetailsMap[$progress->pekerjaan_item_id][$detail->minggu_id] = $detail;
+        }
+    }
+
+    // ✅ Data untuk chart Kurva S (PERBAIKAN DI SINI)
+    $chartData = $this->generateCurveSData($po, $masterMinggu);
+    
+    // ✅ Tambahkan log untuk debugging
+    Log::info('Chart Data Generated:', ['count' => count($chartData), 'data' => $chartData]);
+
+    return view('Dashboard.Pekerjaan.Realisasi.edit_progress', compact(
+        'po',
+        'items',
+        'masterMinggu',
+        'monthMap',
+        'dateRanges',
+        'progressDetailsMap',
+        'rencanaPct',
+        'realisasiPct',
+        'deviasiPct',
+        'chartData'
+    ));
+}
+    
     public function updateProgress(Request $request, Po $po)
     {
         $rules = [
@@ -489,18 +504,22 @@ class RealisasiController extends Controller
         try {
             DB::transaction(function () use ($validated, $po, $request) {
 
-                // ✅ Ambil atau buat progress utama (1 record per PO, tanpa pekerjaan_item_id)
-                $progress = $po->progresses()->firstOrCreate(
-                    ['po_id' => $po->id, 'pekerjaan_item_id' => null]
-                );
+                // ✅ Ambil/buat progress utama (tanpa pekerjaan_item_id)
+                $progress = $po->progresses()->firstOrCreate([
+                    'po_id' => $po->id,
+                    'pekerjaan_item_id' => null
+                ]);
 
                 // ✅ Update BA
                 $progress->nomor_ba_mulai_kerja   = $validated['nomor_ba_mulai_kerja'] ?? $progress->nomor_ba_mulai_kerja;
                 $progress->tanggal_ba_mulai_kerja = $validated['tanggal_ba_mulai_kerja'] ?? $progress->tanggal_ba_mulai_kerja;
 
                 if ($request->hasFile('file_ba')) {
-                    $fileBa = $request->file('file_ba')->store('ba_files', 'public');
-                    $progress->file_ba = $fileBa;
+                    // Hapus file lama jika ada
+                    if ($progress->file_ba && Storage::disk('public')->exists($progress->file_ba)) {
+                        Storage::disk('public')->delete($progress->file_ba);
+                    }
+                    $progress->file_ba = $request->file('file_ba')->store('ba_files', 'public');
                 }
 
                 // ✅ Update PCM
@@ -508,49 +527,13 @@ class RealisasiController extends Controller
                 $progress->tanggal_pcm_mulai_kerja = $validated['tanggal_pcm_mulai_kerja'] ?? $progress->tanggal_pcm_mulai_kerja;
 
                 if ($request->hasFile('file_pcm')) {
-                    $filePcm = $request->file('file_pcm')->store('pcm_files', 'public');
-                    $progress->file_pcm = $filePcm;
+                    if ($progress->file_pcm && Storage::disk('public')->exists($progress->file_pcm)) {
+                        Storage::disk('public')->delete($progress->file_pcm);
+                    }
+                    $progress->file_pcm = $request->file('file_pcm')->store('pcm_files', 'public');
                 }
 
                 $progress->save();
-
-                // Setelah $progress->save();
-                if ($request->has('progress')) {
-                    foreach ($request->progress as $itemId => $mingguData) {
-                        foreach ($mingguData as $mingguId => $values) {
-                            $volumeRealisasi = (float) ($values['volume_realisasi'] ?? 0);
-
-                            // Ambil progress per item
-                            $itemProgress = $po->progresses()
-                                ->firstOrCreate(['po_id' => $po->id, 'pekerjaan_item_id' => $itemId]);
-
-                            // Ambil detail progress per minggu
-                            $detail = ProgressDetail::firstOrNew([
-                                'progress_id' => $itemProgress->id,
-                                'minggu_id'   => $mingguId,
-                            ]);
-
-                            // Ambil bobot rencana (sudah ada di DB)
-                            $bobotRencana = (float) $detail->bobot_rencana;
-
-                            // Ambil total volume dari pekerjaan_items
-                            $item = PekerjaanItem::find($itemId);
-                            $volumeItem = (float) ($item->volume ?? 0);
-
-                            // Hitung bobot realisasi
-                            $bobotRealisasi = 0;
-                            if ($volumeItem > 0 && $bobotRencana > 0) {
-                                $bobotRealisasi = ($volumeRealisasi / $volumeItem) * $bobotRencana;
-                            }
-
-                            // Simpan
-                            $detail->volume_realisasi = $volumeRealisasi;
-                            $detail->bobot_realisasi = $bobotRealisasi;
-                            $detail->save();
-                        }
-                    }
-                }
-
 
                 // ✅ Generate minggu pertama (M1) hanya sekali
                 if (!empty($progress->tanggal_ba_mulai_kerja)) {
@@ -558,7 +541,7 @@ class RealisasiController extends Controller
 
                     if ($existing == 0) {
                         $start = Carbon::parse($progress->tanggal_ba_mulai_kerja);
-                        $awal = $start->copy();
+                        $awal = $start->copy()->startOfWeek();
                         $akhir = $awal->copy()->endOfWeek();
 
                         MasterMinggu::create([
@@ -572,52 +555,122 @@ class RealisasiController extends Controller
             });
 
             return redirect()->route('realisasi.editProgress', $po->id)
-                ->with('success', 'Progress berhasil diperbarui.');
+                ->with('success', 'Dokumen BA & PCM berhasil diperbarui!')
+                ->with('activeTab', 'formProgress');
+                
         } catch (\Throwable $e) {
+            Log::error('Update Progress Error', [
+                'po_id' => $po->id,
+                'error' => $e->getMessage()
+            ]);
+            
             return redirect()->route('realisasi.editProgress', $po->id)
-                ->with('error', 'Gagal memperbarui progress. Pesan error: ' . $e->getMessage());
+                ->with('error', 'Gagal memperbarui: ' . $e->getMessage());
         }
     }
 
+    /**
+     * IMPORT EXCEL - Import rencana progress mingguan
+     */
     public function importExcel(Request $request, Po $po)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv'
+            'file' => 'required|mimes:xlsx,xls,csv|max:5120'
         ]);
 
         try {
             Excel::import(new ProgressImport($po->id), $request->file('file'));
+            
             return redirect()->back()
-                ->with('success', 'Data berhasil diimport!')
-                ->with('activeTab', 'rekapProgress'); // tambahin ini
+                ->with('success', 'Rencana progress berhasil diimport!')
+                ->with('activeTab', 'rekapProgress');
+                
         } catch (\Throwable $e) {
-            Log::error('Import Progress gagal', [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-                'trace'   => $e->getTraceAsString(),
+            Log::error('Import Progress Error', [
+                'po_id' => $po->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->back()
-                ->with('error', 'Terjadi error saat import: '.$e->getMessage())
+                ->with('error', 'Import gagal: ' . $e->getMessage())
                 ->with('activeTab', 'rekapProgress'); 
         }
     }
 
+    /**
+     * GENERATE DATA KURVA S
+     */
+    private function generateCurveSData(Po $po, $masterMinggu)
+{
+    $chartData = [];
+    $cumulativeRencana = 0;
+    $cumulativeRealisasi = 0;
 
-    // TEMPLATE DOWNLOAD
+    foreach ($masterMinggu as $minggu) {
+        $rencanaWeek = 0;
+        $realisasiWeek = 0;
+
+        // Hitung total per minggu dari semua progress items
+        foreach ($po->progresses as $progress) {
+            // Skip progress utama (yang tidak punya pekerjaan_item_id)
+            if (!$progress->pekerjaan_item_id) continue;
+
+            // Cari detail untuk minggu ini
+            $detail = $progress->details->firstWhere('minggu_id', $minggu->id);
+            if ($detail) {
+                $rencanaWeek += (float) $detail->bobot_rencana;
+                $realisasiWeek += (float) $detail->bobot_realisasi;
+            }
+        }
+
+        // Akumulasi
+        $cumulativeRencana += $rencanaWeek;
+        $cumulativeRealisasi += $realisasiWeek;
+
+        $chartData[] = [
+            'week' => $minggu->kode_minggu,
+            'week_label' => $minggu->tanggal_awal->format('d M') . ' - ' . $minggu->tanggal_akhir->format('d M'),
+            'rencana' => round($cumulativeRencana, 2),
+            'realisasi' => round($cumulativeRealisasi, 2),
+            'deviasi' => round($cumulativeRealisasi - $cumulativeRencana, 2)
+        ];
+    }
+
+    // ✅ Jika tidak ada data, buat data dummy untuk visualisasi
+    if (empty($chartData)) {
+        $chartData = [[
+            'week' => 'M1',
+            'week_label' => 'Belum ada data',
+            'rencana' => 0,
+            'realisasi' => 0,
+            'deviasi' => 0
+        ]];
+    }
+
+    return $chartData;
+}
+
+    /**
+     * DOWNLOAD TEMPLATE EXCEL
+     */
     public function downloadTemplate()
     {
         $path = public_path('templates/template_progress.xlsx');
+        
+        if (!file_exists($path)) {
+            return redirect()->back()->with('error', 'Template tidak ditemukan.');
+        }
+        
         return response()->download($path, 'template_progress.xlsx');
     }
 
     // DATA MODAL INPUT
-    public function getModalData($itemId)
-    {
-        $item = PekerjaanItem::with('progress.details')->findOrFail($itemId);
-        return view('Dashboard.Pekerjaan.Realisasi.modal_progress_form', compact('item'))->render();
-    }
+    // public function getModalData($itemId)
+    // {
+    //     $item = PekerjaanItem::with('progress.details')->findOrFail($itemId);
+    //     return view('Dashboard.Pekerjaan.Realisasi.modal_progress_form', compact('item'))->render();
+    // }
 
     // -------------------------------------------------------------- sekarang kerja gr dan payment
     

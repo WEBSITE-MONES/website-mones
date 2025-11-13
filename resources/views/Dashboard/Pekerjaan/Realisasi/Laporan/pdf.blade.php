@@ -115,29 +115,39 @@
 
     .approval-box {
         display: table-cell;
-        width: 50%;
         text-align: center;
         padding: 6px;
         vertical-align: top;
+        border: 1px solid #ddd;
     }
 
     .approval-title {
         font-weight: bold;
         font-size: 8px;
         margin-bottom: 4px;
+        text-transform: uppercase;
     }
 
     .signature-space {
-        height: 40px;
-        margin: 6px 0;
+        min-height: 60px;
+        margin: 8px 0;
+        position: relative;
+    }
+
+    .signature-image {
+        max-width: 120px;
+        max-height: 60px;
+        margin: 4px auto;
+        display: block;
     }
 
     .status-badge {
         display: inline-block;
-        padding: 3px 6px;
-        border-radius: 2px;
+        padding: 3px 8px;
+        border-radius: 3px;
         font-size: 7px;
         margin: 6px 0;
+        font-weight: bold;
     }
 
     .status-approved {
@@ -163,6 +173,28 @@
         text-decoration: underline;
         font-size: 8px;
         margin-top: 4px;
+    }
+
+    .approver-position {
+        font-size: 6px;
+        color: #666;
+        margin-top: 2px;
+    }
+
+    .approval-date {
+        font-size: 6px;
+        color: #666;
+        margin-top: 2px;
+        font-style: italic;
+    }
+
+    .approval-comment {
+        font-size: 6px;
+        margin-top: 4px;
+        font-style: italic;
+        padding: 2px 4px;
+        background: #f8f9fa;
+        border-left: 2px solid #007bff;
     }
 
     .footer {
@@ -253,24 +285,28 @@
                 <td class="text-right">{{ number_format($item->target_sd_bulan ?? 0, 0, ',', '.') }}</td>
                 <td class="text-center">{{ $item->nomor_po ?? '-' }}</td>
                 <td class="text-center no-wrap">
-                    <!-- Ditambahkan no-wrap -->
-                    @if(isset($item->tanggal_po))
-                    {{ is_string($item->tanggal_po) ? \Carbon\Carbon::parse($item->tanggal_po)->format('d M Y') : $item->tanggal_po->format('d M Y') }}
+                    @if(isset($item->tanggal_po) && $item->tanggal_po)
+                    @php
+                    try {
+                    $date = $item->tanggal_po instanceof \Carbon\Carbon
+                    ? $item->tanggal_po
+                    : \Carbon\Carbon::parse($item->tanggal_po);
+                    echo $date->format('d M Y');
+                    } catch (\Exception $e) {
+                    echo '-';
+                    }
+                    @endphp
                     @else
                     -
                     @endif
                 </td>
                 <td class="text-left">{{ $item->pelaksana ?? '-' }}</td>
-                {{-- Kolom Nilai Kontrak Multiyears (2024, 2025, 2026) --}}
                 <td class="text-right">0</td>
                 <td class="text-right">{{ number_format($item->nilai_rkap ?? 0, 0, ',', '.') }}</td>
                 <td class="text-right">0</td>
-                {{-- Total Kontrak --}}
                 <td class="text-right">{{ number_format($item->nilai_rkap ?? 0, 0, ',', '.') }}</td>
-                {{-- Mulai & Selesai Kontrak --}}
-                <td class="text-center no-wrap">{{ $item->mulai_kontrak ?? '-' }}</td> <!-- Ditambahkan no-wrap -->
-                <td class="text-center no-wrap">{{ $item->selesai_kontrak ?? '-' }}</td> <!-- Ditambahkan no-wrap -->
-                {{-- Realisasi --}}
+                <td class="text-center no-wrap">{{ $item->mulai_kontrak ?? '-' }}</td>
+                <td class="text-center no-wrap">{{ $item->selesai_kontrak ?? '-' }}</td>
                 <td class="text-center">{{ number_format($item->realisasi_fisik ?? 0, 2, ',', '.') }}%</td>
                 <td class="text-right">{{ number_format($item->realisasi_pembayaran ?? 0, 0, ',', '.') }}</td>
             </tr>
@@ -311,13 +347,13 @@
                 <td class="text-right"><strong>{{ number_format($totalTarget, 0, ',', '.') }}</strong></td>
                 <td colspan="6"></td>
                 <td class="text-right"><strong>{{ number_format($totalRkap, 0, ',', '.') }}</strong></td>
-                <td colspan="3"></td> {{-- ✅ Kolom ini sudah benar (Mulai, Selesai, Fisik) --}}
+                <td colspan="3"></td>
                 <td class="text-right"><strong>{{ number_format($totalPembayaran, 0, ',', '.') }}</strong></td>
             </tr>
         </tbody>
     </table>
 
-    {{-- APPROVAL SECTION --}}
+    {{-- APPROVAL SECTION - FIXED --}}
     <div class="approval-section">
         <div class="date-info">
             @if(isset($laporan->tanggal_dibuat))
@@ -329,27 +365,70 @@
 
         <div class="approval-container">
             @foreach($laporan->approvals as $approval)
-            <div class="approval-box">
+            @php
+            $width = 100 / max($laporan->approvals->count(), 1);
+            @endphp
+            <div class="approval-box" style="width: {{ $width }}%;">
                 <div class="approval-title">
-                    {{ $approval->role_approval == 'manager_teknik' ? 'Manager Teknik' : 'Assisten Manager' }}
+                    {{-- FIXED: Gunakan accessor dari model --}}
+                    {{ $approval->role_label }}
                 </div>
 
                 <div class="signature-space">
                     @if($approval->status == 'approved')
+                    @php
+                    // Cari setting untuk approver ini
+                    $setting = isset($approval->setting) ? $approval->setting : null;
+
+                    if (!$setting) {
+                    $setting = \App\Models\LaporanApprovalSetting::where('user_id', $approval->user_id)
+                    ->where('role_approval', $approval->role_approval)
+                    ->first();
+                    }
+                    @endphp
+
+                    @if($setting)
+                    @if($setting->qr_code_path && file_exists(storage_path('app/public/' . $setting->qr_code_path)))
+                    {{-- Tampilkan QR Code atau Hybrid --}}
+                    @php
+                    $imagePath = storage_path('app/public/' . $setting->qr_code_path);
+                    $imageData = base64_encode(file_get_contents($imagePath));
+                    $src = 'data:image/png;base64,' . $imageData;
+                    @endphp
+                    <img src="{{ $src }}" class="signature-image">
+                    @elseif($setting->tanda_tangan && file_exists(storage_path('app/public/' . $setting->tanda_tangan)))
+                    {{-- Tampilkan tanda tangan manual --}}
+                    @php
+                    $imagePath = storage_path('app/public/' . $setting->tanda_tangan);
+                    $imageData = base64_encode(file_get_contents($imagePath));
+                    $extension = pathinfo($imagePath, PATHINFO_EXTENSION);
+                    $mimeType = $extension === 'png' ? 'png' : 'jpeg';
+                    $src = 'data:image/' . $mimeType . ';base64,' . $imageData;
+                    @endphp
+                    <img src="{{ $src }}" class="signature-image">
+                    @endif
+                    @endif
+
                     <div class="status-badge status-approved">
-                        ✓ Approved<br>
-                        <small
-                            style="font-weight: normal;">{{ $approval->tanggal_approval ? $approval->tanggal_approval->format('d M Y H:i') : '-' }}</small>
+                        ✓ APPROVED
                     </div>
+                    @if($approval->tanggal_approval)
+                    <div class="approval-date">
+                        {{ $approval->tanggal_approval->format('d M Y H:i') }}
+                    </div>
+                    @endif
                     @elseif($approval->status == 'rejected')
                     <div class="status-badge status-rejected">
-                        ✗ Rejected<br>
-                        <small
-                            style="font-weight: normal;">{{ $approval->tanggal_approval ? $approval->tanggal_approval->format('d M Y H:i') : '-' }}</small>
+                        ✗ REJECTED
                     </div>
+                    @if($approval->tanggal_approval)
+                    <div class="approval-date">
+                        {{ $approval->tanggal_approval->format('d M Y H:i') }}
+                    </div>
+                    @endif
                     @else
                     <div class="status-badge status-pending">
-                        ⏳ Pending Approval
+                        ⏳ PENDING
                     </div>
                     @endif
                 </div>
@@ -358,8 +437,21 @@
                     {{ strtoupper($approval->nama_approver) }}
                 </div>
 
+                @php
+                $setting = isset($approval->setting) ? $approval->setting :
+                \App\Models\LaporanApprovalSetting::where('user_id', $approval->user_id)
+                ->where('role_approval', $approval->role_approval)
+                ->first();
+                @endphp
+
+                @if($setting && $setting->jabatan)
+                <div class="approver-position">
+                    {{ $setting->jabatan }}
+                </div>
+                @endif
+
                 @if($approval->komentar)
-                <div style="font-size: 6px; margin-top: 4px; font-style: italic;">
+                <div class="approval-comment">
                     "{{ $approval->komentar }}"
                 </div>
                 @endif

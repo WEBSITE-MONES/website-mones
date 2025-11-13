@@ -357,7 +357,8 @@
 
         <div class="container copyright text-center mt-4">
             <p>© <span>Copyright</span> <strong class="px-1 sitename">PT. Pelabuhan Indonesia (Persero)</strong>
-                <span>All Rights Reserved</span></p>
+                <span>All Rights Reserved</span>
+            </p>
         </div>
     </footer>
 

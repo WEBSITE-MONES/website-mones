@@ -10,12 +10,11 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
-
-
-
-
 class PekerjaanController extends Controller
 {
+    /**
+     * Tampilkan halaman Rencana Pekerjaan (Read-Only View)
+     */
     public function index(Request $request): View
     {
         $user = auth()->user();
@@ -40,89 +39,93 @@ class PekerjaanController extends Controller
 
         $pekerjaans = $query->orderBy('created_at', 'desc')->get();
 
+        // Halaman ini hanya untuk view/display saja
         return view('Dashboard.rencana_pekerjaan', compact('pekerjaans'));
     }
 
+    /**
+     * Form create pekerjaan (dipanggil dari Database Pekerjaan)
+     */
     public function create(): View
     {
         $wilayahs = Wilayah::all();
         return view('Dashboard.Pekerjaan.create', compact('wilayahs'));
     }
 
+    /**
+     * Store pekerjaan baru (dari Database Pekerjaan)
+     */
     public function store(Request $request): RedirectResponse
-{
-    $request->validate([
-        'wilayah_id'        => 'required|exists:wilayah,id',
-        'coa'               => 'required|string|max:255',
-        'tipe'              => 'required|string|max:255',
-        'tipe_investasi'    => 'required|string|max:255',
-        'nomor_prodef_sap'  => 'nullable|string|max:255',
-        'nama_investasi'    => 'required|string|max:255',
-        'kebutuhan_dana'    => 'required|numeric',
-        'rkap'              => 'required|array',     
-        'rkap.*'            => 'nullable|numeric',    
-        'tahun_usulan'      => 'required|digits:4|integer',
-        'coa_sub'           => 'required|string|max:255',
-        'kategori'          => 'required|string|max:255',
-        'manfaat'           => 'required|string|max:255',
-        'jenis'             => 'required|string|max:255',
-        'sifat'             => 'required|string|max:255',
-        'urgensi'           => 'required|string|max:255',
-    ]);
-
-    // hitung total dari semua RKAP per tahun
-    $totalRkap = array_sum($request->rkap);
-
-    $gambarPath = null;
-
-    if ($request->hasFile('gambar')) {
-        $gambarPath = $request->file('gambar')->store('gambar_pekerjaan', 'public');
-    }
-
-    // simpan pekerjaan utama
-    $pekerjaan = Pekerjaan::create([
-        'wilayah_id'        => $request->wilayah_id,
-        'coa'               => $request->coa,
-        'tipe_investasi'    => $request->tipe_investasi,
-        'nomor_prodef_sap'  => $request->nomor_prodef_sap,
-        'nama_investasi'    => $request->nama_investasi,
-        'kebutuhan_dana'    => $request->kebutuhan_dana,
-        'total_dana'        => $totalRkap, // tambahkan field ini di tabel pekerjaan
-        'tahun_usulan'      => $request->tahun_usulan,
-        'gambar'            => $gambarPath,
-        'user_id'           => auth()->id(),
-    ]);
-
-    // simpan detail master investasi
-    $pekerjaan->masterInvestasi()->create([
-        'tipe'      => $request->tipe,
-        'coa_sub'   => $request->coa_sub,
-        'kategori'  => $request->kategori,
-        'manfaat'   => $request->manfaat,
-        'jenis'     => $request->jenis,
-        'sifat'     => $request->sifat,
-        'urgensi'   => $request->urgensi,
-    ]);
-
-    // simpan RKAP per tahun ke tabel rkap_pekerjaan
-    foreach ($request->rkap as $tahun => $nilai) {
-        $pekerjaan->rkapDetails()->create([
-            'tahun' => $tahun,
-            'nilai' => $nilai ?? 0,
+    {
+        $request->validate([
+            'wilayah_id'        => 'required|exists:wilayah,id',
+            'coa'               => 'required|string|max:255',
+            'tipe'              => 'required|string|max:255',
+            'tipe_investasi'    => 'required|string|max:255',
+            'nomor_prodef_sap'  => 'nullable|string|max:255',
+            'nama_investasi'    => 'required|string|max:255',
+            'kebutuhan_dana'    => 'required|numeric',
+            'rkap'              => 'required|array',     
+            'rkap.*'            => 'nullable|numeric',    
+            'tahun_usulan'      => 'required|digits:4|integer',
+            'coa_sub'           => 'required|string|max:255',
+            'kategori'          => 'required|string|max:255',
+            'manfaat'           => 'required|string|max:255',
+            'jenis'             => 'required|string|max:255',
+            'sifat'             => 'required|string|max:255',
+            'urgensi'           => 'required|string|max:255',
         ]);
+
+        $totalRkap = array_sum($request->rkap);
+        $gambarPath = null;
+
+        if ($request->hasFile('gambar')) {
+            $gambarPath = $request->file('gambar')->store('gambar_pekerjaan', 'public');
+        }
+
+        $pekerjaan = Pekerjaan::create([
+            'wilayah_id'        => $request->wilayah_id,
+            'coa'               => $request->coa,
+            'tipe_investasi'    => $request->tipe_investasi,
+            'nomor_prodef_sap'  => $request->nomor_prodef_sap,
+            'nama_investasi'    => $request->nama_investasi,
+            'kebutuhan_dana'    => $request->kebutuhan_dana,
+            'total_dana'        => $totalRkap,
+            'tahun_usulan'      => $request->tahun_usulan,
+            'gambar'            => $gambarPath,
+            'user_id'           => auth()->id(),
+        ]);
+
+        $pekerjaan->masterInvestasi()->create([
+            'tipe'      => $request->tipe,
+            'coa_sub'   => $request->coa_sub,
+            'kategori'  => $request->kategori,
+            'manfaat'   => $request->manfaat,
+            'jenis'     => $request->jenis,
+            'sifat'     => $request->sifat,
+            'urgensi'   => $request->urgensi,
+        ]);
+
+        foreach ($request->rkap as $tahun => $nilai) {
+            $pekerjaan->rkapDetails()->create([
+                'tahun' => $tahun,
+                'nilai' => $nilai ?? 0,
+            ]);
+        }
+
+        // Redirect ke tab Database Pekerjaan setelah sukses
+        return redirect()->route('realisasi.index', ['tab' => 'database'])
+                         ->with('success', 'Rencana kerja berhasil ditambahkan ke Database Pekerjaan!');
     }
 
-    return redirect()->route('pekerjaan.index')
-                     ->with('success', 'Rencana kerja, master investasi, dan RKAP per tahun berhasil ditambahkan!');
-}
-
-
+    /**
+     * Form edit pekerjaan
+     */
     public function edit(int $id): View
     {
         $pekerjaan = Pekerjaan::with(['masterInvestasi', 'rkapDetails'])->findOrFail($id);
         $wilayahs = Wilayah::all();
         
-        // Siapkan data RKAP existing dari rkapDetails
         $existingRkap = [];
         foreach ($pekerjaan->rkapDetails as $detail) {
             $existingRkap[$detail->tahun] = $detail->nilai;
@@ -131,6 +134,9 @@ class PekerjaanController extends Controller
         return view('Dashboard.Pekerjaan.edit', compact('pekerjaan', 'wilayahs', 'existingRkap'));
     }
 
+    /**
+     * Update pekerjaan
+     */
     public function update(Request $request, int $id): RedirectResponse
     {
         $request->validate([
@@ -154,21 +160,16 @@ class PekerjaanController extends Controller
         ]);
 
         $pekerjaan = Pekerjaan::findOrFail($id);
-
-        // Hitung ulang total RKAP
         $totalRkap = array_sum($request->rkap);
-
         $gambarPath = $pekerjaan->gambar;
 
         if ($request->hasFile('gambar')) {
-            // hapus gambar lama jika ada
             if ($pekerjaan->gambar && Storage::disk('public')->exists($pekerjaan->gambar)) {
                 Storage::disk('public')->delete($pekerjaan->gambar);
             }
             $gambarPath = $request->file('gambar')->store('gambar_pekerjaan', 'public');
         }
 
-        // Update pekerjaan utama
         $pekerjaan->update([
             'wilayah_id'        => $request->wilayah_id,
             'coa'               => $request->coa,
@@ -183,7 +184,6 @@ class PekerjaanController extends Controller
             'user_id'           => auth()->id(),
         ]);
 
-        // Update atau create master investasi
         if ($pekerjaan->masterInvestasi) {
             $pekerjaan->masterInvestasi->update([
                 'tipe'      => $request->tipe,
@@ -206,7 +206,6 @@ class PekerjaanController extends Controller
             ]);
         }
 
-        // Refresh RKAP detail (hapus lama, insert baru)
         $pekerjaan->rkapDetails()->delete();
         foreach ($request->rkap as $tahun => $nilai) {
             $pekerjaan->rkapDetails()->create([
@@ -215,37 +214,34 @@ class PekerjaanController extends Controller
             ]);
         }
 
-        return redirect()->route('pekerjaan.index')
-                        ->with('success', 'Rencana kerja, master investasi, dan RKAP per tahun berhasil diperbarui!');
+        // Redirect ke tab Database Pekerjaan setelah update
+        return redirect()->route('realisasi.index', ['tab' => 'database'])
+                         ->with('success', 'Data pekerjaan berhasil diperbarui!');
     }
 
-
+    /**
+     * Hapus pekerjaan
+     */
     public function destroy(int $id): RedirectResponse
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
+        
         if ($pekerjaan->masterInvestasi) {
             $pekerjaan->masterInvestasi()->delete();
         }
+        
+        if ($pekerjaan->rkapDetails) {
+            $pekerjaan->rkapDetails()->delete();
+        }
+        
+        if ($pekerjaan->gambar && Storage::disk('public')->exists($pekerjaan->gambar)) {
+            Storage::disk('public')->delete($pekerjaan->gambar);
+        }
+        
         $pekerjaan->delete();
 
-        return redirect()->route('pekerjaan.index')
-                         ->with('success', 'Rencana kerja dan master investasi berhasil dihapus!');
+        // Redirect ke tab Database Pekerjaan setelah hapus
+        return redirect()->route('realisasi.index', ['tab' => 'database'])
+                         ->with('success', 'Data pekerjaan berhasil dihapus!');
     }
-
-    
-    
-    // /**
-    //  *
-    //  * @param  int  $id
-    //  * @return \Illuminate\Http\JsonResponse
-    //  */
-    // public function getJsonDetails($id)
-    // {
-    //     $pekerjaan = Pekerjaan::with('wilayah')->find($id);
-
-    //     if (!$pekerjaan) {
-    //         return response()->json(['message' => 'Data tidak ditemukan'], 404);
-    //     }
-    //     return response()->json($pekerjaan);
-    // }
 }

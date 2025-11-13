@@ -190,10 +190,15 @@
 
             <div class="row text-center">
                 @foreach($laporan->approvals as $approval)
-                <div class="col-md-6 approval-column">
+                @php
+                $colWidth = 12 / max($laporan->approvals->count(), 1);
+                $colWidth = min($colWidth, 6); // Max 6 columns (2 per row)
+                @endphp
+                <div class="col-md-{{ $colWidth }} approval-column mb-3">
                     <div class="p-3">
                         <p class="fw-bold mb-1 text-dark">
-                            {{ $approval->role_approval == 'manager_teknik' ? 'Manager Teknik' : 'Assisten Manager' }}
+                            {{-- FIXED: Gunakan accessor dari model --}}
+                            {{ $approval->role_label }}
                         </p>
 
                         <div class="my-3" style="min-height: 60px;">
@@ -221,6 +226,12 @@
                         </div>
 
                         <p class="fw-bold mb-0 text-dark">{{ strtoupper($approval->nama_approver) }}</p>
+
+                        @if($approval->komentar)
+                        <div class="mt-2">
+                            <small class="text-muted fst-italic">"{{ $approval->komentar }}"</small>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
@@ -305,15 +316,12 @@
     }
 }
 
-/* Kustomisasi Tampilan Tabel */
 .table {
     font-size: 0.875rem;
-    /* 14px */
 }
 
 .table thead th {
     padding: 0.75rem 1rem;
-    /* 12px 16px */
     white-space: nowrap;
     vertical-align: middle;
     text-transform: uppercase;
@@ -323,7 +331,6 @@
 
 .table tbody td {
     padding: 0.75rem 1rem;
-    /* 12px 16px */
     vertical-align: middle;
 }
 
@@ -351,15 +358,12 @@
 
 .table .table-info td {
     background-color: #e0f2fe !important;
-    /* light-blue */
     color: #0c5460;
     font-weight: 600;
 }
 
-/* Rounded modal */
 .modal-content {
     border-radius: 0.75rem;
-    /* 12px */
 }
 </style>
 @endpush

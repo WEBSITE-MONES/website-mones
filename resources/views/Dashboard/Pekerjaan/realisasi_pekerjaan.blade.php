@@ -55,10 +55,24 @@
                             </li>
                         </ul>
 
-                        {{-- Tombol Input PR di kanan --}}
-                        <a href="{{ route('realisasi.createPR') }}" class="btn btn-primary btn-round shadow-sm">
-                            <i class="fa fa-plus me-2"></i> Input PR
-                        </a>
+                        {{-- Tombol dinamis berdasarkan tab aktif --}}
+                        <div>
+                            {{-- Tombol Input PR - tampil di tab Realisasi Berjalan --}}
+                            <a href="{{ route('realisasi.createPR') }}"
+                                class="btn btn-primary btn-round shadow-sm btn-tab-action" data-tab="realisasi"
+                                style="display: {{ request('tab') != 'database' ? 'inline-flex' : 'none' }};">
+                                <i class="fa fa-plus me-2"></i> Input PR
+                            </a>
+
+                            {{-- Tombol Tambah Pekerjaan - tampil di tab Database --}}
+                            @if(auth()->user()->role === 'superadmin')
+                            <a href="{{ route('pekerjaan.create') }}"
+                                class="btn btn-success btn-round shadow-sm btn-tab-action" data-tab="database"
+                                style="display: {{ request('tab') == 'database' ? 'inline-flex' : 'none' }};">
+                                <i class="fa fa-plus me-2"></i> Tambah Pekerjaan
+                            </a>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
@@ -227,7 +241,6 @@
                                                             <hr class="dropdown-divider">
                                                         </li>
                                                         <li>
-                                                            {{-- Form hapus tanpa onsubmit inline, konfirmasi dihandle oleh JavaScript --}}
                                                             <form action="{{ route('realisasi.destroy', $pr->id) }}"
                                                                 method="POST">
                                                                 @csrf
@@ -274,6 +287,9 @@
                                 <table id="tabelDatabase" class="table table-hover align-middle">
                                     <thead>
                                         <tr>
+                                            @if(auth()->user()->role === 'superadmin')
+                                            <th style="width: 80px;">Aksi</th>
+                                            @endif
                                             <th>Nama Investasi</th>
                                             <th>Entitas</th>
                                             <th>Nomor Prodef Sap</th>
@@ -289,6 +305,9 @@
                                     </thead>
                                     <tfoot>
                                         <tr>
+                                            @if(auth()->user()->role === 'superadmin')
+                                            <th>Aksi</th>
+                                            @endif
                                             <th>Nama Investasi</th>
                                             <th>Entitas</th>
                                             <th>Nomor Prodef Sap</th>
@@ -305,6 +324,43 @@
                                     <tbody>
                                         @foreach($pekerjaans as $pk)
                                         <tr>
+                                            @if(auth()->user()->role === 'superadmin')
+                                            <td class="text-center">
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-light rounded-circle p-0"
+                                                        type="button" data-bs-toggle="dropdown"
+                                                        style="width: 32px; height: 32px;">
+                                                        <i class="fa fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                        <li>
+                                                            <h6 class="dropdown-header text-uppercase small">Menu Aksi
+                                                            </h6>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                href="{{ route('pekerjaan.edit', $pk->id) }}">
+                                                                <i class="fa fa-edit text-primary me-2"></i> Edit
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <hr class="dropdown-divider">
+                                                        </li>
+                                                        <li>
+                                                            <form action="{{ route('pekerjaan.destroy', $pk->id) }}"
+                                                                method="POST" class="form-hapus-pekerjaan">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="button"
+                                                                    class="dropdown-item text-danger btn-hapus-pekerjaan">
+                                                                    <i class="fa fa-trash me-2"></i> Hapus
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                            @endif
                                             <td class="fw-medium">{{ $pk->nama_investasi }}</td>
                                             <td class="fw-medium">{{ $pk->wilayah->nama }}</td>
                                             <td class="fw-medium">{{ $pk->nomor_prodef_sap }}</td>
@@ -317,6 +373,9 @@
                                             <td>{{ $pk->masterInvestasi->jenis ?? '-' }}</td>
                                             <td class="text-end fw-semibold text-primary">
                                                 Rp{{ number_format($pk->kebutuhan_dana, 0, ',', '.')}}
+                                            </td>
+                                            <td class="text-end fw-semibold text-success">
+                                                Rp{{ number_format($pk->total_dana ?? 0, 0, ',', '.')}}
                                             </td>
                                         </tr>
                                         @endforeach
@@ -337,12 +396,11 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Handle hapus PR
     const deleteButtons = document.querySelectorAll('.btn-hapus');
-
     deleteButtons.forEach(button => {
         button.addEventListener('click', function(event) {
             event.preventDefault();
-
             const form = this.closest('form');
 
             Swal.fire({
@@ -357,6 +415,51 @@ document.addEventListener('DOMContentLoaded', function() {
             }).then((result) => {
                 if (result.isConfirmed) {
                     form.submit();
+                }
+            });
+        });
+    });
+
+    // Handle hapus Pekerjaan di tab Database
+    const deletePekerjaanButtons = document.querySelectorAll('.btn-hapus-pekerjaan');
+    deletePekerjaanButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            const form = this.closest('form');
+
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Data pekerjaan ini akan dihapus secara permanen!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+
+    // Toggle button visibility based on active tab
+    const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function(event) {
+            const targetTab = event.target.getAttribute('data-bs-target');
+            const actionButtons = document.querySelectorAll('.btn-tab-action');
+
+            actionButtons.forEach(btn => {
+                if (targetTab === '#realisasi-content' && btn.getAttribute(
+                    'data-tab') === 'realisasi') {
+                    btn.style.display = 'inline-flex';
+                } else if (targetTab === '#database-content' && btn.getAttribute(
+                        'data-tab') === 'database') {
+                    btn.style.display = 'inline-flex';
+                } else {
+                    btn.style.display = 'none';
                 }
             });
         });

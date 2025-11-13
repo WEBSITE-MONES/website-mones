@@ -25,6 +25,157 @@
 
     <link href="assets/css/main.css" rel="stylesheet">
     <link href="assets/css/pelaporan.css" rel="stylesheet">
+    <style>
+    .user-menu-btn {
+        display: flex;
+        align-items: center;
+        background: transparent;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        padding: 8px 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+
+    .user-menu-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .dropdown-menu-custom {
+        display: none;
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        min-width: 280px;
+        z-index: 1000;
+        animation: slideDown 0.3s ease;
+    }
+
+    .dropdown-menu-custom.show {
+        display: block;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dropdown-header {
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px 12px 0 0;
+        color: #fff;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .user-avatar {
+        font-size: 50px;
+        line-height: 1;
+    }
+
+    .user-details {
+        flex: 1;
+    }
+
+    .user-name {
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+
+    .user-email {
+        font-size: 13px;
+        opacity: 0.9;
+        margin-bottom: 6px;
+    }
+
+    .badge-role {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .dropdown-divider {
+        height: 1px;
+        background: #eee;
+        margin: 8px 0;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        color: #333;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        font-size: 14px;
+    }
+
+    .dropdown-item i {
+        font-size: 18px;
+        width: 20px;
+        text-align: center;
+    }
+
+    .dropdown-item:hover {
+        background: #f8f9fa;
+    }
+
+    .logout-btn {
+        color: #dc3545;
+    }
+
+    .logout-btn:hover {
+        background: #fff5f5;
+    }
+
+    /* Responsive untuk mobile */
+    @media (max-width: 768px) {
+        .d-flex.align-items-center.gap-3 {
+            flex-direction: column;
+            gap: 10px !important;
+        }
+
+        .btn-primary.btn-sm {
+            width: 100%;
+        }
+
+        .user-dropdown {
+            width: 100%;
+        }
+
+        .user-menu-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+    </style>
 </head>
 
 <body>
@@ -32,24 +183,86 @@
     <header id="header" class="header d-flex align-items-center fixed-top">
         <div class="container-fluid container-xl position-relative d-flex align-items-center">
 
-            <a href="index.html" class="logo d-flex align-items-center me-auto">
+            <a href="{{ route('landingpage.index') }}" class="logo d-flex align-items-center me-auto">
                 <h1 class="sitename">P-Mones</h1>
             </a>
 
             <nav id="navmenu" class="navmenu">
                 <ul>
-                    <li><a href={{ route('landingpage.index') }}>Home</a></li>
                     <li><a href="{{ route('landingpage.index') }}">Home</a></li>
                     <li><a href="{{ route('landingpage.index.pelaporan') }}" class="active">Pelaporan</a></li>
                     <li><a href="{{ route('landingpage.index.dokumentasi') }}">Dokumentasi</a></li>
+                    <li><a href="#services">Gambar</a></li>
                     <li><a href="#team">Korespondensi</a></li>
                 </ul>
                 <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
             </nav>
 
-            <a class="btn-getstarted" href="{{ route('landingpage.index.pelaporanform') }}">
-                <i class="bi bi-plus-circle"></i> Laporan Baru
+            @auth
+            {{-- User sudah login - Tampilkan nama & dropdown --}}
+            <div class="d-flex align-items-center gap-3">
+                {{-- Tombol Laporan Baru --}}
+                <a class="btn btn-primary btn-sm" href="{{ route('landingpage.index.pelaporanform') }}"
+                    style="white-space: nowrap;">
+                    <i class="bi bi-plus-circle"></i> Laporan Baru
+                </a>
+
+                {{-- User Dropdown --}}
+                <div class="user-dropdown" style="position: relative;">
+                    <button class="btn-getstarted user-menu-btn" id="userMenuBtn" type="button">
+                        <i class="bi bi-person-circle" style="font-size: 18px; margin-right: 8px;"></i>
+                        {{ Auth::user()->name }}
+                        <i class="bi bi-chevron-down" style="font-size: 12px; margin-left: 5px;"></i>
+                    </button>
+
+                    <div id="userDropdownMenu" class="dropdown-menu-custom">
+                        <div class="dropdown-header">
+                            <div class="user-info">
+                                <div class="user-avatar">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                                <div class="user-details">
+                                    <div class="user-name">{{ Auth::user()->name }}</div>
+                                    <div class="user-email">{{ Auth::user()->email }}</div>
+                                    <div class="user-role">
+                                        <span class="badge-role">{{ ucfirst(Auth::user()->role) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+
+                        <a href="{{ route('account.index') }}" class="dropdown-item">
+                            <i class="bi bi-person"></i>
+                            <span>Profile Saya</span>
+                        </a>
+
+                        <a href="{{ route('account.setting') }}" class="dropdown-item">
+                            <i class="bi bi-gear"></i>
+                            <span>Pengaturan</span>
+                        </a>
+
+                        <div class="dropdown-divider"></div>
+
+                        <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+                            @csrf
+                            <button type="submit" class="dropdown-item logout-btn">
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Logout</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            @else
+            {{-- User belum login - Redirect ke login --}}
+            <a class="btn-getstarted" href="{{ route('login') }}">
+                <i class="bi bi-box-arrow-in-right" style="margin-right: 5px;"></i>
+                Login
             </a>
+            @endauth
 
         </div>
     </header>
@@ -248,6 +461,38 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="assets/js/main.js"></script>
     <script src="assets/js/ringkasan.js"></script>
+
+    <script>
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    if (userMenuBtn) {
+        userMenuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('userDropdownMenu');
+            dropdown.classList.toggle('show');
+        });
+    }
+
+    // Close dropdown saat klik di luar
+    document.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('userDropdownMenu');
+        const button = document.getElementById('userMenuBtn');
+
+        // Periksa apakah button dan dropdown ada
+        if (button && dropdown && !button.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    // Close dropdown saat klik item menu
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const dropdown = document.getElementById('userDropdownMenu');
+            if (dropdown) {
+                dropdown.classList.remove('show');
+            }
+        });
+    });
+    </script>
 
 </body>
 

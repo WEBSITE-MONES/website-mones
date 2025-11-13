@@ -242,7 +242,11 @@
                                             <span class="sub-item">Judul Aplikasi</span>
                                         </a>
                                     </li>
-                                    <li><a href="#"><span class="sub-item">Approval Laporan</span></a></li>
+                                    <li>
+                                        <a href="{{ route('laporan.approval-settings.index') }}">
+                                            <span class="sub-item">Approval Laporan</span>
+                                        </a>
+                                    </li>
                                 </ul>
                             </div>
                         </li>

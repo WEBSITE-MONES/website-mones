@@ -16,7 +16,12 @@ use App\Models\Kontrak;
 use App\Models\Korespondensi;
 use App\Models\DokumenUsulan;
 use Illuminate\Http\Request;
+use App\Models\DailyProgress;
+use App\Services\ProgressAggregator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Auth;
+
 
 class PekerjaanDetailController extends Controller
 {
@@ -294,13 +299,239 @@ class PekerjaanDetailController extends Controller
         $laporanQa = [];
         return view('Dashboard.Pekerjaan.Pekerjaan_Detail.data.laporan.laporan_qa', compact('pekerjaan', 'laporanQa'));
     }
-    public function laporanDokumentasi($id)
-    {
-        $pekerjaan = Pekerjaan::findOrFail($id);
-        $laporanDokumentasi = [];
-        return view('Dashboard.Pekerjaan.Pekerjaan_Detail.data.laporan.laporan_dokumentasi', compact('pekerjaan', 'laporanDokumentasi'));
-    }
 
+    // LAPORAN DOKUMENTASI APPROVE
+    protected $progressAggregator;
+
+public function __construct(ProgressAggregator $progressAggregator)
+{
+    $this->progressAggregator = $progressAggregator;
+}
+
+/**
+ * Laporan Dokumentasi - Daily Progress dengan Approval
+ */
+public function laporanDokumentasi($id)
+{
+    $pekerjaan = Pekerjaan::findOrFail($id);
+    
+    // Ambil daily progress yang terkait dengan pekerjaan ini
+    $laporanDokumentasi = DailyProgress::whereHas('po.pr.pekerjaan', function($query) use ($id) {
+        $query->where('id', $id);
+    })
+    ->with(['po', 'pekerjaanItem', 'pelapor', 'approver'])
+    ->orderBy('tanggal', 'desc')
+    ->paginate(20);
+    
+    // Summary counts
+    $summary = [
+        'total' => DailyProgress::whereHas('po.pr.pekerjaan', function($q) use ($id) {
+            $q->where('id', $id);
+        })->count(),
+        'pending' => DailyProgress::whereHas('po.pr.pekerjaan', function($q) use ($id) {
+            $q->where('id', $id);
+        })->pending()->count(),
+        'approved' => DailyProgress::whereHas('po.pr.pekerjaan', function($q) use ($id) {
+            $q->where('id', $id);
+        })->approved()->count(),
+        'rejected' => DailyProgress::whereHas('po.pr.pekerjaan', function($q) use ($id) {
+            $q->where('id', $id);
+        })->rejected()->count(),
+    ];
+    
+    return view('Dashboard.Pekerjaan.Pekerjaan_Detail.data.laporan.laporan_dokumentasi', compact('pekerjaan', 'laporanDokumentasi', 'summary'));
+}
+
+/**
+ * Show Detail Daily Progress
+ */
+public function showDokumentasi($id, $dailyProgressId)
+{
+    $pekerjaan = Pekerjaan::findOrFail($id);
+    $report = DailyProgress::with(['po', 'pekerjaanItem', 'pelapor', 'approver'])
+        ->findOrFail($dailyProgressId);
+    
+    return view('Dashboard.Pekerjaan.Pekerjaan_Detail.data.laporan.show_dokumentasi', compact('pekerjaan', 'report'));
+}
+
+/**
+ * Approve Daily Progress
+ */
+public function approveDokumentasi($id, $dailyProgressId)
+{
+    try {
+        DB::beginTransaction();
+        
+        $report = DailyProgress::findOrFail($dailyProgressId);
+        
+        if ($report->status_approval === 'approved') {
+            return redirect()->back()->with('info', 'Laporan sudah di-approve sebelumnya.');
+        }
+        
+        $report->update([
+            'status_approval' => 'approved',
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+            'rejection_reason' => null,
+        ]);
+        
+        // Agregasi ke progress mingguan
+        $this->progressAggregator->aggregateToWeekly($report->po);
+        
+        DB::commit();
+        
+        Log::info('Daily Progress Approved', [
+            'report_id' => $dailyProgressId,
+            'approved_by' => Auth::user()->name
+        ]);
+        
+        return redirect()->back()->with('success', 'Dokumentasi berhasil di-approve dan progress mingguan telah diperbarui!');
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        Log::error('Approve Daily Progress Error', [
+            'report_id' => $dailyProgressId,
+            'error' => $e->getMessage()
+        ]);
+        
+        return redirect()->back()->with('error', 'Gagal meng-approve dokumentasi: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Reject Daily Progress
+ */
+public function rejectDokumentasi(Request $request, $id, $dailyProgressId)
+{
+    $request->validate([
+        'rejection_reason' => 'required|string|min:10|max:500',
+    ], [
+        'rejection_reason.required' => 'Alasan penolakan wajib diisi',
+        'rejection_reason.min' => 'Alasan penolakan minimal 10 karakter',
+    ]);
+    
+    try {
+        $report = DailyProgress::findOrFail($dailyProgressId);
+        
+        $report->update([
+            'status_approval' => 'rejected',
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+            'rejection_reason' => $request->rejection_reason,
+        ]);
+        
+        Log::info('Daily Progress Rejected', [
+            'report_id' => $dailyProgressId,
+            'rejected_by' => Auth::user()->name,
+            'reason' => $request->rejection_reason
+        ]);
+        
+        return redirect()->back()->with('warning', 'Dokumentasi telah ditolak.');
+        
+    } catch (\Exception $e) {
+        Log::error('Reject Daily Progress Error', [
+            'report_id' => $dailyProgressId,
+            'error' => $e->getMessage()
+        ]);
+        
+        return redirect()->back()->with('error', 'Gagal menolak dokumentasi: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Revise - kembalikan ke pending
+ */
+public function reviseDokumentasi($id, $dailyProgressId)
+{
+    try {
+        DB::beginTransaction();
+        
+        $report = DailyProgress::findOrFail($dailyProgressId);
+        $oldStatus = $report->status_approval;
+        
+        $report->update([
+            'status_approval' => 'pending',
+            'approved_by' => null,
+            'approved_at' => null,
+            'rejection_reason' => null,
+        ]);
+        
+        if ($oldStatus === 'approved') {
+            $this->progressAggregator->aggregateToWeekly($report->po);
+        }
+        
+        DB::commit();
+        
+        Log::info('Daily Progress Revised', [
+            'report_id' => $dailyProgressId,
+            'revised_by' => Auth::user()->name,
+            'old_status' => $oldStatus
+        ]);
+        
+        return redirect()->back()->with('success', 'Dokumentasi dikembalikan ke status pending.');
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        Log::error('Revise Daily Progress Error', [
+            'report_id' => $dailyProgressId,
+            'error' => $e->getMessage()
+        ]);
+        
+        return redirect()->back()->with('error', 'Gagal merevisi dokumentasi: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Delete Daily Progress
+ */
+public function destroyDokumentasi($id, $dailyProgressId)
+{
+    try {
+        DB::beginTransaction();
+        
+        $report = DailyProgress::findOrFail($dailyProgressId);
+        $po = $report->po;
+        $wasApproved = $report->status_approval === 'approved';
+        
+        // Hapus foto
+        if (!empty($report->foto)) {
+            foreach ($report->foto as $foto) {
+                if (isset($foto['filename'])) {
+                    Storage::disk('public')->delete('progress-photos/' . $foto['filename']);
+                }
+            }
+        }
+        
+        $report->delete();
+        
+        if ($wasApproved) {
+            $this->progressAggregator->aggregateToWeekly($po);
+        }
+        
+        DB::commit();
+        
+        Log::info('Daily Progress Deleted by Admin', [
+            'report_id' => $dailyProgressId,
+            'deleted_by' => Auth::user()->name
+        ]);
+        
+        return redirect()->back()->with('success', 'Dokumentasi berhasil dihapus!');
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        Log::error('Delete Daily Progress Error', [
+            'report_id' => $dailyProgressId,
+            'error' => $e->getMessage()
+        ]);
+        
+        return redirect()->back()->with('error', 'Gagal menghapus dokumentasi: ' . $e->getMessage());
+    }
+}
+
+    // END LAPORAN DOKUMENTASI APPROVE
     // end laporan
 
     // start kontrak

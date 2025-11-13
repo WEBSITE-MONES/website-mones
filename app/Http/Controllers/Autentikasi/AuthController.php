@@ -10,13 +10,17 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    // Tampilkan form register
     public function registerForm()
     {
         if (Auth::check()) {
-        return redirect()->route('dashboard.index');
-    }
-    return view('Autentikasi.register');
+            $user = Auth::user();
+            // Redirect sesuai role
+            if ($user->role === 'user') {
+                return redirect()->route('landingpage.index'); 
+            }
+            return redirect()->route('dashboard.index'); 
+        }
+        return view('Autentikasi.register');
     }
 
     // Proses register
@@ -26,7 +30,7 @@ class AuthController extends Controller
             'username' => 'required|unique:users,username',
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed', // pakai password_confirmation
+            'password' => 'required|min:6|confirmed',
         ]);
 
         User::create([
@@ -34,7 +38,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'user', // default role user
+            'role' => 'user', 
         ]);
 
         return back()->with('success', 'Akun Anda berhasil dibuat, silakan login!');
@@ -44,12 +48,17 @@ class AuthController extends Controller
     public function loginForm()
     {
         if (Auth::check()) {
-        return redirect()->route('dashboard.index');
-    }
-    return view('Autentikasi.login');
+            $user = Auth::user();
+            // Redirect sesuai role
+            if ($user->role === 'user') {
+                return redirect()->route('landingpage.index'); 
+            }
+            return redirect()->route('dashboard.index'); 
+        }
+        return view('Autentikasi.login');
     }
 
-    // Proses login
+    // Proses login 
     public function login(Request $request)
     {
         $request->validate([
@@ -57,26 +66,45 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if(Auth::attempt($request->only('username', 'password'))){
-    $request->session()->regenerate();
-    return redirect()->route('dashboard.index'); 
-}
+        if (Auth::attempt($request->only('username', 'password'))) {
+            $request->session()->regenerate();
+            
+            $user = Auth::user();
+            
+            // 🎯 REDIRECT BERDASARKAN ROLE
+            if ($user->role === 'user') {
+                // User biasa → ke PWA Mobile
+                return redirect()->route('landingpage.index')
+                    ->with('success', 'Selamat datang di P-Mones Mobile!');
+            } else {
+                // Admin/Superadmin → ke Dashboard
+                return redirect()->route('dashboard.index')
+                    ->with('success', 'Selamat datang, ' . $user->name);
+            }
+        }
 
-        // login gagal, tetap di halaman login
-        return back()->withErrors(['username' => 'Username atau password salah']);
+        // Login gagal
+        return back()->withErrors([
+            'username' => 'Username atau password salah'
+        ])->withInput($request->only('username'));
     }
 
     // Proses logout
-    public function logout()
+    public function logout(Request $request)
     {
         Auth::logout();
-        return redirect()->route('login');
+        
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect()->route('login')
+            ->with('success', 'Anda telah logout');
     }
 
-    // user
+    // User list (untuk dashboard admin)
     public function user()
-{
-    $users = User::all(); // ambil semua data user
-    return view('Autentikasi.user', compact('users')); 
-}
+    {
+        $users = User::all();
+        return view('Autentikasi.user', compact('users')); 
+    }
 }

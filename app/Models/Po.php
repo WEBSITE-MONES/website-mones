@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Po extends Model
 {
+
+    // protected $table = 'pos';
     protected $fillable = [
     'pr_id',
     'nomor_po',
