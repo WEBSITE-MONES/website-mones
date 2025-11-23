@@ -1,4 +1,3 @@
-    /* Menampilkan foto yang sudah ada */
     #existingPhotoPreview .preview-item {
       position: relative;
       display: inline-block;
@@ -161,7 +160,6 @@
         justify-content: center;
       }
     }
-    /* === AKHIR CSS RESPONSIVE === */
 
     /* Menggunakan variabel dari pelaporan.css */
     :root {
@@ -175,19 +173,19 @@
       --status-revision: #dc3545;
     }
 
-    /* Latar belakang utama */
+    /* Latar belakang utama
     .main {
       padding-top: 100px;
       padding-bottom: 60px;
       min-height: 100vh;
       background: linear-gradient(135deg, #e8f4f8 0%, #ffffff 100%);
-    }
+    } */
 
-    /* Kontainer utama untuk ringkasan */
+    /* Kontainer utama untuk ringkasan
     .summary-container {
       max-width: 1200px;
       margin: 0 auto;
-    }
+    } */
 
     /* Header halaman ringkasan */
     .summary-header {
@@ -232,19 +230,19 @@
       margin-bottom: 25px;
     }
 
-    /* Card untuk tabel */
+    
     .summary-table-card {
       background: #ffffff;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
       overflow: hidden;
-    }
+    } 
 
     /* Styling Tabel */
     .table {
       margin-bottom: 0;
       font-size: 14px;
-    }
+    } 
     
     .table thead th {
       background-color: var(--primary-color);
@@ -1234,5 +1232,3 @@
     min-width: 80px;
   }
 }
-
-/* end pelaporan summary card */

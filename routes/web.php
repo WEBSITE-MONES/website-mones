@@ -258,6 +258,24 @@ Route::prefix('landingpage')->name('landingpage.')->group(function () {
         Route::get('/pelaporanform', [ProgresController::class, 'pelaporanform'])->name('index.pelaporanform');
         Route::get('/pelaporanform-edit', [ProgresController::class, 'pelaporanformedit'])->name('index.pelaporanformedit');
         Route::get('/dokumentasi', [ProgresController::class, 'dokumentasi'])->name('index.dokumentasi');
+        
+        // API Get Photos untuk Dokumentasi
+        Route::get('/api/dokumentasi', [ProgresController::class, 'apiGetDokumentasi'])
+            ->name('api.dokumentasi');
+
+        Route::get('/debug/dokumentasi', [ProgresController::class, 'debugDokumentasi'])
+            ->name('debug.dokumentasi');
+            
+        // monitoring progress
+        Route::get('/monitoring-progress', [ProgresController::class, 'monitoringProgress'])
+        ->name('monitoring.progress');
+
+        // ========== PROFILE VENDOR ROUTES (BARU) ==========
+        Route::get('/profile', [ProgresController::class, 'vendorProfile'])->name('profile');
+        Route::get('/profile/edit', [ProgresController::class, 'vendorProfileEdit'])->name('profile.edit');
+        Route::put('/profile/update', [ProgresController::class, 'vendorProfileUpdate'])->name('profile.update');
+        Route::get('/profile/password', [ProgresController::class, 'vendorPasswordEdit'])->name('profile.password');
+        Route::post('/profile/password/update', [ProgresController::class, 'vendorPasswordUpdate'])->name('profile.password.update');
 
         // ========== API ROUTES - CASCADE SELECTION ==========
         Route::get('/api/po/pekerjaan/{pekerjaanId}', [ProgresController::class, 'getPoByPekerjaan'])
@@ -279,7 +297,11 @@ Route::prefix('landingpage')->name('landingpage.')->group(function () {
         // GET: Show single report detail (untuk edit)
         Route::get('/api/progress-harian/{id}', [ProgresController::class, 'apiShowReport'])
             ->name('api.show.report');
-        
+
+        // Wilayah & Pekerjaan API
+        Route::get('api/wilayah', [ProgresController::class, 'apiGetWilayah']);
+        Route::get('api/pekerjaan/wilayah/{wilayahId}', [ProgresController::class, 'apiGetPekerjaanByWilayah']);
+            
         // PUT/PATCH: Update existing report
         Route::put('/api/progress-harian/{id}', [ProgresController::class, 'apiUpdateReport'])
             ->name('api.update.report');
@@ -287,5 +309,10 @@ Route::prefix('landingpage')->name('landingpage.')->group(function () {
         // DELETE: Delete report
         Route::delete('/api/progress-harian/{id}', [ProgresController::class, 'apiDeleteReport'])
             ->name('api.delete.report');
+
+            Route::get('/api/progress/{id}', [ProgresController::class, 'apiGetProgressData'])
+    ->name('api.progress.data');
+
+    
     });
 });

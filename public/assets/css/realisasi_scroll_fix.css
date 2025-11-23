@@ -1,0 +1,279 @@
+/* ============================================
+   DATATABLE CUSTOM DESIGN WITH SHADOWS
+   ============================================ */
+
+/* Wrapper DataTables - Shadow untuk keseluruhan */
+.dataTables_wrapper {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Search & Length Menu Section - Shadow Card */
+.dataTables_wrapper .row:first-child {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Search Input - Shadow on Focus */
+.dataTables_wrapper .dataTables_filter input {
+    border: 1px solid #e0e0e0;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dataTables_wrapper .dataTables_filter input:focus {
+    border-color: #1572E8;
+    box-shadow: 0 0 0 3px rgba(21, 114, 232, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
+    outline: none;
+}
+
+/* Length Select Dropdown - Shadow */
+.dataTables_wrapper .dataTables_length select {
+    border: 1px solid #e0e0e0;
+    border-radius: 0.5rem;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.dataTables_wrapper .dataTables_length select:focus {
+    border-color: #1572E8;
+    box-shadow: 0 0 0 3px rgba(21, 114, 232, 0.1);
+    outline: none;
+}
+
+/* Table Container - Shadow yang lebih jelas */
+.dataTables_wrapper .dataTables_scroll,
+.dataTables_wrapper table {
+    margin-top: 1rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Header Table - Shadow bawah */
+.dataTables_wrapper table thead {
+    background: linear-gradient(135deg, #1572E8 0%, #0d5dbd 100%);
+    box-shadow: 0 2px 4px rgba(21, 114, 232, 0.2);
+}
+
+.dataTables_wrapper table thead th {
+    color: white;
+    font-weight: 600;
+    padding: 1rem 0.75rem;
+    border: none;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+/* Row Shadow on Hover */
+.dataTables_wrapper table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dataTables_wrapper table tbody tr:hover {
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+/* Cell dengan Shadow Subtle */
+.dataTables_wrapper table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+}
+
+/* Badge dengan Shadow */
+.badge-custom {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Dropdown Button - Shadow */
+.dataTables_wrapper .dropdown .btn {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    transition: all 0.2s ease;
+}
+
+.dataTables_wrapper .dropdown .btn:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    transform: translateY(-1px);
+}
+
+/* Dropdown Menu - Shadow lebih tebal */
+.dataTables_wrapper .dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.dataTables_wrapper .dropdown-item {
+    border-radius: 0.5rem;
+    padding: 0.625rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.dataTables_wrapper .dropdown-item:hover {
+    background-color: #f8f9fa;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Footer Info & Pagination Section - Shadow Card */
+.dataTables_wrapper .row:last-child {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Pagination Buttons - Individual Shadows */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin: 0 0.25rem;
+    border: 1px solid #e0e0e0;
+    background: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #f8f9fa;
+    border-color: #1572E8;
+    box-shadow: 0 2px 4px rgba(21, 114, 232, 0.2);
+    transform: translateY(-1px);
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: linear-gradient(135deg, #1572E8 0%, #0d5dbd 100%);
+    border-color: #1572E8;
+    color: white !important;
+    box-shadow: 0 2px 6px rgba(21, 114, 232, 0.3);
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+    box-shadow: none;
+    opacity: 0.5;
+}
+
+/* Info Text - Subtle styling */
+.dataTables_wrapper .dataTables_info {
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Empty State - Shadow */
+.dataTables_wrapper .dataTables_empty {
+    padding: 3rem;
+    text-align: center;
+    color: #6c757d;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Loading Processing - Shadow */
+.dataTables_wrapper .dataTables_processing {
+    position: fixed !important;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.98);
+    padding: 2rem 3rem;
+    border-radius: 1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    border: none;
+}
+
+/* Responsive Table Shadow */
+.table-responsive {
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+/* Sorting Icons Enhancement */
+.dataTables_wrapper table thead th.sorting,
+.dataTables_wrapper table thead th.sorting_asc,
+.dataTables_wrapper table thead th.sorting_desc {
+    cursor: pointer;
+    position: relative;
+    padding-right: 30px;
+}
+
+.dataTables_wrapper table thead th.sorting:after,
+.dataTables_wrapper table thead th.sorting_asc:after,
+.dataTables_wrapper table thead th.sorting_desc:after {
+    opacity: 0.6;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+}
+
+/* Card-like Row Style (Alternative) */
+.dataTables_wrapper.card-style table tbody tr {
+    background: white;
+    margin-bottom: 0.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Zebra Striping dengan Shadow */
+.dataTables_wrapper table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #fafbfc;
+}
+
+/* Hover effect lebih dramatic */
+.dataTables_wrapper table tbody tr:hover td {
+    background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
+}
+
+/* Focus state untuk aksesibilitas */
+.dataTables_wrapper *:focus {
+    outline: 2px solid #1572E8;
+    outline-offset: 2px;
+}
+
+/* Responsive Shadows */
+@media (max-width: 768px) {
+    .dataTables_wrapper {
+        padding: 1rem;
+    }
+    
+    .dataTables_wrapper .row:first-child,
+    .dataTables_wrapper .row:last-child {
+        padding: 0.75rem 1rem;
+    }
+    
+    .dataTables_wrapper table tbody tr:hover {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+    .dataTables_wrapper {
+        background: #1a1a1a;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .dataTables_wrapper table tbody tr {
+        border-bottom-color: #2a2a2a;
+    }
+    
+    .dataTables_wrapper table tbody tr:hover {
+        background-color: #2a2a2a;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+}

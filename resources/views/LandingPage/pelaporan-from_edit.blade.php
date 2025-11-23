@@ -34,26 +34,94 @@
 
 <body>
 
-    <!-- Header -->
     <header id="header" class="header d-flex align-items-center fixed-top">
         <div class="container-fluid container-xl position-relative d-flex align-items-center">
 
-            <a href="index.html" class="logo d-flex align-items-center me-auto">
+            <a href="{{ route('landingpage.index') }}" class="logo d-flex align-items-center me-auto">
                 <h1 class="sitename">P-Mones</h1>
             </a>
 
             <nav id="navmenu" class="navmenu">
                 <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="pelaporan.html" class="active">Pelaporan</a></li>
-                    <li><a href="#services">Gambar</a></li>
-                    li><a href="dokumentasi.html">Dokumentasi</a></li>
-                    <li><a href="#team">Korespondensi</a></li>
+                    @auth
+                    <li><a href="{{ route('landingpage.index') }}"
+                            class="{{ request()->routeIs('landingpage.index') ? 'active' : '' }}">Home</a></li>
+                    <li><a href="{{ route('landingpage.index.pelaporan') }}"
+                            class="{{ request()->routeIs('landingpage.index.pelaporan*') ? 'active' : '' }}">Pelaporan</a>
+                    </li>
+                    <li><a href="{{ route('landingpage.index.dokumentasi') }}"
+                            class="{{ request()->routeIs('landingpage.index.dokumentasi') ? 'active' : '' }}">Dokumentasi</a>
+                    </li>
+                    <li><a href="{{ route('landingpage.monitoring.progress') }}"
+                            class="{{ request()->routeIs('landingpage.monitoring.progress') ? 'active' : '' }}">Monitoring</a>
+                    </li>
+                    <li><a href="{{ route('landingpage.monitoring.progress') }}"
+                            class="{{ request()->routeIs('landingpage.monitoring.progress') ? 'active' : '' }}">Gambar</a>
+                    </li>
+                    @else
+                    <li><a href="#about">Tentang</a></li>
+                    <li><a href="#services">Layanan</a></li>
+                    <li><a href="#contact">Kontak</a></li>
+                    @endauth
                 </ul>
                 <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
             </nav>
 
-            <a class="btn-getstarted" href="pelaporan.html">Kembali</a>
+            @auth
+            {{-- User Dropdown - Vendor Only --}}
+            <div class="user-dropdown" style="position: relative;">
+                <button class="btn-getstarted user-menu-btn" id="userMenuBtn" type="button">
+                    <i class="bi bi-person-circle" style="font-size: 18px; margin-right: 8px;"></i>
+                    {{ Auth::user()->name }}
+                    <i class="bi bi-chevron-down" style="font-size: 12px; margin-left: 5px;"></i>
+                </button>
+
+                <div id="userDropdownMenu" class="dropdown-menu-custom">
+                    <div class="dropdown-header">
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                <i class="bi bi-person-circle"></i>
+                            </div>
+                            <div class="user-details">
+                                <div class="user-name">{{ Auth::user()->name }}</div>
+                                <div class="user-email">{{ Auth::user()->email }}</div>
+                                <div class="user-role">
+                                    <span class="badge-role">Vendor</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dropdown-divider"></div>
+
+                    <a href="{{ route('landingpage.profile') }}" class="dropdown-item">
+                        <i class="bi bi-person"></i>
+                        <span>Profile Saya</span>
+                    </a>
+
+                    <a href="{{ route('landingpage.profile.password') }}" class="dropdown-item">
+                        <i class="bi bi-key"></i>
+                        <span>Ubah Password</span>
+                    </a>
+
+                    <div class="dropdown-divider"></div>
+
+                    <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+                        @csrf
+                        <button type="submit" class="dropdown-item logout-btn">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>Logout</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            @else
+            {{-- User belum login --}}
+            <a class="btn-getstarted" href="{{ route('login') }}">
+                <i class="bi bi-box-arrow-in-right" style="margin-right: 5px;"></i>
+                Login
+            </a>
+            @endauth
 
         </div>
     </header>
@@ -111,7 +179,7 @@
                                 </select>
                             </div>
 
-                            <!-- GPS Location (Saved - Read Only) -->
+                            <!-- GPS Location  -->
                             <div class="mb-3">
                                 <div class="alert alert-secondary d-flex align-items-center">
                                     <i class="bi bi-geo-alt-fill me-2" style="font-size: 24px;"></i>

@@ -57,4 +57,8 @@ public function pekerjaan()
         return $this->pr->pekerjaan(); 
     }
 
+    public function dailyProgresses()
+    {
+        return $this->hasMany(DailyProgress::class, 'po_id');
+    }
 }

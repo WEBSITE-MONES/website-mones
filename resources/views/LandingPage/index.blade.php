@@ -41,122 +41,6 @@
 
     <!-- Main CSS File -->
     <link href="/LandingPage/assets/css/main.css" rel="stylesheet">
-    <!-- <link href="/LandingPage/assets/css/pelaporan.css" rel="stylesheet"> -->
-
-    <!-- PWA Custom Styles -->
-    <style>
-    /* Install Prompt Styles */
-    #installPrompt {
-        display: none;
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 16px 20px;
-        border-radius: 12px;
-        z-index: 9999;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        max-width: 90%;
-        animation: slideUp 0.4s ease-out;
-    }
-
-    @keyframes slideUp {
-        from {
-            transform: translateX(-50%) translateY(100px);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-        }
-    }
-
-    #installPrompt .prompt-content {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    #installPrompt .prompt-icon {
-        font-size: 24px;
-    }
-
-    #installPrompt .prompt-text {
-        flex: 1;
-        min-width: 200px;
-    }
-
-    #installPrompt .prompt-buttons {
-        display: flex;
-        gap: 8px;
-    }
-
-    #installPrompt button {
-        padding: 8px 20px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 14px;
-        transition: all 0.2s;
-    }
-
-    #installBtn {
-        background: white;
-        color: #667eea;
-    }
-
-    #installBtn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
-    }
-
-    #dismissBtn {
-        background: transparent;
-        color: white;
-        border: 2px solid white;
-    }
-
-    #dismissBtn:hover {
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    /* Offline Indicator */
-    .offline-indicator {
-        display: none;
-        position: fixed;
-        top: 70px;
-        right: 20px;
-        background: #ff6b6b;
-        color: white;
-        padding: 10px 16px;
-        border-radius: 8px;
-        font-size: 14px;
-        z-index: 9998;
-        animation: slideDown 0.3s ease-out;
-    }
-
-    .offline-indicator.show {
-        display: block;
-    }
-
-    @keyframes slideDown {
-        from {
-            transform: translateY(-100px);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-    </style>
-
 </head>
 
 <body class="index-page">
@@ -190,15 +74,22 @@
 
             <nav id="navmenu" class="navmenu">
                 <ul>
-                    <li><a href="{{ route('landingpage.index') }}" class="active">Home</a></li>
-
                     @auth
-                    {{-- Menu untuk user yang sudah login --}}
-                    <li><a href="{{ route('landingpage.index.pelaporan') }}">Pelaporan</a></li>
-                    <li><a href="{{ route('landingpage.index.dokumentasi') }}">Dokumentasi</a></li>
-                    <li><a href="#services">Gambar</a></li>
+                    <li><a href="{{ route('landingpage.index') }}"
+                            class="{{ request()->routeIs('landingpage.index') ? 'active' : '' }}">Home</a></li>
+                    <li><a href="{{ route('landingpage.index.pelaporan') }}"
+                            class="{{ request()->routeIs('landingpage.index.pelaporan*') ? 'active' : '' }}">Pelaporan</a>
+                    </li>
+                    <li><a href="{{ route('landingpage.index.dokumentasi') }}"
+                            class="{{ request()->routeIs('landingpage.index.dokumentasi') ? 'active' : '' }}">Dokumentasi</a>
+                    </li>
+                    <li><a href="{{ route('landingpage.monitoring.progress') }}"
+                            class="{{ request()->routeIs('landingpage.monitoring.progress') ? 'active' : '' }}">Monitoring</a>
+                    </li>
+                    <li><a href="{{ route('landingpage.monitoring.progress') }}"
+                            class="{{ request()->routeIs('landingpage.monitoring.progress') ? 'active' : '' }}">Gambar</a>
+                    </li>
                     @else
-                    {{-- Menu untuk user yang belum login --}}
                     <li><a href="#about">Tentang</a></li>
                     <li><a href="#services">Layanan</a></li>
                     <li><a href="#contact">Kontak</a></li>
@@ -208,7 +99,7 @@
             </nav>
 
             @auth
-            {{-- User sudah login - Tampilkan nama & dropdown --}}
+            {{-- User Dropdown - Vendor Only --}}
             <div class="user-dropdown" style="position: relative;">
                 <button class="btn-getstarted user-menu-btn" id="userMenuBtn" type="button">
                     <i class="bi bi-person-circle" style="font-size: 18px; margin-right: 8px;"></i>
@@ -226,7 +117,7 @@
                                 <div class="user-name">{{ Auth::user()->name }}</div>
                                 <div class="user-email">{{ Auth::user()->email }}</div>
                                 <div class="user-role">
-                                    <span class="badge-role">{{ ucfirst(Auth::user()->role) }}</span>
+                                    <span class="badge-role">Vendor</span>
                                 </div>
                             </div>
                         </div>
@@ -234,14 +125,14 @@
 
                     <div class="dropdown-divider"></div>
 
-                    <a href="{{ route('account.index') }}" class="dropdown-item">
+                    <a href="{{ route('landingpage.profile') }}" class="dropdown-item">
                         <i class="bi bi-person"></i>
                         <span>Profile Saya</span>
                     </a>
 
-                    <a href="{{ route('account.setting') }}" class="dropdown-item">
-                        <i class="bi bi-gear"></i>
-                        <span>Pengaturan</span>
+                    <a href="{{ route('landingpage.profile.password') }}" class="dropdown-item">
+                        <i class="bi bi-key"></i>
+                        <span>Ubah Password</span>
                     </a>
 
                     <div class="dropdown-divider"></div>
@@ -255,164 +146,8 @@
                     </form>
                 </div>
             </div>
-
-            <style>
-            .user-menu-btn {
-                display: flex;
-                align-items: center;
-                background: transparent;
-                border: 2px solid rgba(255, 255, 255, 0.3);
-                color: #fff;
-                padding: 8px 16px;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-
-            .user-menu-btn:hover {
-                background: rgba(255, 255, 255, 0.1);
-                border-color: rgba(255, 255, 255, 0.5);
-            }
-
-            .dropdown-menu-custom {
-                display: none;
-                position: absolute;
-                top: calc(100% + 10px);
-                right: 0;
-                background: #fff;
-                border-radius: 12px;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-                min-width: 280px;
-                z-index: 1000;
-                animation: slideDown 0.3s ease;
-            }
-
-            .dropdown-menu-custom.show {
-                display: block;
-            }
-
-            @keyframes slideDown {
-                from {
-                    opacity: 0;
-                    transform: translateY(-10px);
-                }
-
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-
-            .dropdown-header {
-                padding: 20px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                border-radius: 12px 12px 0 0;
-                color: #fff;
-            }
-
-            .user-info {
-                display: flex;
-                align-items: center;
-                gap: 15px;
-            }
-
-            .user-avatar {
-                font-size: 50px;
-                line-height: 1;
-            }
-
-            .user-details {
-                flex: 1;
-            }
-
-            .user-name {
-                font-weight: 600;
-                font-size: 16px;
-                margin-bottom: 4px;
-            }
-
-            .user-email {
-                font-size: 13px;
-                opacity: 0.9;
-                margin-bottom: 6px;
-            }
-
-            .badge-role {
-                background: rgba(255, 255, 255, 0.2);
-                padding: 3px 10px;
-                border-radius: 12px;
-                font-size: 11px;
-                font-weight: 600;
-                text-transform: uppercase;
-            }
-
-            .dropdown-divider {
-                height: 1px;
-                background: #eee;
-                margin: 8px 0;
-            }
-
-            .dropdown-item {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 12px 20px;
-                color: #333;
-                text-decoration: none;
-                transition: all 0.2s ease;
-                cursor: pointer;
-                border: none;
-                background: none;
-                width: 100%;
-                text-align: left;
-                font-size: 14px;
-            }
-
-            .dropdown-item i {
-                font-size: 18px;
-                width: 20px;
-                text-align: center;
-            }
-
-            .dropdown-item:hover {
-                background: #f8f9fa;
-            }
-
-            .logout-btn {
-                color: #dc3545;
-            }
-
-            .logout-btn:hover {
-                background: #fff5f5;
-            }
-            </style>
-
-            <script>
-            // Toggle dropdown
-            document.getElementById('userMenuBtn').addEventListener('click', function(e) {
-                e.stopPropagation();
-                const dropdown = document.getElementById('userDropdownMenu');
-                dropdown.classList.toggle('show');
-            });
-
-            // Close dropdown saat klik di luar
-            document.addEventListener('click', function(e) {
-                const dropdown = document.getElementById('userDropdownMenu');
-                const button = document.getElementById('userMenuBtn');
-
-                if (!button.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.classList.remove('show');
-                }
-            });
-
-            // Close dropdown saat klik item menu
-            document.querySelectorAll('.dropdown-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    document.getElementById('userDropdownMenu').classList.remove('show');
-                });
-            });
-            </script>
             @else
-            {{-- User belum login - Tampilkan tombol login --}}
+            {{-- User belum login --}}
             <a class="btn-getstarted" href="{{ route('login') }}">
                 <i class="bi bi-box-arrow-in-right" style="margin-right: 5px;"></i>
                 Login
@@ -426,7 +161,6 @@
 
         <!-- Hero Section -->
         <section id="hero" class="hero section dark-background">
-
             <div class="container">
                 <div class="row gy-4">
                     <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center"
@@ -442,37 +176,31 @@
                     </div>
                 </div>
             </div>
+        </section>
 
-        </section><!-- /Hero Section -->
-
-        <!-- Ini Progress Harian -->
+        <!-- Progress Monitoring -->
         <section id="skills" class="skills section">
-
             <div class="container" data-aos="fade-up" data-aos-delay="100">
-
                 <div class="row">
-
                     <div class="col-lg-6 d-flex align-items-center">
                         <img src="{{ asset('LandingPage/assets/img/illustration/illustration-10.webp') }}"
                             class="img-fluid" alt="">
                     </div>
 
                     <div class="col-lg-6 pt-4 pt-lg-0 content">
-
                         <h3>Progress Monitoring Investasi</h3>
                         <p class="fst-italic">
                             Pantau progress investasi secara real-time untuk memastikan target tercapai sesuai rencana.
                         </p>
 
                         <div class="skills-content skills-animation">
-
                             <div class="progress">
                                 <span class="skill"><span>Perencanaan</span> <i class="val">100%</i></span>
                                 <div class="progress-bar-wrap">
                                     <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0"
                                         aria-valuemax="100"></div>
                                 </div>
-                            </div><!-- End Skills Item -->
+                            </div>
 
                             <div class="progress">
                                 <span class="skill"><span>Pelelangan</span> <i class="val">90%</i></span>
@@ -480,7 +208,7 @@
                                     <div class="progress-bar" role="progressbar" aria-valuenow="90" aria-valuemin="0"
                                         aria-valuemax="100"></div>
                                 </div>
-                            </div><!-- End Skills Item -->
+                            </div>
 
                             <div class="progress">
                                 <span class="skill"><span>Pelaksanaan</span> <i class="val">75%</i></span>
@@ -488,7 +216,7 @@
                                     <div class="progress-bar" role="progressbar" aria-valuenow="75" aria-valuemin="0"
                                         aria-valuemax="100"></div>
                                 </div>
-                            </div><!-- End Skills Item -->
+                            </div>
 
                             <div class="progress">
                                 <span class="skill"><span>Serah Terima</span> <i class="val">55%</i></span>
@@ -496,24 +224,17 @@
                                     <div class="progress-bar" role="progressbar" aria-valuenow="55" aria-valuemin="0"
                                         aria-valuemax="100"></div>
                                 </div>
-                            </div><!-- End Skills Item -->
-
+                            </div>
                         </div>
-
                     </div>
                 </div>
-
             </div>
+        </section>
 
-        </section><!-- /Skills Section -->
-
-        <!-- Pekerjaan dari upload pekerjaan, ini bisa -->
+        <!-- Call to Action -->
         <section id="call-to-action" class="call-to-action section dark-background">
-
             <img src="{{ asset('LandingPage/assets/img/bg/bg-8.webp') }}" alt="">
-
             <div class="container">
-
                 <div class="row" data-aos="zoom-in" data-aos-delay="100">
                     <div class="col-xl-9 text-center text-xl-start">
                         <h3>Mulai Monitoring Sekarang</h3>
@@ -525,10 +246,8 @@
                             Laporan</a>
                     </div>
                 </div>
-
             </div>
-
-        </section><!-- /Call To Action Section -->
+        </section>
 
     </main>
 
@@ -554,8 +273,10 @@
                         <li><i class="bi bi-chevron-right"></i> <a href="{{ route('landingpage.index') }}">Home</a></li>
                         <li><i class="bi bi-chevron-right"></i> <a
                                 href="{{ route('landingpage.index.pelaporan') }}">Pelaporan</a></li>
-                        <li><i class="bi bi-chevron-right"></i> <a href="#gambar">Gambar</a></li>
-                        <li><i class="bi bi-chevron-right"></i> <a href="#korespondensi">Korespondensi</a></li>
+                        <li><i class="bi bi-chevron-right"></i> <a
+                                href="{{ route('landingpage.index.dokumentasi') }}">Dokumentasi</a></li>
+                        <li><i class="bi bi-chevron-right"></i> <a
+                                href="{{ route('landingpage.monitoring.progress') }}">Monitoring</a></li>
                     </ul>
                 </div>
 
@@ -589,8 +310,9 @@
     </footer>
 
     <!-- Scroll Top -->
-    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i
-            class="bi bi-arrow-up-short"></i></a>
+    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center">
+        <i class="bi bi-arrow-up-short"></i>
+    </a>
 
     <!-- Preloader -->
     <div id="preloader"></div>
@@ -618,14 +340,12 @@
                 });
                 console.log('✅ SW registered:', registration.scope);
 
-                // Update check
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker
                             .controller) {
                             console.log('🔄 Update available!');
-                            // Optional: Tampilkan notifikasi update
                         }
                     });
                 });
@@ -642,7 +362,6 @@
     const dismissBtn = document.getElementById('dismissBtn');
 
     window.addEventListener('beforeinstallprompt', (e) => {
-        console.log('📱 Install prompt detected');
         e.preventDefault();
         deferredPrompt = e;
 
@@ -652,8 +371,7 @@
         if (!dismissedTime || (Date.now() - dismissedTime) > sevenDays) {
             setTimeout(() => {
                 installPrompt.style.display = 'block';
-                console.log('✅ Showing install prompt');
-            }, 2000); // Tampilkan setelah 2 detik
+            }, 2000);
         }
     });
 
@@ -689,9 +407,37 @@
     window.addEventListener('offline', () => offlineIndicator.classList.add('show'));
     window.addEventListener('online', () => offlineIndicator.classList.remove('show'));
     if (!navigator.onLine) offlineIndicator.classList.add('show');
+
+    // User Dropdown Toggle
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    const userDropdownMenu = document.getElementById('userDropdownMenu');
+
+    if (userMenuBtn) {
+        userMenuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userDropdownMenu.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (userMenuBtn && userDropdownMenu &&
+                !userMenuBtn.contains(e.target) &&
+                !userDropdownMenu.contains(e.target)) {
+                userDropdownMenu.classList.remove('show');
+            }
+        });
+
+        // Close dropdown when clicking menu items
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function() {
+                if (userDropdownMenu) {
+                    userDropdownMenu.classList.remove('show');
+                }
+            });
+        });
+    }
     </script>
 
-    <!-- PWA Service Worker & Install Script -->
-    < </body>
+</body>
 
 </html>

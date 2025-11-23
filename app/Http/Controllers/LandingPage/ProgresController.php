@@ -11,8 +11,13 @@ use App\Models\Pekerjaan;
 use App\Models\SubPekerjaan;
 use App\Models\Po;  
 use App\Models\PekerjaanItem;
+use App\Models\MasterMinggu;
 use App\Models\DailyProgress;
 use Illuminate\Support\Facades\Http; 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use App\Models\Profile;
+
 
 class ProgresController extends Controller
 {
@@ -30,29 +35,303 @@ class ProgresController extends Controller
         return view('LandingPage.pelaporan', compact('user'));
     }
     
-    public function pelaporanform()
+        public function pelaporanform()
     {
         $user = Auth::user();
         
-        // Load pekerjaan dengan relasi
-        $pekerjaan = Pekerjaan::with('wilayah')
-            ->orderBy('nama_investasi', 'asc')
-            ->get();
+        // // Load wilayah yang memiliki pekerjaan
+        // $wilayah = \App\Models\Wilayah::whereHas('pekerjaans')
+        //     ->orderBy('nama', 'asc')
+        //     ->get();
         
-        return view('LandingPage.pelaporan-form', compact('user', 'pekerjaan'));
+        // // Load semua pekerjaan dengan relasi wilayah (untuk fallback)
+        // $pekerjaan = Pekerjaan::with('wilayah')
+        //     ->orderBy('nama_investasi', 'asc')
+        //     ->get();
+        
+        return view('LandingPage.pelaporan-form', compact('user'));
     }
-    
+        
     public function pelaporanformedit()
     {
         $user = Auth::user();
         return view('LandingPage.pelaporan-form_edit', compact('user'));
     }
     
+    // DOKUMENTASI
     public function dokumentasi()
     {
-        $user = Auth::user();
-        return view('LandingPage.dokumentasi', compact('user'));
+        try {
+            $user = Auth::user();
+            
+            // Ambil semua pekerjaan untuk filter dropdown
+            $pekerjaans = Pekerjaan::with('wilayah')
+                ->whereHas('subPekerjaan.pr.po.dailyProgresses')
+                ->orderBy('nama_investasi', 'asc')
+                ->get();
+            
+            return view('LandingPage.dokumentasi', compact('user', 'pekerjaans'));
+            
+        } catch (\Exception $e) {
+            Log::error('Error dokumentasi page', [
+                'error' => $e->getMessage()
+            ]);
+            
+            return redirect()->route('landingpage.index')
+                ->with('error', 'Gagal memuat halaman dokumentasi');
+        }
     }
+
+    public function debugDokumentasi()
+{
+    try {
+        // 1. Cek total records
+        $totalRecords = DailyProgress::count();
+        
+        // 2. Cek records dengan foto
+        $recordsWithFoto = DailyProgress::whereNotNull('foto')->count();
+        
+        // 3. Cek records dengan foto valid (JSON array)
+        $recordsWithValidFoto = DailyProgress::whereNotNull('foto')
+            ->whereRaw("JSON_LENGTH(foto) > 0")
+            ->count();
+        
+        // 4. Sample data 5 terakhir
+        $samples = DailyProgress::with(['pelapor:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get()
+            ->map(function($report) {
+                return [
+                    'id' => $report->id,
+                    'tanggal' => [
+                        'raw' => $report->getAttributes()['tanggal'], // Raw dari DB
+                        'formatted' => $report->tanggal ? $report->tanggal->format('Y-m-d H:i:s') : 'NULL',
+                        'type' => gettype($report->tanggal),
+                        'is_carbon' => $report->tanggal instanceof \Carbon\Carbon,
+                    ],
+                    'foto' => [
+                        'is_null' => is_null($report->foto),
+                        'is_array' => is_array($report->foto),
+                        'count' => is_array($report->foto) ? count($report->foto) : 0,
+                        'structure' => is_array($report->foto) && count($report->foto) > 0 
+                            ? array_keys($report->foto[0]) 
+                            : null,
+                        'sample_url' => is_array($report->foto) && count($report->foto) > 0 
+                            ? ($report->foto[0]['url'] ?? 'NO_URL') 
+                            : null,
+                    ],
+                    'po_id' => $report->po_id,
+                    'pelapor' => $report->pelapor ? $report->pelapor->name : 'NULL',
+                    'created_at' => $report->created_at->format('Y-m-d H:i:s'),
+                ];
+            });
+        
+        // 5. Cek struktur database
+        $tableInfo = DB::select("DESCRIBE daily_progress");
+        
+        // 6. Test query yang digunakan di apiGetDokumentasi
+        $testQuery = DailyProgress::with([
+            'po:id,nomor_po,pelaksana,pr_id',
+            'pelapor:id,name'
+        ])
+        ->where('status_approval', '!=', 'rejected')
+        ->whereNotNull('foto')
+        ->whereRaw("JSON_LENGTH(foto) > 0")
+        ->orderBy('tanggal', 'desc')
+        ->take(3)
+        ->get();
+        
+        $queryResult = $testQuery->map(function($report) {
+            return [
+                'id' => $report->id,
+                'has_po' => !is_null($report->po),
+                'has_pelapor' => !is_null($report->pelapor),
+                'foto_count' => is_array($report->foto) ? count($report->foto) : 0,
+                'tanggal_ok' => $report->tanggal instanceof \Carbon\Carbon,
+            ];
+        });
+        
+        return response()->json([
+            'database' => [
+                'total_records' => $totalRecords,
+                'records_with_foto' => $recordsWithFoto,
+                'records_with_valid_foto' => $recordsWithValidFoto,
+                'foto_percentage' => $totalRecords > 0 
+                    ? round(($recordsWithFoto / $totalRecords) * 100, 2) . '%' 
+                    : '0%',
+            ],
+            'sample_data' => $samples,
+            'table_structure' => $tableInfo,
+            'test_query' => [
+                'count' => $testQuery->count(),
+                'results' => $queryResult,
+            ],
+            'model_casts' => DailyProgress::make()->getCasts(),
+        ], 200, [], JSON_PRETTY_PRINT);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => true,
+            'message' => $e->getMessage(),
+            'trace' => explode("\n", $e->getTraceAsString()),
+        ], 500, [], JSON_PRETTY_PRINT);
+    }
+}
+
+    public function apiGetDokumentasi(Request $request)
+{
+    try {
+        Log::info('API Get Dokumentasi called', [
+            'filters' => $request->all()
+        ]);
+        
+        $query = DailyProgress::with([
+            'po:id,nomor_po,pelaksana,pr_id',
+            'po.pr.pekerjaan:id,nama_investasi',
+            'pekerjaanItem:id,kode_pekerjaan,jenis_pekerjaan_utama,sub_pekerjaan,sub_sub_pekerjaan',
+            'pelapor:id,name'
+        ])
+        ->where('status_approval', '!=', 'rejected')
+        // ✅ PENTING: Hanya ambil yang PUNYA foto
+        ->whereNotNull('foto')
+        ->whereRaw("JSON_LENGTH(foto) > 0") // Pastikan array foto tidak kosong
+        ->orderBy('tanggal', 'desc')
+        ->orderBy('created_at', 'desc');
+        
+        // Filter by pekerjaan
+        if ($request->has('pekerjaan_id') && $request->pekerjaan_id) {
+            $prIds = SubPekerjaan::where('pekerjaan_id', $request->pekerjaan_id)
+                ->pluck('pr_id');
+            $poIds = Po::whereIn('pr_id', $prIds)->pluck('id');
+            $query->whereIn('po_id', $poIds);
+        }
+        
+        // Filter by date range
+        if ($request->has('tanggal_mulai') && $request->tanggal_mulai) {
+            $query->where('tanggal', '>=', $request->tanggal_mulai);
+        }
+        
+        if ($request->has('tanggal_akhir') && $request->tanggal_akhir) {
+            $query->where('tanggal', '<=', $request->tanggal_akhir);
+        }
+        
+        $reports = $query->get();
+        
+        Log::info('Reports found', ['count' => $reports->count()]);
+        
+        // Extract all photos from reports
+        $allPhotos = [];
+        $photoId = 0;
+        
+        foreach ($reports as $report) {
+            // ✅ Double check foto array
+            if (empty($report->foto) || !is_array($report->foto)) {
+                Log::warning('Report has invalid foto', ['report_id' => $report->id]);
+                continue;
+            }
+            
+            $namaProyek = 'Unknown';
+            $projectSlug = 'unknown';
+            
+            if ($report->po && $report->po->pr && $report->po->pr->pekerjaan) {
+                $namaProyek = $report->po->pr->pekerjaan->nama_investasi;
+                $projectSlug = strtolower(str_replace(' ', '_', $namaProyek));
+            }
+            
+            foreach ($report->foto as $index => $foto) {
+                // ✅ Validasi struktur foto
+                if (!is_array($foto) || empty($foto['url'])) {
+                    Log::warning('Invalid photo structure', [
+                        'report_id' => $report->id,
+                        'photo_index' => $index
+                    ]);
+                    continue;
+                }
+                
+                $allPhotos[] = [
+                    'id' => $photoId++,
+                    'url' => $foto['url'] ?? '',
+                    'thumbnail' => $foto['url'] ?? '',
+                    'title' => $report->jenis_pekerjaan ?? 'Dokumentasi',
+                    'description' => $report->deskripsi ?? '',
+                    'date' => $report->tanggal->format('Y-m-d'),
+                    'time' => $report->tanggal->format('H:i'),
+                    'gps' => [
+                        'lat' => (float) ($foto['gps_lat'] ?? $report->gps_latitude ?? 0),
+                        'lon' => (float) ($foto['gps_lon'] ?? $report->gps_longitude ?? 0),
+                        'accuracy' => (int) ($foto['gps_accuracy'] ?? 10)
+                    ],
+                    'weather' => [
+                        'temp' => (int) ($report->cuaca_suhu ?? 28),
+                        'desc' => $report->cuaca_deskripsi ?? 'Cerah',
+                        'icon' => $this->getWeatherIcon($report->cuaca_deskripsi),
+                        'humidity' => (int) ($report->cuaca_kelembaban ?? 70)
+                    ],
+                    'project' => $projectSlug,
+                    'projectName' => $namaProyek,
+                    'pelapor' => $report->pelapor->name ?? 'Unknown',
+                    'status' => $report->status_approval,
+                    'location_name' => $foto['location_name'] ?? $report->lokasi_nama ?? 'Unknown'
+                ];
+            }
+        }
+        
+        Log::info('Photos extracted', ['total' => count($allPhotos)]);
+        
+        // Calculate stats
+        $uniqueGPS = array_unique(array_map(function($p) {
+            return $p['gps']['lat'] . ',' . $p['gps']['lon'];
+        }, $allPhotos));
+        
+        $uniqueProjects = array_unique(array_column($allPhotos, 'project'));
+        
+        $stats = [
+            'total_photos' => count($allPhotos),
+            'unique_locations' => count($uniqueGPS),
+            'active_projects' => count($uniqueProjects),
+            'last_update' => $reports->isNotEmpty() 
+                ? $reports->first()->tanggal->diffForHumans() 
+                : 'Belum ada data'
+        ];
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'photos' => $allPhotos,
+                'stats' => $stats
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        Log::error('Error apiGetDokumentasi', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal memuat dokumentasi: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+    private function getWeatherIcon($description)
+    {
+        if (!$description) return '☀️';
+        
+        $desc = strtolower($description);
+        
+        if (strpos($desc, 'cerah') !== false) return '☀️';
+        if (strpos($desc, 'berawan') !== false) return '⛅';
+        if (strpos($desc, 'hujan') !== false) return '🌧️';
+        if (strpos($desc, 'mendung') !== false) return '☁️';
+        if (strpos($desc, 'badai') !== false) return '⛈️';
+        
+        return '🌤️';
+    }
+
+    // DOKUMENTASI
     
     // ==================== API: GET PO BY PEKERJAAN ====================
     
@@ -187,7 +466,7 @@ class ProgresController extends Controller
             // Validasi data
             $validated = $request->validate([
                 'tanggal' => 'required|date',
-                'pekerjaan' => 'required|exists:pekerjaan,id',  // ✅ Fixed: pekerjaan (bukan pekerjaans)
+                'pekerjaan' => 'required|exists:pekerjaan,id', 
                 'po_id' => 'required|exists:pos,id',
                 'pekerjaan_item_id' => 'required|exists:pekerjaan_items,id',
                 'jenis_pekerjaan' => 'required|string|max:255',
@@ -689,4 +968,467 @@ class ProgresController extends Controller
             ], 500);
         }
     }
+
+
+    // untuk curva s
+public function monitoringProgress()
+{
+    try {
+        $user = Auth::user();
+        
+        // Ambil semua pekerjaan yang punya PO (sederhanakan dulu untuk testing)
+        $pekerjaans = Pekerjaan::with('wilayah')
+            ->whereHas('subPekerjaan.pr.po') // Pastikan ada PO
+            ->orderBy('nama_investasi', 'asc')
+            ->get();
+        
+        Log::info('Monitoring Progress Accessed', [
+            'user_id' => $user->id,
+            'pekerjaan_count' => $pekerjaans->count()
+        ]);
+        
+        return view('LandingPage.monitoring-progress', compact('user', 'pekerjaans'));
+        
+    } catch (\Exception $e) {
+        Log::error('Error monitoringProgress', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return redirect()->route('landingpage.index')
+            ->with('error', 'Gagal memuat halaman monitoring: ' . $e->getMessage());
+    }
+}
+public function apiGetProgressData($pekerjaanId)
+{
+    try {
+        // Ambil PO dari pekerjaan
+        $prIds = SubPekerjaan::where('pekerjaan_id', $pekerjaanId)->pluck('pr_id');
+        $po = Po::whereIn('pr_id', $prIds)
+            ->with([
+                'progresses.details.minggu',
+                'progresses.pekerjaanItem'
+            ])
+            ->first();
+        
+        if (!$po) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data PO tidak ditemukan'
+            ], 404);
+        }
+        
+        // Ambil master minggu
+        $progressUtama = $po->progresses()->whereNull('pekerjaan_item_id')->first();
+        $masterMinggu = MasterMinggu::where('progress_id', $progressUtama->id ?? 0)
+            ->orderBy('tanggal_awal')
+            ->get();
+        
+        // Hitung kumulatif rencana & realisasi per minggu
+        $chartData = [];
+        $cumulativeRencana = 0;
+        $cumulativeRealisasi = 0;
+        
+        foreach ($masterMinggu as $minggu) {
+            $rencanaWeek = 0;
+            $realisasiWeek = 0;
+            
+            foreach ($po->progresses as $progress) {
+                if (!$progress->pekerjaan_item_id) continue;
+                
+                $detail = $progress->details->firstWhere('minggu_id', $minggu->id);
+                if ($detail) {
+                    $rencanaWeek += (float) $detail->bobot_rencana;
+                    $realisasiWeek += (float) $detail->bobot_realisasi;
+                }
+            }
+            
+            $cumulativeRencana += $rencanaWeek;
+            $cumulativeRealisasi += $realisasiWeek;
+            
+            $chartData[] = [
+                'week' => $minggu->kode_minggu,
+                'week_label' => $minggu->tanggal_awal->format('d M') . ' - ' . $minggu->tanggal_akhir->format('d M'),
+                'rencana' => round($cumulativeRencana, 2),
+                'realisasi' => round($cumulativeRealisasi, 2),
+                'deviasi' => round($cumulativeRealisasi - $cumulativeRencana, 2)
+            ];
+        }
+        
+        // Data untuk progress bars
+        $rencanaPct = round($cumulativeRencana, 2);
+        $realisasiPct = round($cumulativeRealisasi, 2);
+        $deviasiPct = round($realisasiPct - $rencanaPct, 2);
+        
+        // Ambil item pekerjaan hierarki untuk tabel WBS
+        $items = PekerjaanItem::where('po_id', $po->id)
+            ->with(['children.children'])
+            ->whereNull('parent_id')
+            ->orderBy('kode_pekerjaan')
+            ->get();
+        
+        // Map detail progress per item
+        $progressDetailsMap = [];
+        foreach ($po->progresses as $progress) {
+            if (!$progress->pekerjaan_item_id) continue;
+            
+            foreach ($progress->details as $detail) {
+                $progressDetailsMap[$progress->pekerjaan_item_id][$detail->minggu_id] = [
+                    'bobot_rencana' => (float) $detail->bobot_rencana,
+                    'bobot_realisasi' => (float) $detail->bobot_realisasi
+                ];
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'chart_data' => $chartData,
+                'summary' => [
+                    'rencana_pct' => $rencanaPct,
+                    'realisasi_pct' => $realisasiPct,
+                    'deviasi_pct' => $deviasiPct
+                ],
+                'master_minggu' => $masterMinggu->map(fn($m) => [
+                    'id' => $m->id,
+                    'kode' => $m->kode_minggu,
+                    'tanggal' => $m->tanggal_awal->format('d M') . ' - ' . $m->tanggal_akhir->format('d M')
+                ]),
+                'items' => $this->formatItemsProgress($items, $progressDetailsMap),
+                'po_info' => [
+                    'nomor_po' => $po->nomor_po,
+                    'pelaksana' => $po->pelaksana,
+                    'nilai_po' => $po->nilai_po
+                ]
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        Log::error('Error apiGetProgressData', [
+            'pekerjaan_id' => $pekerjaanId,
+            'error' => $e->getMessage()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal memuat data progress: ' . $e->getMessage()
+        ], 500);
+    }
+}
+private function formatItemsProgress($items, $progressDetailsMap, $level = 0)
+{
+    $result = [];
+    
+    foreach ($items as $item) {
+        $nama = $item->jenis_pekerjaan_utama ?: 
+                ($item->sub_pekerjaan ?: 
+                ($item->sub_sub_pekerjaan ?: 'Item Pekerjaan'));
+        
+        $progressData = $progressDetailsMap[$item->id] ?? [];
+        
+        $result[] = [
+            'id' => $item->id,
+            'kode' => $item->kode_pekerjaan,
+            'nama' => $nama,
+            'volume' => $item->volume,
+            'satuan' => $item->sat,
+            'bobot' => $item->bobot,
+            'level' => $level,
+            'has_children' => $item->children->count() > 0,
+            'progress_data' => $progressData // { minggu_id: { rencana, realisasi } }
+        ];
+        
+        if ($item->children->count() > 0) {
+            $childItems = $this->formatItemsProgress($item->children, $progressDetailsMap, $level + 1);
+            $result = array_merge($result, $childItems);
+        }
+    }
+    
+    return $result;
+}
+
+
+// PROFILE
+/**
+ * VENDOR PROFILE - View Profile
+ */
+public function vendorProfile()
+{
+    try {
+        $user = Auth::user();
+        $profile = $user->profile;
+        
+        Log::info('Vendor Profile Accessed', [
+            'user_id' => $user->id,
+            'name' => $user->name
+        ]);
+        
+        return view('LandingPage.vendor-profile', compact('user', 'profile'));
+        
+    } catch (\Exception $e) {
+        Log::error('Error vendorProfile', [
+            'error' => $e->getMessage()
+        ]);
+        
+        return redirect()->route('landingpage.index')
+            ->with('error', 'Gagal memuat profil');
+    }
+}
+
+/**
+ * VENDOR PROFILE - Edit Profile Form
+ */
+public function vendorProfileEdit()
+{
+    try {
+        $user = Auth::user();
+        $profile = $user->profile;
+        
+        return view('LandingPage.vendor-profile-edit', compact('user', 'profile'));
+        
+    } catch (\Exception $e) {
+        Log::error('Error vendorProfileEdit', [
+            'error' => $e->getMessage()
+        ]);
+        
+        return redirect()->route('landingpage.profile')
+            ->with('error', 'Gagal memuat form edit profil');
+    }
+}
+
+public function vendorProfileUpdate(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'tanggal_lahir' => 'required|date',
+            'jenis_kelamin' => 'required|in:L,P',
+            'agama' => 'nullable|string|max:50',
+            'jabatan' => 'nullable|string|max:100',
+            'nomor_telepon' => 'nullable|string|max:15',
+            'alamat' => 'nullable|string'
+        ]);
+        
+        $userId = Auth::id();
+        
+        // ✅ Update user name menggunakan DB query
+        DB::table('users')
+            ->where('id', $userId)
+            ->update([
+                'name' => $validated['name'],
+                'updated_at' => now()
+            ]);
+        
+        // ✅ Cek apakah profile sudah ada
+        $profileExists = DB::table('profiles')
+            ->where('user_id', $userId)
+            ->exists();
+        
+        if ($profileExists) {
+            // Update existing profile
+            DB::table('profiles')
+                ->where('user_id', $userId)
+                ->update([
+                    'tanggal_lahir' => $validated['tanggal_lahir'],
+                    'jenis_kelamin' => $validated['jenis_kelamin'],
+                    'agama' => $validated['agama'],
+                    'jabatan' => $validated['jabatan'],
+                    'nomor_telepon' => $validated['nomor_telepon'],
+                    'alamat' => $validated['alamat'],
+                    'updated_at' => now()
+                ]);
+        } else {
+            // Create new profile
+            DB::table('profiles')->insert([
+                'user_id' => $userId,
+                'tanggal_lahir' => $validated['tanggal_lahir'],
+                'jenis_kelamin' => $validated['jenis_kelamin'],
+                'agama' => $validated['agama'],
+                'jabatan' => $validated['jabatan'],
+                'nomor_telepon' => $validated['nomor_telepon'],
+                'alamat' => $validated['alamat'],
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+        
+        Log::info('Vendor Profile Updated', [
+            'user_id' => $userId,
+            'name' => $validated['name']
+        ]);
+        
+        return redirect()->route('landingpage.profile')
+            ->with('success', 'Profil berhasil diperbarui');
+        
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return redirect()->back()
+            ->withErrors($e->errors())
+            ->withInput();
+        
+    } catch (\Exception $e) {
+        Log::error('Error vendorProfileUpdate', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return redirect()->back()
+            ->with('error', 'Gagal memperbarui profil: ' . $e->getMessage())
+            ->withInput();
+    }
+}
+
+/**
+ * VENDOR PROFILE - Edit Password Form
+ */
+public function vendorPasswordEdit()
+{
+    try {
+        $user = Auth::user();
+        
+        return view('LandingPage.vendor-password', compact('user'));
+        
+    } catch (\Exception $e) {
+        Log::error('Error vendorPasswordEdit', [
+            'error' => $e->getMessage()
+        ]);
+        
+        return redirect()->route('landingpage.profile')
+            ->with('error', 'Gagal memuat form ubah password');
+    }
+}
+
+/**
+ * VENDOR PROFILE - Update Password
+ */
+public function vendorPasswordUpdate(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:8|confirmed',
+        ], [
+            'current_password.required' => 'Password lama harus diisi',
+            'new_password.required' => 'Password baru harus diisi',
+            'new_password.min' => 'Password baru minimal 8 karakter',
+            'new_password.confirmed' => 'Konfirmasi password tidak cocok'
+        ]);
+        
+        $userId = Auth::id();
+        
+        // ✅ Get current password from database
+        $currentPassword = DB::table('users')
+            ->where('id', $userId)
+            ->value('password');
+        
+        // Cek password lama
+        if (!Hash::check($validated['current_password'], $currentPassword)) {
+            return redirect()->back()
+                ->with('error', 'Password lama tidak sesuai')
+                ->withInput();
+        }
+        
+        // ✅ Update password menggunakan DB query
+        DB::table('users')
+            ->where('id', $userId)
+            ->update([
+                'password' => Hash::make($validated['new_password']),
+                'updated_at' => now()
+            ]);
+        
+        Log::info('Vendor Password Updated', [
+            'user_id' => $userId
+        ]);
+        
+        return redirect()->route('landingpage.profile')
+            ->with('success', 'Password berhasil diubah');
+        
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return redirect()->back()
+            ->withErrors($e->errors())
+            ->withInput();
+        
+    } catch (\Exception $e) {
+        Log::error('Error vendorPasswordUpdate', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return redirect()->back()
+            ->with('error', 'Gagal mengubah password: ' . $e->getMessage());
+    }
+}
+// END PROFILE
+
+// wilayah api
+public function apiGetWilayah()
+{
+    try {
+        $wilayah = \App\Models\Wilayah::whereHas('pekerjaans')
+            ->withCount('pekerjaans') 
+            ->orderBy('nama', 'asc') 
+            ->get(['id', 'nama']); 
+        
+        Log::info('API Get Wilayah', [
+            'count' => $wilayah->count(),
+            'data' => $wilayah->toArray()
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $wilayah->map(function($w) {
+                return [
+                    'id' => $w->id,
+                    'nama' => $w->nama, 
+                    'jumlah_pekerjaan' => $w->pekerjaans_count
+                ];
+            })
+        ]);
+        
+    } catch (\Exception $e) {
+        Log::error('Error apiGetWilayah', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal memuat data wilayah: ' . $e->getMessage()
+        ], 500);
+    }
+}
+public function apiGetPekerjaanByWilayah($wilayahId)
+{
+    try {
+        Log::info('API Get Pekerjaan by Wilayah', [
+            'wilayah_id' => $wilayahId
+        ]);
+        
+        $pekerjaans = \App\Models\Pekerjaan::where('wilayah_id', $wilayahId)
+            ->with('wilayah:id,nama')
+            ->orderBy('nama_investasi', 'asc')
+            ->get(['id', 'nama_investasi', 'wilayah_id']);
+        
+        Log::info('Pekerjaan found', [
+            'count' => $pekerjaans->count()
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $pekerjaans
+        ]);
+        
+    } catch (\Exception $e) {
+        Log::error('Error apiGetPekerjaanByWilayah', [
+            'wilayah_id' => $wilayahId,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal memuat data pekerjaan: ' . $e->getMessage()
+        ], 500);
+    }
+}
+// end wilayah api
 }

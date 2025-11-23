@@ -29,7 +29,7 @@ class WeatherController extends Controller
             try {
                 $response = Http::timeout(10)
                     ->withOptions([
-                        'verify' => false, // kalau di XAMPP/localhost SSL error → bypass
+                        'verify' => false, 
                     ])
                     ->get($url);
 

@@ -4,6 +4,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/realisasi.css') }}">
+<!-- <link rel="stylesheet" href="{{ asset('assets/css/realisasi_scroll_fix.css') }}"> -->
 @endpush
 
 @section('content')
@@ -283,9 +284,9 @@
                                 <h5 class="fw-bold text-dark mb-0">Database Master Pekerjaan</h5>
                             </div>
 
-                            <div class="table-responsive">
+                            <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
                                 <table id="tabelDatabase" class="table table-hover align-middle">
-                                    <thead>
+                                    <thead style="position: sticky; top: 0; z-index: 10;">
                                         <tr>
                                             @if(auth()->user()->role === 'superadmin')
                                             <th style="width: 80px;">Aksi</th>
@@ -396,7 +397,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle hapus PR
     const deleteButtons = document.querySelectorAll('.btn-hapus');
     deleteButtons.forEach(button => {
         button.addEventListener('click', function(event) {
@@ -420,7 +420,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Handle hapus Pekerjaan di tab Database
     const deletePekerjaanButtons = document.querySelectorAll('.btn-hapus-pekerjaan');
     deletePekerjaanButtons.forEach(button => {
         button.addEventListener('click', function(event) {
@@ -453,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             actionButtons.forEach(btn => {
                 if (targetTab === '#realisasi-content' && btn.getAttribute(
-                    'data-tab') === 'realisasi') {
+                        'data-tab') === 'realisasi') {
                     btn.style.display = 'inline-flex';
                 } else if (targetTab === '#database-content' && btn.getAttribute(
                         'data-tab') === 'database') {

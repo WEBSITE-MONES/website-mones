@@ -35,10 +35,10 @@ class DailyProgress extends Model
         'lokasi_nama',
         'rencana_besok',
         'pelapor_id',
-        'status_approval',      // ✅ Tambahan: pending, approved, rejected
-        'approved_by',          // ✅ User ID yang approve
-        'approved_at',          // ✅ Waktu approval
-        'rejection_reason',     // ✅ Alasan reject (jika ditolak)
+        'status_approval',
+        'approved_by',          // ✅ Sesuai dengan database
+        'approved_at',
+        'rejection_reason',
     ];
 
     protected $casts = [
@@ -54,7 +54,8 @@ class DailyProgress extends Model
         'approved_at' => 'datetime',
     ];
 
-    // Relations
+    // ==================== RELATIONS ====================
+    
     public function po()
     {
         return $this->belongsTo(Po::class, 'po_id');
@@ -70,12 +71,14 @@ class DailyProgress extends Model
         return $this->belongsTo(User::class, 'pelapor_id');
     }
 
+    // ✅ PERBAIKAN: Gunakan approved_by sesuai database
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    // Helpers
+    // ==================== HELPERS ====================
+    
     public function getWeekNumber()
     {
         return $this->tanggal->weekOfYear;
@@ -86,7 +89,8 @@ class DailyProgress extends Model
         return $this->tanggal->year;
     }
 
-    // ✅ Status Helpers
+    // ==================== STATUS HELPERS ====================
+    
     public function isPending()
     {
         return $this->status_approval === 'pending';
@@ -102,7 +106,8 @@ class DailyProgress extends Model
         return $this->status_approval === 'rejected';
     }
 
-    // ✅ Scope untuk filtering
+    // ==================== QUERY SCOPES ====================
+    
     public function scopePending($query)
     {
         return $query->where('status_approval', 'pending');
@@ -116,5 +121,23 @@ class DailyProgress extends Model
     public function scopeRejected($query)
     {
         return $query->where('status_approval', 'rejected');
+    }
+    
+    public function scopeDateRange($query, $startDate, $endDate = null)
+    {
+        if ($endDate) {
+            return $query->whereBetween('tanggal', [$startDate, $endDate]);
+        }
+        return $query->where('tanggal', '>=', $startDate);
+    }
+    
+    public function scopeByPelapor($query, $pelaporId)
+    {
+        return $query->where('pelapor_id', $pelaporId);
+    }
+    
+    public function scopeByPo($query, $poId)
+    {
+        return $query->where('po_id', $poId);
     }
 }

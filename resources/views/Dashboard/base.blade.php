@@ -123,14 +123,15 @@
 
                 <div class="sidebar-content">
                     <ul class="nav nav-primary">
-                        <li class="nav-item">
+                        <li class="nav-item {{ request()->routeIs('dashboard.index') ? 'active' : '' }}">
                             <a href="{{ route('dashboard.index') }}">
                                 <i class="fas fa-home"></i>
                                 <p>Dashboard</p>
                             </a>
                         </li>
+
                         @if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin')
-                        <li class="nav-item">
+                        <li class="nav-item {{ request()->routeIs('pekerjaan.*') ? 'active' : '' }}">
                             <a href="{{ route('pekerjaan.index') }}">
                                 <i class="fas fa-tasks"></i>
                                 <p>Rencana Kerja</p>
@@ -138,34 +139,28 @@
                         </li>
                         @endif
 
-                        {{-- Progress Investasi (admin & user) --}}
-                        <!-- @if(in_array(auth()->user()->role, ['superadmin','admin']))
-                        <li class="nav-item">
-                            <a href="#">
-                                <i class="fas fa-money-bill-alt"></i>
-                                <p>Anggaran</p>
-                            </a>
-                        </li>
-                        @endif -->
                         @if(in_array(auth()->user()->role, ['superadmin','admin']))
-                        <li class="nav-item">
+                        <li class="nav-item {{ request()->routeIs('realisasi.*') ? 'active' : '' }}">
                             <a href="{{ route('realisasi.index') }}">
                                 <i class="fas fa-handshake"></i>
                                 <p>Database Pekerjaan</p>
                             </a>
                         </li>
                         @endif
+
                         @if(in_array(auth()->user()->role, ['superadmin','admin']))
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#laporaninvestasi" class="collapsed"
-                                aria-expanded="false">
+                        <li class="nav-item {{ request()->routeIs('laporan.*') ? 'active submenu' : '' }}">
+                            <a data-bs-toggle="collapse" href="#laporaninvestasi"
+                                class="{{ request()->routeIs('laporan.*') ? '' : 'collapsed' }}"
+                                aria-expanded="{{ request()->routeIs('laporan.*') ? 'true' : 'false' }}">
                                 <i class="fas fa-chart-line"></i>
                                 <p>Laporan</p>
                                 <span class="caret"></span>
                             </a>
-                            <div class="collapse" id="laporaninvestasi">
+                            <div class="collapse {{ request()->routeIs('laporan.*') ? 'show' : '' }}"
+                                id="laporaninvestasi">
                                 <ul class="nav nav-collapse">
-                                    <li>
+                                    <li class="{{ request()->routeIs('laporan.index') ? 'active' : '' }}">
                                         <a href="{{ route('laporan.index') }}">
                                             <i></i>
                                             <span class="sub-item">Investasi</span>
@@ -183,14 +178,16 @@
                         @endif
 
                         @if(in_array(auth()->user()->role, ['superadmin','admin']))
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#statusinvestasi" class="collapsed"
-                                aria-expanded="false">
+                        <li class="nav-item {{ request()->routeIs('statusinvestasi.*') ? 'active submenu' : '' }}">
+                            <a data-bs-toggle="collapse" href="#statusinvestasi"
+                                class="{{ request()->routeIs('statusinvestasi.*') ? '' : 'collapsed' }}"
+                                aria-expanded="{{ request()->routeIs('statusinvestasi.*') ? 'true' : 'false' }}">
                                 <i class="fas fa-chart-line"></i>
                                 <p>Status Investasi</p>
                                 <span class="caret"></span>
                             </a>
-                            <div class="collapse" id="statusinvestasi">
+                            <div class="collapse {{ request()->routeIs('statusinvestasi.*') ? 'show' : '' }}"
+                                id="statusinvestasi">
                                 <ul class="nav nav-collapse">
                                     <li>
                                         <a href="#">
@@ -221,7 +218,6 @@
                         </li>
                         @endif
 
-                        {{-- Pengaturan (hanya superadmin) --}}
                         @if(auth()->user()->role === 'superadmin')
                         <li class="nav-section">
                             <span class="sidebar-mini-icon">
@@ -229,20 +225,24 @@
                             </span>
                             <h4 class="text-section">SPESIAL MENU</h4>
                         </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#pengaturan" class="collapsed" aria-expanded="false">
+                        <li
+                            class="nav-item {{ request()->routeIs('setting_aplikasi.*') || request()->routeIs('laporan.approval-settings.*') ? 'active submenu' : '' }}">
+                            <a data-bs-toggle="collapse" href="#pengaturan"
+                                class="{{ request()->routeIs('setting_aplikasi.*') || request()->routeIs('laporan.approval-settings.*') ? '' : 'collapsed' }}"
+                                aria-expanded="{{ request()->routeIs('setting_aplikasi.*') || request()->routeIs('laporan.approval-settings.*') ? 'true' : 'false' }}">
                                 <i class="fas fa-cog"></i>
                                 <p>Pengaturan</p>
                                 <span class="caret"></span>
                             </a>
-                            <div class="collapse" id="pengaturan">
+                            <div class="collapse {{ request()->routeIs('setting_aplikasi.*') || request()->routeIs('laporan.approval-settings.*') ? 'show' : '' }}"
+                                id="pengaturan">
                                 <ul class="nav nav-collapse">
-                                    <li>
+                                    <li class="{{ request()->routeIs('setting_aplikasi.*') ? 'active' : '' }}">
                                         <a href="{{ route('setting_aplikasi.index') }}">
                                             <span class="sub-item">Judul Aplikasi</span>
                                         </a>
                                     </li>
-                                    <li>
+                                    <li class="{{ request()->routeIs('laporan.approval-settings.*') ? 'active' : '' }}">
                                         <a href="{{ route('laporan.approval-settings.index') }}">
                                             <span class="sub-item">Approval Laporan</span>
                                         </a>
@@ -250,7 +250,7 @@
                                 </ul>
                             </div>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item {{ request()->routeIs('dashboard.user') ? 'active' : '' }}">
                             <a href="{{ route('dashboard.user') }}">
                                 <i class="fas fa-user"></i>
                                 <p>User</p>

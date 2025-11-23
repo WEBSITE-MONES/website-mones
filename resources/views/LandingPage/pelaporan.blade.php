@@ -4,6 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <title>Ringkasan Progres Harian - P-Mones</title>
     <meta name="description" content="Ringkasan Laporan Progress Harian Proyek - P-Mones">
     <meta name="keywords" content="summary, progress, harian, p-mones, pelabuhan">
@@ -199,15 +201,7 @@
             </nav>
 
             @auth
-            {{-- User sudah login - Tampilkan nama & dropdown --}}
             <div class="d-flex align-items-center gap-3">
-                {{-- Tombol Laporan Baru --}}
-                <a class="btn btn-primary btn-sm" href="{{ route('landingpage.index.pelaporanform') }}"
-                    style="white-space: nowrap;">
-                    <i class="bi bi-plus-circle"></i> Laporan Baru
-                </a>
-
-                {{-- User Dropdown --}}
                 <div class="user-dropdown" style="position: relative;">
                     <button class="btn-getstarted user-menu-btn" id="userMenuBtn" type="button">
                         <i class="bi bi-person-circle" style="font-size: 18px; margin-right: 8px;"></i>
@@ -257,7 +251,6 @@
             </div>
 
             @else
-            {{-- User belum login - Redirect ke login --}}
             <a class="btn-getstarted" href="{{ route('login') }}">
                 <i class="bi bi-box-arrow-in-right" style="margin-right: 5px;"></i>
                 Login
@@ -271,10 +264,12 @@
     <main class="main">
         <div class="container summary-container">
 
-            <!-- Header Halaman -->
             <div class="summary-header">
                 <h2><i class="bi bi-bar-chart-line-fill"></i> Ringkasan Laporan Progres Harian</h2>
-                <p class="text-muted">PT. CIPTA RANCANG KONSTRUKSI</p>
+                <a class="btn btn-primary btn-sm" href="{{ route('landingpage.index.pelaporanform') }}"
+                    style="white-space: nowrap;">
+                    <i class="bi bi-plus-circle"></i> Laporan Baru
+                </a>
             </div>
 
             <!-- Summary Cards -->
@@ -285,7 +280,7 @@
                             <i class="bi bi-file-earmark-text"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalLaporan">24</h3>
+                            <h3 id="totalLaporan"></h3>
                             <p>Total Laporan</p>
                         </div>
                     </div>
@@ -297,7 +292,7 @@
                             <i class="bi bi-check-circle"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalDisetujui">18</h3>
+                            <h3 id="totalDisetujui"></h3>
                             <p>Disetujui</p>
                         </div>
                     </div>
@@ -309,7 +304,7 @@
                             <i class="bi bi-clock-history"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalPending">4</h3>
+                            <h3 id="totalPending"></h3>
                             <p>Menunggu Approval</p>
                         </div>
                     </div>
@@ -321,7 +316,7 @@
                             <i class="bi bi-exclamation-triangle"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalRevisi">2</h3>
+                            <h3 id="totalRevisi"></h3>
                             <p>Perlu Revisi</p>
                         </div>
                     </div>
@@ -373,7 +368,6 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Data akan dimuat oleh JavaScript -->
                             <tr>
                                 <td colspan="6" class="text-center py-4">
                                     <div class="spinner-border text-primary" role="status">
@@ -389,7 +383,6 @@
                 <!-- Pagination -->
                 <nav aria-label="Page navigation" class="p-3">
                     <ul class="pagination justify-content-end mb-0" id="pagination">
-                        <!-- Pagination akan dimuat oleh JavaScript -->
                     </ul>
                 </nav>
             </div>
@@ -452,7 +445,6 @@
         </div>
     </footer>
 
-    <!-- Scroll Top -->
     <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center">
         <i class="bi bi-arrow-up-short"></i>
     </a>
@@ -472,18 +464,15 @@
         });
     }
 
-    // Close dropdown saat klik di luar
     document.addEventListener('click', function(e) {
         const dropdown = document.getElementById('userDropdownMenu');
         const button = document.getElementById('userMenuBtn');
 
-        // Periksa apakah button dan dropdown ada
         if (button && dropdown && !button.contains(e.target) && !dropdown.contains(e.target)) {
             dropdown.classList.remove('show');
         }
     });
 
-    // Close dropdown saat klik item menu
     document.querySelectorAll('.dropdown-item').forEach(item => {
         item.addEventListener('click', function() {
             const dropdown = document.getElementById('userDropdownMenu');

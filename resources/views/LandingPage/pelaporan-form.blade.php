@@ -191,7 +191,6 @@
 
 <body>
 
-    <!-- Header -->
     <header id="header" class="header d-flex align-items-center fixed-top">
         <div class="container-fluid container-xl position-relative d-flex align-items-center">
 
@@ -201,78 +200,84 @@
 
             <nav id="navmenu" class="navmenu">
                 <ul>
-                    <li><a href="{{ route('landingpage.index') }}">Home</a></li>
-                    <li><a href="{{ route('landingpage.index.pelaporan') }}" class="active">Pelaporan</a></li>
-                    <li><a href="{{ route('landingpage.index.dokumentasi') }}">Dokumentasi</a></li>
-                    <li><a href="#services">Gambar</a></li>
-                    <li><a href="#team">Korespondensi</a></li>
+                    @auth
+                    <li><a href="{{ route('landingpage.index') }}"
+                            class="{{ request()->routeIs('landingpage.index') ? 'active' : '' }}">Home</a></li>
+                    <li><a href="{{ route('landingpage.index.pelaporan') }}"
+                            class="{{ request()->routeIs('landingpage.index.pelaporan*') ? 'active' : '' }}">Pelaporan</a>
+                    </li>
+                    <li><a href="{{ route('landingpage.index.dokumentasi') }}"
+                            class="{{ request()->routeIs('landingpage.index.dokumentasi') ? 'active' : '' }}">Dokumentasi</a>
+                    </li>
+                    <li><a href="{{ route('landingpage.monitoring.progress') }}"
+                            class="{{ request()->routeIs('landingpage.monitoring.progress') ? 'active' : '' }}">Monitoring</a>
+                    </li>
+                    <li><a href="{{ route('landingpage.monitoring.progress') }}"
+                            class="{{ request()->routeIs('landingpage.monitoring.progress') ? 'active' : '' }}">Gambar</a>
+                    </li>
+                    @else
+                    <li><a href="#about">Tentang</a></li>
+                    <li><a href="#services">Layanan</a></li>
+                    <li><a href="#contact">Kontak</a></li>
+                    @endauth
                 </ul>
                 <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
             </nav>
 
             @auth
-            {{-- User sudah login - Tampilkan tombol kembali & user dropdown --}}
-            <div class="d-flex align-items-center gap-2">
-                {{-- Tombol Kembali --}}
-                <a class="btn btn-outline-light btn-sm" href="{{ route('landingpage.index.pelaporan') }}">
-                    <i class="bi bi-arrow-left"></i> Kembali
-                </a>
+            {{-- User Dropdown - Vendor Only --}}
+            <div class="user-dropdown" style="position: relative;">
+                <button class="btn-getstarted user-menu-btn" id="userMenuBtn" type="button">
+                    <i class="bi bi-person-circle" style="font-size: 18px; margin-right: 8px;"></i>
+                    {{ Auth::user()->name }}
+                    <i class="bi bi-chevron-down" style="font-size: 12px; margin-left: 5px;"></i>
+                </button>
 
-                {{-- User Dropdown --}}
-                <div class="user-dropdown" style="position: relative;">
-                    <button class="btn-getstarted user-menu-btn" id="userMenuBtn" type="button">
-                        <i class="bi bi-person-circle" style="font-size: 18px;"></i>
-                        <span class="d-none d-md-inline ms-2">{{ Auth::user()->name }}</span>
-                        <i class="bi bi-chevron-down d-none d-md-inline" style="font-size: 12px; margin-left: 5px;"></i>
-                    </button>
-
-                    <div id="userDropdownMenu" class="dropdown-menu-custom">
-                        <div class="dropdown-header">
-                            <div class="user-info">
-                                <div class="user-avatar">
-                                    <i class="bi bi-person-circle"></i>
-                                </div>
-                                <div class="user-details">
-                                    <div class="user-name">{{ Auth::user()->name }}</div>
-                                    <div class="user-email">{{ Auth::user()->email }}</div>
-                                    <div class="user-role">
-                                        <span class="badge-role">{{ ucfirst(Auth::user()->role) }}</span>
-                                    </div>
+                <div id="userDropdownMenu" class="dropdown-menu-custom">
+                    <div class="dropdown-header">
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                <i class="bi bi-person-circle"></i>
+                            </div>
+                            <div class="user-details">
+                                <div class="user-name">{{ Auth::user()->name }}</div>
+                                <div class="user-email">{{ Auth::user()->email }}</div>
+                                <div class="user-role">
+                                    <span class="badge-role">Vendor</span>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="dropdown-divider"></div>
-
-                        <a href="{{ route('account.index') }}" class="dropdown-item">
-                            <i class="bi bi-person"></i>
-                            <span>Profile Saya</span>
-                        </a>
-
-                        <a href="{{ route('account.setting') }}" class="dropdown-item">
-                            <i class="bi bi-gear"></i>
-                            <span>Pengaturan</span>
-                        </a>
-
-                        <div class="dropdown-divider"></div>
-
-                        <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
-                            @csrf
-                            <button type="submit" class="dropdown-item logout-btn">
-                                <i class="bi bi-box-arrow-right"></i>
-                                <span>Logout</span>
-                            </button>
-                        </form>
                     </div>
+
+                    <div class="dropdown-divider"></div>
+
+                    <a href="{{ route('landingpage.profile') }}" class="dropdown-item">
+                        <i class="bi bi-person"></i>
+                        <span>Profile Saya</span>
+                    </a>
+
+                    <a href="{{ route('landingpage.profile.password') }}" class="dropdown-item">
+                        <i class="bi bi-key"></i>
+                        <span>Ubah Password</span>
+                    </a>
+
+                    <div class="dropdown-divider"></div>
+
+                    <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+                        @csrf
+                        <button type="submit" class="dropdown-item logout-btn">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>Logout</span>
+                        </button>
+                    </form>
                 </div>
             </div>
-
-
             @else
-            {{-- User belum login - Redirect --}}
-            <script>
-            window.location.href = "{{ route('login') }}";
-            </script>
+            {{-- User belum login --}}
+            <a class="btn-getstarted" href="{{ route('login') }}">
+                <i class="bi bi-box-arrow-in-right" style="margin-right: 5px;"></i>
+                Login
+            </a>
             @endauth
 
         </div>
@@ -286,7 +291,6 @@
                 <!-- Form Header -->
                 <div class="form-header">
                     <h2><i class="bi bi-clipboard-data"></i> Form Pelaporan Progress Harian</h2>
-                    <p>PT. CIPTA RANCANG KONSTRUKSI</p>
                 </div>
 
                 <!-- Form Body -->
@@ -318,23 +322,31 @@
                                 </div>
                             </div>
 
-                            <!-- 1. Pilih Pekerjaan -->
+                            <!-- ✅ 1. TAMBAHKAN: Pilih Wilayah (BARU) -->
+                            <div class="mb-3">
+                                <label for="wilayah" class="form-label">
+                                    Wilayah / Regional <span class="required">*</span>
+                                </label>
+                                <select class="form-select" id="wilayah" name="wilayah" required>
+                                    <option value="">-- Pilih Wilayah --</option>
+                                </select>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Pilih wilayah terlebih dahulu untuk memfilter
+                                    pekerjaan
+                                </small>
+                            </div>
+
+                            <!-- ✅ 2. UPDATE: Pilih Pekerjaan (akan terisi setelah pilih wilayah) -->
                             <div class="mb-3">
                                 <label for="pekerjaan" class="form-label">
                                     Nama Pekerjaan / Proyek <span class="required">*</span>
                                 </label>
-                                <select class="form-select" id="pekerjaan" name="pekerjaan" required>
-                                    <option value="">-- Pilih Pekerjaan --</option>
-                                    @foreach($pekerjaan as $p)
-                                    <option value="{{ $p->id }}">
-                                        {{ $p->nama_investasi }}
-                                        @if($p->wilayah) - {{ $p->wilayah->nama_wilayah }}@endif
-                                    </option>
-                                    @endforeach
+                                <select class="form-select" id="pekerjaan" name="pekerjaan" required disabled>
+                                    <option value="">-- Pilih Wilayah Terlebih Dahulu --</option>
                                 </select>
                             </div>
 
-                            <!-- 2. Pilih PO (muncul setelah pilih pekerjaan) -->
+                            <!-- 3. Pilih PO (muncul setelah pilih pekerjaan) -->
                             <div class="mb-3" id="poWrapper" style="display: none;">
                                 <label for="po" class="form-label">
                                     Nomor PO / Kontrak <span class="required">*</span>
@@ -345,7 +357,7 @@
                                 <small class="text-muted" id="poInfo"></small>
                             </div>
 
-                            <!-- 3. Pilih Item Pekerjaan (muncul setelah pilih PO) -->
+                            <!-- 4. Pilih Item Pekerjaan (muncul setelah pilih PO) -->
                             <div class="mb-3" id="itemPekerjaanWrapper" style="display: none;">
                                 <label for="pekerjaan_item" class="form-label">
                                     Item Pekerjaan yang Dikerjakan <span class="required">*</span>
@@ -612,150 +624,185 @@
     <!-- Pelaporan JS -->
     <script src="assets/js/pelaporan.js"></script>
     <script src="assets/js/main.js"></script>
-
     <script>
-    // 1. Saat pilih Pekerjaan → Load PO
-    document.getElementById('pekerjaan').addEventListener('change', function() {
-        const pekerjaanId = this.value;
-        console.log('Pekerjaan ID:', pekerjaanId);
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ Cascade script loaded');
+        loadWilayahOptions();
+    });
 
-        const poWrapper = document.getElementById('poWrapper');
-        const poSelect = document.getElementById('po');
-        const itemWrapper = document.getElementById('itemPekerjaanWrapper');
+    function loadWilayahOptions() {
+        const wilayahSelect = document.getElementById('wilayah');
+        if (!wilayahSelect) return;
 
-        if (pekerjaanId) {
-            poWrapper.style.display = 'block';
-            poSelect.innerHTML = '<option value="">⏳ Memuat PO...</option>';
-            poSelect.disabled = true;
-            itemWrapper.style.display = 'none';
+        wilayahSelect.innerHTML = '<option value="">⏳ Memuat wilayah...</option>';
+        wilayahSelect.disabled = true;
 
-            // ✅ UBAH URL INI - Tambahkan prefix 'landingpage'
-            const url = `/landingpage/api/po/pekerjaan/${pekerjaanId}`;
-            console.log('Fetching URL:', url);
+        fetch('/landingpage/api/wilayah')
+            .then(response => response.json())
+            .then(result => {
+                wilayahSelect.disabled = false;
+                if (result.success && result.data.length > 0) {
+                    wilayahSelect.innerHTML = '<option value="">-- Pilih Wilayah --</option>';
+                    result.data.forEach(wilayah => {
+                        const option = document.createElement('option');
+                        option.value = wilayah.id;
+                        option.textContent = `${wilayah.nama} (${wilayah.jumlah_pekerjaan} pekerjaan)`;
+                        wilayahSelect.appendChild(option);
+                    });
+                    console.log('✅ Wilayah loaded:', result.data.length);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error loading wilayah:', error);
+                wilayahSelect.disabled = false;
+                wilayahSelect.innerHTML = '<option value="">❌ Gagal memuat wilayah</option>';
+            });
+    }
 
-            fetch(url)
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(result => {
-                    console.log('Result:', result);
-                    poSelect.disabled = false;
+    // Wilayah → Pekerjaan
+    document.addEventListener('DOMContentLoaded', function() {
+        const wilayahSelect = document.getElementById('wilayah');
+        if (wilayahSelect) {
+            wilayahSelect.addEventListener('change', function() {
+                const wilayahId = this.value;
+                const pekerjaanSelect = document.getElementById('pekerjaan');
+                const poWrapper = document.getElementById('poWrapper');
+                const itemWrapper = document.getElementById('itemPekerjaanWrapper');
 
-                    if (result.success && result.data.length > 0) {
-                        poSelect.innerHTML = '<option value="">-- Pilih PO --</option>';
+                if (poWrapper) poWrapper.style.display = 'none';
+                if (itemWrapper) itemWrapper.style.display = 'none';
 
-                        result.data.forEach(po => {
-                            const option = document.createElement('option');
-                            option.value = po.id;
-                            option.textContent = `${po.nomor_po} - ${po.pelaksana || 'N/A'}`;
-                            option.dataset.tanggal = po.tanggal_po;
-                            option.dataset.pelaksana = po.pelaksana;
-                            poSelect.appendChild(option);
-                        });
-                    } else {
-                        poSelect.innerHTML = '<option value="">⚠️ Tidak ada PO tersedia</option>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Fetch Error:', error);
-                    poSelect.disabled = false;
-                    poSelect.innerHTML = '<option value="">❌ Gagal memuat data</option>';
-                });
-        } else {
-            poWrapper.style.display = 'none';
-            itemWrapper.style.display = 'none';
+                if (!wilayahId) {
+                    pekerjaanSelect.innerHTML =
+                        '<option value="">-- Pilih Wilayah Terlebih Dahulu --</option>';
+                    pekerjaanSelect.disabled = true;
+                    return;
+                }
+
+                pekerjaanSelect.innerHTML = '<option value="">⏳ Memuat pekerjaan...</option>';
+                pekerjaanSelect.disabled = true;
+
+                fetch(`/landingpage/api/pekerjaan/wilayah/${wilayahId}`)
+                    .then(response => response.json())
+                    .then(result => {
+                        pekerjaanSelect.disabled = false;
+                        if (result.success && result.data.length > 0) {
+                            pekerjaanSelect.innerHTML =
+                                '<option value="">-- Pilih Pekerjaan --</option>';
+                            result.data.forEach(pekerjaan => {
+                                const option = document.createElement('option');
+                                option.value = pekerjaan.id;
+                                option.textContent = pekerjaan.nama_investasi;
+                                pekerjaanSelect.appendChild(option);
+                            });
+                            console.log('✅ Pekerjaan loaded:', result.data.length);
+                        } else {
+                            pekerjaanSelect.innerHTML =
+                                '<option value="">⚠️ Tidak ada pekerjaan</option>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Error loading pekerjaan:', error);
+                        pekerjaanSelect.disabled = false;
+                        pekerjaanSelect.innerHTML =
+                            '<option value="">❌ Gagal memuat pekerjaan</option>';
+                    });
+            });
         }
     });
 
-    // 2. Saat pilih PO → Load Item Pekerjaan
-    document.getElementById('po').addEventListener('change', function() {
-        const poId = this.value;
-        const itemWrapper = document.getElementById('itemPekerjaanWrapper');
-        const itemSelect = document.getElementById('pekerjaan_item');
-        const poInfo = document.getElementById('poInfo');
+    // Pekerjaan → PO
+    document.addEventListener('DOMContentLoaded', function() {
+        const pekerjaanSelect = document.getElementById('pekerjaan');
+        if (pekerjaanSelect) {
+            pekerjaanSelect.addEventListener('change', function() {
+                const pekerjaanId = this.value;
+                const poWrapper = document.getElementById('poWrapper');
+                const poSelect = document.getElementById('po');
+                const itemWrapper = document.getElementById('itemPekerjaanWrapper');
 
-        if (poId) {
-            const selectedOption = this.options[this.selectedIndex];
-            poInfo.innerHTML =
-                `<i class="bi bi-info-circle"></i> Pelaksana: ${selectedOption.dataset.pelaksana || 'N/A'} | Tanggal: ${selectedOption.dataset.tanggal || 'N/A'}`;
+                if (pekerjaanId) {
+                    poWrapper.style.display = 'block';
+                    poSelect.innerHTML = '<option value="">⏳ Memuat PO...</option>';
+                    poSelect.disabled = true;
+                    itemWrapper.style.display = 'none';
 
-            itemWrapper.style.display = 'block';
-            itemSelect.innerHTML = '<option value="">⏳ Memuat item pekerjaan...</option>';
-            itemSelect.disabled = true;
-
-            // ✅ UBAH URL INI - Tambahkan prefix 'landingpage'
-            fetch(`/landingpage/api/pekerjaan-items/po/${poId}`)
-                .then(response => {
-                    console.log('Items Response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(result => {
-                    console.log('Items Result:', result);
-                    itemSelect.disabled = false;
-
-                    if (result.success && result.data.length > 0) {
-                        itemSelect.innerHTML = '<option value="">-- Pilih Item Pekerjaan --</option>';
-
-                        result.data.forEach(item => {
-                            const option = document.createElement('option');
-                            option.value = item.id;
-                            option.innerHTML = item.display;
-                            option.dataset.kode = item.kode;
-                            option.dataset.nama = item.nama;
-                            option.dataset.volume = item.volume;
-                            option.dataset.satuan = item.satuan;
-                            option.dataset.bobot = item.bobot;
-                            option.dataset.level = item.level;
-
-                            if (item.has_children) {
-                                option.disabled = true;
-                                option.style.fontWeight = 'bold';
-                                option.style.color = '#666';
+                    fetch(`/landingpage/api/po/pekerjaan/${pekerjaanId}`)
+                        .then(response => response.json())
+                        .then(result => {
+                            poSelect.disabled = false;
+                            if (result.success && result.data.length > 0) {
+                                poSelect.innerHTML = '<option value="">-- Pilih PO --</option>';
+                                result.data.forEach(po => {
+                                    const option = document.createElement('option');
+                                    option.value = po.id;
+                                    option.textContent =
+                                        `${po.nomor_po} - ${po.pelaksana || 'N/A'}`;
+                                    poSelect.appendChild(option);
+                                });
+                            } else {
+                                poSelect.innerHTML =
+                                    '<option value="">⚠️ Tidak ada PO tersedia</option>';
                             }
-
-                            itemSelect.appendChild(option);
+                        })
+                        .catch(error => {
+                            console.error('❌ Error loading PO:', error);
+                            poSelect.disabled = false;
+                            poSelect.innerHTML = '<option value="">❌ Gagal memuat data</option>';
                         });
-                    } else {
-                        itemSelect.innerHTML = '<option value="">⚠️ Tidak ada item pekerjaan</option>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Items Error:', error);
-                    itemSelect.disabled = false;
-                    itemSelect.innerHTML = '<option value="">❌ Gagal memuat data</option>';
-                });
-        } else {
-            itemWrapper.style.display = 'none';
-            poInfo.innerHTML = '';
+                } else {
+                    poWrapper.style.display = 'none';
+                    itemWrapper.style.display = 'none';
+                }
+            });
         }
     });
 
-    // 3. Saat pilih Item Pekerjaan → Tampilkan Info
-    document.getElementById('pekerjaan_item').addEventListener('change', function() {
-        const itemInfo = document.getElementById('itemInfo');
-        const itemDetails = document.getElementById('itemDetails');
+    // PO → Item Pekerjaan
+    document.addEventListener('DOMContentLoaded', function() {
+        const poSelect = document.getElementById('po');
+        if (poSelect) {
+            poSelect.addEventListener('change', function() {
+                const poId = this.value;
+                const itemWrapper = document.getElementById('itemPekerjaanWrapper');
+                const itemSelect = document.getElementById('pekerjaan_item');
 
-        if (this.value) {
-            const selectedOption = this.options[this.selectedIndex];
-            itemDetails.innerHTML = `
-                <strong>Kode:</strong> ${selectedOption.dataset.kode}<br>
-                <strong>Nama:</strong> ${selectedOption.dataset.nama}<br>
-                <strong>Volume:</strong> ${selectedOption.dataset.volume} ${selectedOption.dataset.satuan}<br>
-                <strong>Bobot:</strong> ${selectedOption.dataset.bobot}%
-            `;
-            itemInfo.style.display = 'block';
-        } else {
-            itemInfo.style.display = 'none';
+                if (poId) {
+                    itemWrapper.style.display = 'block';
+                    itemSelect.innerHTML = '<option value="">⏳ Memuat item...</option>';
+                    itemSelect.disabled = true;
+
+                    fetch(`/landingpage/api/pekerjaan-items/po/${poId}`)
+                        .then(response => response.json())
+                        .then(result => {
+                            itemSelect.disabled = false;
+                            if (result.success && result.data.length > 0) {
+                                itemSelect.innerHTML =
+                                    '<option value="">-- Pilih Item Pekerjaan --</option>';
+                                result.data.forEach(item => {
+                                    const option = document.createElement('option');
+                                    option.value = item.id;
+                                    option.innerHTML = item.display;
+                                    itemSelect.appendChild(option);
+                                });
+                            } else {
+                                itemSelect.innerHTML =
+                                    '<option value="">⚠️ Tidak ada item</option>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('❌ Error loading items:', error);
+                            itemSelect.disabled = false;
+                            itemSelect.innerHTML = '<option value="">❌ Gagal memuat data</option>';
+                        });
+                } else {
+                    itemWrapper.style.display = 'none';
+                }
+            });
         }
     });
     </script>
+
 
 </body>
 

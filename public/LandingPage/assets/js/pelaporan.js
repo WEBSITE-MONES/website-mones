@@ -1,24 +1,15 @@
-// ==================== PELAPORAN PROGRESS HARIAN JS - WITH LOCATION NAME ====================
-
-// Set tanggal default ke hari ini
 document.getElementById('tanggal').valueAsDate = new Date();
-
-// Global variables
 let userLocation = null;
 let uploadedFiles = [];
 let currentGPSCoords = null;
-let currentLocationName = null; // ✅ TAMBAHAN: Simpan nama lokasi
+let currentLocationName = null;
 
-// OpenWeather API Key
-const OPENWEATHER_API_KEY = 'eb63c86a920d5776c62b7dd6641e95c0';
-
-// ==================== MODERN ALERT HELPER ====================
 function showAlert(icon, title, text) {
   Swal.fire({
     icon: icon,
     title: title,
     text: text,
-    confirmButtonColor: '#1d6ba8',
+    confirmButtonColor: '#2c5aa0',
     confirmButtonText: 'OK'
   });
 }
@@ -29,7 +20,7 @@ function showConfirm(title, text, confirmCallback, cancelCallback) {
     text: text,
     icon: 'question',
     showCancelButton: true,
-    confirmButtonColor: '#1d6ba8',
+    confirmButtonColor: '#2c5aa0',
     cancelButtonColor: '#6c757d',
     confirmButtonText: 'Kamera 📸',
     cancelButtonText: 'Galeri 🖼️'
@@ -47,12 +38,11 @@ function showSuccess(title, text) {
     icon: 'success',
     title: title,
     text: text,
-    confirmButtonColor: '#1d6ba8',
+    confirmButtonColor: '#2c5aa0',
     timer: 3000
   });
 }
 
-// ==================== GET LOCATION NAME FROM COORDINATES ====================
 async function getLocationNameFromCoords(lat, lon) {
   try {
     const response = await fetch(
@@ -68,7 +58,6 @@ async function getLocationNameFromCoords(lat, lon) {
       const data = await response.json();
       const address = data.address || {};
       
-      // ✅ Format alamat yang user-friendly (prioritas dari spesifik ke umum)
       const parts = [];
       
       if (address.road || address.street) {
@@ -87,12 +76,10 @@ async function getLocationNameFromCoords(lat, lon) {
         parts.push(address.state);
       }
       
-      // Gabungkan parts yang ada
       if (parts.length > 0) {
         return parts.join(', ');
       }
       
-      // Fallback ke display_name (potong jika terlalu panjang)
       if (data.display_name) {
         return data.display_name.length > 80 
           ? data.display_name.substring(0, 77) + '...' 
@@ -108,7 +95,6 @@ async function getLocationNameFromCoords(lat, lon) {
   return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
 }
 
-// ==================== GET LOCATION FROM GPS (LIVE) ====================
 async function getUserLocation() {
   const weatherInfo = document.getElementById('weatherInfo');
   if (weatherInfo) {
@@ -137,7 +123,6 @@ async function getUserLocation() {
       document.getElementById('latitude').value = lat;
       document.getElementById('longitude').value = lon;
       
-      // ✅ PERBAIKAN: Ambil nama lokasi dari koordinat
       console.log('🔍 Mencari nama lokasi...');
       currentLocationName = await getLocationNameFromCoords(lat, lon);
       console.log('📍 Lokasi ditemukan:', currentLocationName);
@@ -166,7 +151,7 @@ async function getUserLocation() {
             country: country,
             latitude: lat,
             longitude: lon,
-            locationName: currentLocationName // ✅ Simpan nama lokasi
+            locationName: currentLocationName 
           };
         }
         
@@ -174,7 +159,6 @@ async function getUserLocation() {
         console.error('Reverse geocoding error:', error);
       }
       
-      // Update weather dengan nama lokasi
       getWeatherDataLive(lat, lon);
     },
     (error) => {
@@ -204,7 +188,7 @@ async function getUserLocation() {
   );
 }
 
-// ==================== FALLBACK LOCATION (IP-based) ====================
+// ==================== FALLBACK LOCATION  ====================
 async function useFallbackLocation() {
   try {
     const response = await fetch('https://ipapi.co/json/');
@@ -216,8 +200,7 @@ async function useFallbackLocation() {
     
     const lat = data.latitude || -5.1477;
     const lon = data.longitude || 119.4327;
-    
-    // ✅ Ambil nama lokasi dari koordinat
+
     currentLocationName = await getLocationNameFromCoords(lat, lon);
     
     userLocation = {
@@ -272,32 +255,42 @@ async function useFallbackLocation() {
   }
 }
 
-// ==================== GET WEATHER DATA LIVE (OpenWeather API) ====================
 async function getWeatherDataLive(lat, lon) {
   try {
-    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=id&appid=${OPENWEATHER_API_KEY}`;
+    const url = `/dashboard/sidebar-weather?lat=${lat}&lon=${lon}`;
     
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    if (data.cod !== 200) {
-      throw new Error(data.message || 'Weather API Error');
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status}`);
     }
     
-    const temperature = Math.round(data.main.temp);
-    const description = data.weather[0].description;
-    const humidity = data.main.humidity;
-    const iconCode = data.weather[0].icon;
-    const weatherIcon = getWeatherIcon(iconCode);
+    const data = await response.json();
     
-    // ✅ Tampilkan nama lokasi, bukan koordinat
+    // Check if error response
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    const temperature = Math.round(data.temperature);
+    const description = data.description;
+    const humidity = data.humidity;
+    const iconCode = data.icon;
+    const weatherIcon = getWeatherIcon(iconCode);
+
     const displayLocation = currentLocationName || (userLocation ? userLocation.city : 'Unknown');
     
     document.getElementById('weatherInfo').innerHTML = `
       <div class="weather-icon">${weatherIcon}</div>
       <div class="weather-details">
         <h5>${temperature}°C - ${description}</h5>
-        <p>Kelembaban: ${humidity}% | 📍 ${displayLocation}</p>
+        <p>Kelembaban: ${humidity}% |  ${displayLocation}</p>
       </div>
     `;
     
@@ -411,16 +404,25 @@ async function openCamera() {
       margin-top: 20px;
       padding: 15px 40px;
       font-size: 18px;
-      background: #47b2e4;
+      background: #2c5aa0;
       color: white;
       border: none;
       border-radius: 8px;
       cursor: pointer;
       font-weight: bold;
+      transition: background 0.3s ease;
     `;
     
+    captureBtn.addEventListener('mouseenter', () => {
+      captureBtn.style.background = '#1d4278';
+    });
+    
+    captureBtn.addEventListener('mouseleave', () => {
+      captureBtn.style.background = '#2c5aa0';
+    });
+    
     const closeBtn = document.createElement('button');
-    closeBtn.innerHTML = '❌ Tutup';
+    closeBtn.innerHTML = ' Tutup';
     closeBtn.style.cssText = `
       margin-top: 10px;
       padding: 10px 30px;
@@ -430,7 +432,16 @@ async function openCamera() {
       border: none;
       border-radius: 8px;
       cursor: pointer;
+      transition: background 0.3s ease;
     `;
+    
+    closeBtn.addEventListener('mouseenter', () => {
+      closeBtn.style.background = '#5a6268';
+    });
+    
+    closeBtn.addEventListener('mouseleave', () => {
+      closeBtn.style.background = '#6c757d';
+    });
     
     modal.appendChild(video);
     modal.appendChild(captureBtn);
@@ -454,7 +465,7 @@ async function openCamera() {
         const file = new File([blob], fileName, { type: 'image/jpeg' });
         
         file.gpsData = currentGPSCoords;
-        file.locationName = currentLocationName; // ✅ Simpan nama lokasi
+        file.locationName = currentLocationName;
         file.weatherData = {
           temperature: document.getElementById('cuaca_suhu').value,
           description: document.getElementById('cuaca_deskripsi').value,
@@ -493,13 +504,12 @@ async function openCamera() {
   }
 }
 
-// ==================== HANDLE FILES ====================
 async function handleFiles(files) {
   for (let file of files) {
     if (file.type.startsWith('image/') && file.size <= 5242880) {
       if (currentGPSCoords && !file.gpsData) {
         file.gpsData = currentGPSCoords;
-        file.locationName = currentLocationName; // ✅ Simpan nama lokasi
+        file.locationName = currentLocationName; 
         file.weatherData = {
           temperature: document.getElementById('cuaca_suhu').value,
           description: document.getElementById('cuaca_deskripsi').value,
@@ -515,21 +525,19 @@ async function handleFiles(files) {
   }
 }
 
-// ==================== DISPLAY PHOTO ====================
 function displayPhoto(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
     const div = document.createElement('div');
     div.className = 'preview-item';
     
-    // ✅ Tampilkan nama lokasi, bukan koordinat
     const gpsLabel = file.locationName ? 
       `<small style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.8); color:white; padding:5px; font-size:10px; line-height:1.3;">
-        📍 ${file.locationName}
+        ${file.locationName}
       </small>` : 
       (file.gpsData ? 
         `<small style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7); color:white; padding:3px; font-size:9px;">
-          📍 ${file.gpsData.latitude.toFixed(4)}, ${file.gpsData.longitude.toFixed(4)}
+          ${file.gpsData.latitude.toFixed(4)}, ${file.gpsData.longitude.toFixed(4)}
         </small>` : '');
     
     div.innerHTML = `
@@ -545,7 +553,6 @@ function displayPhoto(file) {
   reader.readAsDataURL(file);
 }
 
-// ==================== REMOVE PHOTO ====================
 function removePhoto(btn, fileName) {
   uploadedFiles = uploadedFiles.filter(f => f.name !== fileName);
   btn.parentElement.remove();
@@ -554,7 +561,6 @@ function removePhoto(btn, fileName) {
   }
 }
 
-// ==================== FORM SUBMIT HANDLER ====================
 document.getElementById('progressForm').addEventListener('submit', function(e) {
   e.preventDefault();
   
@@ -564,15 +570,12 @@ document.getElementById('progressForm').addEventListener('submit', function(e) {
     return;
   }
 
-  // Validasi GPS coordinates harus ada
   if (!document.getElementById('latitude').value || !document.getElementById('longitude').value) {
     showAlert('error', 'GPS Belum Siap', 'Mohon tunggu hingga GPS coordinates terdeteksi!');
     return;
   }
 
   const formData = new FormData(this);
-  
-  // ✅ Tambahkan nama lokasi ke form data
   if (currentLocationName) {
     formData.append('location_name', currentLocationName);
   }
@@ -634,7 +637,7 @@ document.getElementById('progressForm').addEventListener('submit', function(e) {
         icon: 'success',
         title: 'Berhasil!',
         text: `Laporan berhasil dikirim dari ${currentLocationName || 'lokasi Anda'}!`,
-        confirmButtonColor: '#1d6ba8'
+        confirmButtonColor: '#2c5aa0'
       }).then(() => {
         window.location.href = '/landingpage/pelaporan';
       });
@@ -654,7 +657,6 @@ document.getElementById('progressForm').addEventListener('submit', function(e) {
   });
 });
 
-// ==================== RESET FORM ====================
 function resetForm(needConfirm = true) {
   if (needConfirm) {
     Swal.fire({
@@ -662,7 +664,7 @@ function resetForm(needConfirm = true) {
       text: 'Yakin ingin membatalkan? Semua data akan dihapus.',
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#1d6ba8',
+      confirmButtonColor: '#2c5aa0',
       cancelButtonColor: '#6c757d',
       confirmButtonText: 'Ya, Batalkan',
       cancelButtonText: 'Tidak'
@@ -687,7 +689,7 @@ function performReset() {
 
 // ==================== INITIALIZE ON LOAD ====================
 window.addEventListener('DOMContentLoaded', function() {
-  console.log('📍 Initializing Pelaporan Progress dengan Location Name...');
+  console.log('📍 Initializing Pelaporan Progress (Secure Mode)...');
   getUserLocation(); 
-  console.log('✅ GPS & Weather data loading...');
+  console.log('GPS & Weather data loading via secure backend...');
 });

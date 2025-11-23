@@ -1,6 +1,7 @@
-<div class="table-responsive">
-    <table class="table table-sm table-bordered table-hover align-middle mb-0" id="progressTable">
-        <thead class="table-light sticky-top">
+<div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+    <table class="table table-sm table-bordered table-hover align-middle mb-0" id="progressTable"
+        style="max-height: 600px; overflow-y: auto;">
+        <thead class=" table-light sticky-top" style="position: sticky; top: 0; z-index: 10;">
             <tr>
                 <th rowspan="3" class="text-center align-middle" style="min-width: 60px;">No</th>
                 <th rowspan="3" class="text-center align-middle" style="min-width: 120px;">Kode WBS</th>
@@ -31,7 +32,7 @@
             {{-- Header Range Tanggal --}}
             <tr>
                 @foreach($masterMinggu as $minggu)
-                <th colspan="2" class="text-center bg-light">
+                <th colspan="2" class="bg-primary text-white">
                     <small>{{ $minggu->tanggal_awal->format('d M') }} -
                         {{ $minggu->tanggal_akhir->format('d M') }}</small>
                 </th>
@@ -49,7 +50,6 @@
         </thead>
         <tbody>
             @php
-            // ✅ Fungsi render dengan collapse/expand
             function renderItems($items, $masterMinggu, $progressDetailsMap, $parentNumber = '', $parentId = '', $level
             = 0) {
             $counter = 1;
@@ -69,26 +69,18 @@
             ($item->sub_pekerjaan ?:
             ($item->sub_sub_pekerjaan ?: 'Item'));
 
-            // Row class
             $rowClass = $isParent ? 'fw-bold bg-light parent-row' : '';
             $rowClass .= ' ' . $parentClass;
             $rowClass .= ' level-' . $level;
 
             echo '<tr class="' . trim($rowClass) . '" data-id="' . $rowId . '" data-level="' . $level . '">';
 
-                // Nomor
                 echo '<td class="text-center">' . $currentNumber . '</td>';
-
-                // Kode WBS
                 echo '<td>' . $item->kode_pekerjaan . '</td>';
-
-                // Uraian dengan toggle icon
                 echo '<td>';
 
-                    // Indentasi
                     echo str_repeat('<span class="ms-3"></span>', $level);
 
-                    // Toggle icon untuk parent
                     if ($isParent) {
                     echo '<i class="fas fa-chevron-down toggle-icon me-2" style="cursor: pointer; color: #007bff;"
                         onclick="toggleChildren(\'' . $rowId . '\')"></i>';
@@ -103,17 +95,13 @@
                 echo '<td class="text-end">' . number_format($item->volume, 2) . '</td>';
                 echo '<td class="text-center">' . $item->sat . '</td>';
                 echo '<td class="text-end">' . number_format($item->bobot, 2) . '%</td>';
-
-                // Loop minggu
                 foreach ($masterMinggu as $minggu) {
                 $detail = $progressDetailsMap[$item->id][$minggu->id] ?? null;
                 $rencana = $detail ? number_format($detail->bobot_rencana, 2) : '0.00';
                 $realisasi = $detail ? number_format($detail->bobot_realisasi, 2) : '0.00';
 
-                // Rencana
                 echo '<td class="text-center text-primary fw-semibold">' . $rencana . '%</td>';
 
-                // Realisasi dengan badge
                 $badgeClass = 'bg-secondary';
                 if ($detail && $detail->bobot_realisasi > 0) {
                 if ($detail->bobot_realisasi >= $detail->bobot_rencana) {
@@ -130,7 +118,6 @@
 
                 echo '</tr>';
 
-            // Render children
             if ($isParent) {
             renderItems($item->children, $masterMinggu, $progressDetailsMap, $currentNumber, $rowId, $level + 1);
             }
@@ -145,7 +132,6 @@
 
         {{-- Footer Summary --}}
         <tfoot class="table-light">
-            {{-- Baris 1: RENCANA PEKERJAAN --}}
             <tr class="bg-warning">
                 <th colspan="6" class="text-center fw-bold">RENCANA PEKERJAAN</th>
                 @foreach($masterMinggu as $minggu)

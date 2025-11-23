@@ -1,23 +1,18 @@
-// ==================== RINGKASAN LAPORAN JS (FIXED STATUS) ====================
-
 let allReports = [];
 let filteredReports = [];
 let currentPage = 1;
 const itemsPerPage = 10;
 
-// ==================== INITIALIZE ====================
 window.addEventListener("DOMContentLoaded", function () {
   loadReports();
   setupEventListeners();
   
-  // ✅ Auto-refresh setiap 30 detik
   setInterval(() => {
     console.log('🔄 Auto-refreshing data...');
     loadReports();
-  }, 30000);
+  }, 50000);
 });
 
-// ==================== SETUP EVENT LISTENERS ====================
 function setupEventListeners() {
   document.getElementById("btnFilter").addEventListener("click", applyFilters);
 
@@ -69,11 +64,9 @@ async function loadReports() {
   }
 }
 
-// ==================== UPDATE SUMMARY CARDS ====================
 function updateSummaryCards() {
   const total = allReports.length;
-  
-  // ✅ PERBAIKAN: Gunakan status_approval dari database
+
   const approved = allReports.filter((r) => r.status_approval === "approved").length;
   const pending = allReports.filter((r) => r.status_approval === "pending").length;
   const rejected = allReports.filter((r) => r.status_approval === "rejected").length;
@@ -84,7 +77,6 @@ function updateSummaryCards() {
   document.getElementById("totalRevisi").textContent = rejected;
 }
 
-// ==================== APPLY FILTERS ====================
 function applyFilters() {
   const pekerjaan = document.getElementById("filterPekerjaan").value;
   const tanggalMulai = document.getElementById("filterTanggalMulai").value;
