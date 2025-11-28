@@ -356,9 +356,6 @@ class PekerjaanDetailController extends Controller
         return view('Dashboard.Pekerjaan.Pekerjaan_Detail.data.laporan.show_dokumentasi', compact('pekerjaan', 'report'));
     }
 
-    /**
-     * Approve Daily Progress
-     */
     public function approveDokumentasi($id, $dailyProgressId)
     {
         try {
@@ -377,26 +374,82 @@ class PekerjaanDetailController extends Controller
                 'rejection_reason' => null,
             ]);
 
-            // Agregasi ke progress mingguan
-            $this->progressAggregator->aggregateToWeekly($report->po);
-
-            DB::commit();
-
-            Log::info('Daily Progress Approved', [
+            Log::info('✅ Daily Progress Approved', [
                 'report_id' => $dailyProgressId,
+                'volume' => $report->volume_realisasi,
                 'approved_by' => Auth::user()->name
             ]);
 
-            return redirect()->back()->with('success', 'Dokumentasi berhasil di-approve dan progress mingguan telah diperbarui!');
+            // ✅ CRITICAL: Panggil updateWeeklyProgress
+            $updateResult = $this->triggerWeeklyProgressUpdate($report);
+
+            if (!$updateResult) {
+                Log::warning('⚠️ Weekly progress update returned false, but approval continues', [
+                    'report_id' => $dailyProgressId
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->back()
+                ->with('success', 'Dokumentasi berhasil di-approve dan progress mingguan telah diperbarui!');
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('Approve Daily Progress Error', [
+            Log::error('❌ Approve Daily Progress Error', [
                 'report_id' => $dailyProgressId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
-            return redirect()->back()->with('error', 'Gagal meng-approve dokumentasi: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Gagal meng-approve dokumentasi: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * ✅ HELPER: Trigger Weekly Progress Update
+     */
+    private function triggerWeeklyProgressUpdate(DailyProgress $dailyProgress)
+    {
+        try {
+            Log::info('🔄 Triggering weekly progress update', [
+                'daily_progress_id' => $dailyProgress->id,
+                'volume' => $dailyProgress->volume_realisasi,
+                'item_id' => $dailyProgress->pekerjaan_item_id
+            ]);
+
+            // Instantiate ProgresController
+            $controller = new \App\Http\Controllers\LandingPage\ProgresController();
+
+            // Use reflection to call private method
+            $reflection = new \ReflectionClass($controller);
+            $method = $reflection->getMethod('updateWeeklyProgress');
+            $method->setAccessible(true);
+
+            // Call the method
+            $result = $method->invoke($controller, $dailyProgress);
+
+            if ($result) {
+                Log::info('✅ Weekly progress updated successfully after approval', [
+                    'daily_progress_id' => $dailyProgress->id
+                ]);
+            } else {
+                Log::warning('⚠️ updateWeeklyProgress returned false', [
+                    'daily_progress_id' => $dailyProgress->id
+                ]);
+            }
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('❌ Failed to trigger weekly progress update', [
+                'daily_progress_id' => $dailyProgress->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Don't throw - let approval succeed even if update fails
+            return false;
         }
     }
 

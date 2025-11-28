@@ -551,11 +551,11 @@ class RealisasiController extends Controller
                     'po_id' => $po->id,
                     'pekerjaan_item_id' => null
                 ]);
+
                 $progress->nomor_ba_mulai_kerja   = $validated['nomor_ba_mulai_kerja'] ?? $progress->nomor_ba_mulai_kerja;
                 $progress->tanggal_ba_mulai_kerja = $validated['tanggal_ba_mulai_kerja'] ?? $progress->tanggal_ba_mulai_kerja;
 
                 if ($request->hasFile('file_ba')) {
-                    // Hapus file lama jika ada
                     if ($progress->file_ba && Storage::disk('public')->exists($progress->file_ba)) {
                         Storage::disk('public')->delete($progress->file_ba);
                     }
@@ -588,6 +588,12 @@ class RealisasiController extends Controller
                             'tanggal_awal'  => $awal,
                             'tanggal_akhir' => $akhir,
                         ]);
+
+                        Log::info('✅ Master Minggu M1 Created', [
+                            'progress_id' => $progress->id,
+                            'tanggal_awal' => $awal->format('Y-m-d'),
+                            'tanggal_akhir' => $akhir->format('Y-m-d')
+                        ]);
                     }
                 }
             });
@@ -596,15 +602,18 @@ class RealisasiController extends Controller
                 ->with('success', 'Dokumen BA & PCM berhasil diperbarui!')
                 ->with('activeTab', 'formProgress');
         } catch (\Throwable $e) {
-            Log::error('Update Progress Error', [
+            Log::error('❌ Update Progress Error', [
                 'po_id' => $po->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->route('realisasi.editProgress', $po->id)
                 ->with('error', 'Gagal memperbarui: ' . $e->getMessage());
         }
     }
+
+
     public function importExcel(Request $request, Po $po)
     {
         $request->validate([

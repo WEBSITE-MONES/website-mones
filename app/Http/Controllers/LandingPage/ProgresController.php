@@ -627,8 +627,6 @@ class ProgresController extends Controller
             ], 500);
         }
     }
-
-
     // Tambahan Akumulasi Volume harian
     private function updateWeeklyProgress(DailyProgress $dailyProgress)
     {
@@ -638,23 +636,12 @@ class ProgresController extends Controller
             $dailyProgress->refresh();
             $tanggal = $dailyProgress->tanggal;
 
-            Log::info('🔄 Processing daily progress', [
-                'id' => $dailyProgress->id,
-                'tanggal' => $tanggal->format('Y-m-d'),
-                'po_id' => $dailyProgress->po_id,
-                'item_id' => $dailyProgress->pekerjaan_item_id,
-                'volume_realisasi' => $dailyProgress->volume_realisasi
-            ]);
-
             // 1. Cari minggu berdasarkan tanggal
             $minggu = MasterMinggu::whereDate('tanggal_awal', '<=', $tanggal)
                 ->whereDate('tanggal_akhir', '>=', $tanggal)
                 ->first();
 
             if (!$minggu) {
-                Log::warning('⚠️ Minggu tidak ditemukan', [
-                    'tanggal' => $tanggal->format('Y-m-d')
-                ]);
                 DB::rollBack();
                 return false;
             }
@@ -663,21 +650,15 @@ class ProgresController extends Controller
             $item = PekerjaanItem::find($dailyProgress->pekerjaan_item_id);
 
             if (!$item) {
-                Log::warning('⚠️ Item tidak ditemukan', [
-                    'item_id' => $dailyProgress->pekerjaan_item_id
-                ]);
                 DB::rollBack();
                 return false;
             }
 
             if ($item->volume <= 0) {
-                Log::warning('⚠️ Volume item = 0, tidak bisa hitung realisasi', [
-                    'item_id' => $item->id,
-                    'kode' => $item->kode_pekerjaan
-                ]);
                 DB::rollBack();
                 return false;
             }
+
 
             // 3. Cari/buat Progress record
             $progress = Progress::firstOrCreate([
@@ -685,29 +666,22 @@ class ProgresController extends Controller
                 'pekerjaan_item_id' => $dailyProgress->pekerjaan_item_id
             ]);
 
-            // 4. Hitung TOTAL volume realisasi untuk minggu ini dari SEMUA daily reports
+
+            // 4. Hitung TOTAL volume realisasi untuk minggu ini dari SEMUA daily reports yang APPROVED
             $totalVolumeMingguan = DailyProgress::where('po_id', $dailyProgress->po_id)
                 ->where('pekerjaan_item_id', $dailyProgress->pekerjaan_item_id)
                 ->whereDate('tanggal', '>=', $minggu->tanggal_awal)
                 ->whereDate('tanggal', '<=', $minggu->tanggal_akhir)
-                ->where('status_approval', '!=', 'rejected')
+                ->where('status_approval', 'approved') // ✅ HANYA YANG APPROVED
                 ->sum('volume_realisasi');
 
-            Log::info('📊 Volume calculation', [
-                'minggu' => $minggu->kode_minggu,
-                'total_volume_mingguan' => $totalVolumeMingguan,
-                'volume_item' => $item->volume,
-                'bobot_item' => $item->bobot
-            ]);
-
-            // 5. ✅ HITUNG BOBOT REALISASI
-            // Rumus: (volume_realisasi / volume_total) * bobot_item
-            // Cap maksimal = bobot_item (tidak boleh lebih dari 100%)
-
+            //  HITUNG BOBOT REALISASI
+            // Rumus: (volume_realisasi_mingguan / volume_total_item) * bobot_item
             $persentaseRealisasi = ($totalVolumeMingguan / $item->volume) * 100;
-            $bobotRealisasi = ($totalVolumeMingguan / $item->volume) * $item->bobot;
+            $bobotRealisasiDecimal = ($totalVolumeMingguan / $item->volume) * $item->bobot;
+            $bobotRealisasi = $bobotRealisasiDecimal * 100; 
 
-            // Cap maksimal pada bobot item
+            // Cap maksimal pada bobot item (tidak boleh lebih dari 100%)
             $bobotRealisasi = min($bobotRealisasi, $item->bobot);
 
             Log::info('🧮 Perhitungan bobot realisasi', [
@@ -717,7 +691,8 @@ class ProgresController extends Controller
                 'volume_total_item' => $item->volume,
                 'bobot_item' => $item->bobot,
                 'persentase_realisasi' => round($persentaseRealisasi, 2) . '%',
-                'bobot_realisasi' => round($bobotRealisasi, 4),
+                'bobot_realisasi_calculated' => $bobotRealisasi,
+                'bobot_realisasi_formatted' => number_format($bobotRealisasi, 4),
                 'is_capped' => $bobotRealisasi >= $item->bobot ? 'YES' : 'NO'
             ]);
 
@@ -729,19 +704,36 @@ class ProgresController extends Controller
                 ],
                 [
                     'volume_realisasi' => $totalVolumeMingguan,
-                    'bobot_realisasi' => round($bobotRealisasi, 4), // Simpan dengan 4 desimal untuk akurasi
+                    'bobot_realisasi' => $bobotRealisasi, // ✅ Simpan nilai ASLI (bukan rounded)
                     'keterangan' => $totalVolumeMingguan >= $item->volume
                         ? 'Realisasi mencapai/melebihi target (capped at 100%)'
                         : 'Auto-calculated from daily reports'
                 ]
             );
 
+            // ✅ VERIFY: Baca ulang dari database untuk memastikan tersimpan
+            $progressDetail->refresh();
+
             Log::info('✅ Progress detail updated successfully', [
                 'detail_id' => $progressDetail->id,
                 'progress_id' => $progress->id,
                 'minggu' => $minggu->kode_minggu,
-                'volume_realisasi' => $totalVolumeMingguan,
-                'bobot_realisasi' => round($bobotRealisasi, 2) . '%'
+                'volume_realisasi_saved' => $progressDetail->volume_realisasi,
+                'bobot_realisasi_saved' => $progressDetail->bobot_realisasi,
+                'bobot_realisasi_display' => number_format($progressDetail->bobot_realisasi, 2) . '%'
+            ]);
+
+            // ✅ DEBUG: Query langsung untuk verifikasi
+            $verifyData = DB::table('progress_details')
+                ->where('id', $progressDetail->id)
+                ->first();
+
+            Log::info('🔍 Database verification', [
+                'id' => $verifyData->id,
+                'volume_realisasi' => $verifyData->volume_realisasi,
+                'bobot_realisasi' => $verifyData->bobot_realisasi,
+                'data_type_volume' => gettype($verifyData->volume_realisasi),
+                'data_type_bobot' => gettype($verifyData->bobot_realisasi)
             ]);
 
             DB::commit();
@@ -751,6 +743,7 @@ class ProgresController extends Controller
             Log::error('❌ Error updating weekly progress', [
                 'daily_progress_id' => $dailyProgress->id ?? 'unknown',
                 'error' => $e->getMessage(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
             return false;
