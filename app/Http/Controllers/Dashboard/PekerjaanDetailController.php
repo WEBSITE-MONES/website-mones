@@ -33,8 +33,6 @@ class PekerjaanDetailController extends Controller
 
         return view('Dashboard.Pekerjaan.detail', compact('pekerjaan'));
     }
-
-    // menampilkan daftar sub-pekerjaan untuk pekerjaan {id}
     public function subPekerjaan($pekerjaan_id)
     {
         $pekerjaan = Pekerjaan::with('subPekerjaan')->findOrFail($pekerjaan_id);
@@ -48,8 +46,6 @@ class PekerjaanDetailController extends Controller
         try {
             $pekerjaan = Pekerjaan::findOrFail($pekerjaan_id);
             $sub = SubPekerjaan::findOrFail($sub_id);
-
-            // cari PR yang terkait sub_pekerjaan_id
             $pr = Pr::where('sub_pekerjaan_id', $sub->id)->first();
 
             if (!$pr) {
@@ -77,8 +73,6 @@ class PekerjaanDetailController extends Controller
             if ($masterMinggu->isEmpty()) {
                 return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik_empty', compact('pekerjaan', 'pr', 'po', 'sub'));
             }
-
-            // --- perhitungan chart sama seperti progresFisik biasa ---
             $chartLabels = [];
             $chartRencana = [];
             $chartRealisasi = [];
@@ -166,16 +160,9 @@ class PekerjaanDetailController extends Controller
                 'labels',
                 'rencanaKumulatifBulanan',
                 'realisasiKumulatifBulanan',
-                // jika view butuh tahu sub
                 'sub'
             ));
         } catch (\Exception $e) {
-            Log::error('Error di progresFisikSub:', [
-                'pekerjaan_id' => $pekerjaan_id ?? null,
-                'sub_id' => $sub_id ?? null,
-                'message' => $e->getMessage(),
-                'line' => $e->getLine(),
-            ]);
 
             return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik_error', [
                 'pekerjaan' => Pekerjaan::find($pekerjaan_id),
@@ -237,8 +224,6 @@ class PekerjaanDetailController extends Controller
             'keterangan' => 'required|string|max:255',
             'file_laporan' => 'required|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120',
         ]);
-
-        // Pastikan folder upload tersedia
         if (!File::exists(public_path('uploads/laporan'))) {
             File::makeDirectory(public_path('uploads/laporan'), 0777, true);
         }
@@ -251,7 +236,7 @@ class PekerjaanDetailController extends Controller
         Laporan::create([
             'pekerjaan_id'   => $id,
             'keterangan'     => $request->keterangan,
-            'file_laporan'   => $fileName, // ✅ ini disesuaikan dengan kolom di tabel
+            'file_laporan'   => $fileName,
             'tanggal_upload' => now()->toDateString(),
             'status'         => 'Menunggu',
         ]);
@@ -263,14 +248,10 @@ class PekerjaanDetailController extends Controller
     public function destroyLaporanApproval($id)
     {
         $laporan = Laporan::findOrFail($id);
-
-        // hapus file dari folder public/uploads/laporan_approval
         $filePath = public_path('uploads/laporan/' . $laporan->file);
         if (file_exists($filePath)) {
             unlink($filePath);
         }
-
-        // hapus data dari database
         $laporan->delete();
 
         return back()->with('success', 'Laporan approval berhasil dihapus!');
@@ -316,8 +297,6 @@ class PekerjaanDetailController extends Controller
     public function laporanDokumentasi($id)
     {
         $pekerjaan = Pekerjaan::findOrFail($id);
-
-        // Ambil daily progress yang terkait dengan pekerjaan ini
         $laporanDokumentasi = DailyProgress::whereHas('po.pr.pekerjaan', function ($query) use ($id) {
             $query->where('id', $id);
         })
@@ -325,7 +304,6 @@ class PekerjaanDetailController extends Controller
             ->orderBy('tanggal', 'desc')
             ->paginate(20);
 
-        // Summary counts
         $summary = [
             'total' => DailyProgress::whereHas('po.pr.pekerjaan', function ($q) use ($id) {
                 $q->where('id', $id);
@@ -374,17 +352,15 @@ class PekerjaanDetailController extends Controller
                 'rejection_reason' => null,
             ]);
 
-            Log::info('✅ Daily Progress Approved', [
+            Log::info(' Daily Progress Approved', [
                 'report_id' => $dailyProgressId,
                 'volume' => $report->volume_realisasi,
                 'approved_by' => Auth::user()->name
             ]);
-
-            // ✅ CRITICAL: Panggil updateWeeklyProgress
             $updateResult = $this->triggerWeeklyProgressUpdate($report);
 
             if (!$updateResult) {
-                Log::warning('⚠️ Weekly progress update returned false, but approval continues', [
+                Log::warning(' Weekly progress update returned false, but approval continues', [
                     'report_id' => $dailyProgressId
                 ]);
             }
@@ -396,7 +372,7 @@ class PekerjaanDetailController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('❌ Approve Daily Progress Error', [
+            Log::error('Approve Daily Progress Error', [
                 'report_id' => $dailyProgressId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -408,16 +384,11 @@ class PekerjaanDetailController extends Controller
     }
 
     /**
-     * ✅ HELPER: Trigger Weekly Progress Update
+     * HELPER: Trigger Weekly Progress Update
      */
     private function triggerWeeklyProgressUpdate(DailyProgress $dailyProgress)
     {
         try {
-            Log::info('🔄 Triggering weekly progress update', [
-                'daily_progress_id' => $dailyProgress->id,
-                'volume' => $dailyProgress->volume_realisasi,
-                'item_id' => $dailyProgress->pekerjaan_item_id
-            ]);
 
             // Instantiate ProgresController
             $controller = new \App\Http\Controllers\LandingPage\ProgresController();
@@ -431,22 +402,11 @@ class PekerjaanDetailController extends Controller
             $result = $method->invoke($controller, $dailyProgress);
 
             if ($result) {
-                Log::info('✅ Weekly progress updated successfully after approval', [
-                    'daily_progress_id' => $dailyProgress->id
-                ]);
             } else {
-                Log::warning('⚠️ updateWeeklyProgress returned false', [
-                    'daily_progress_id' => $dailyProgress->id
-                ]);
             }
 
             return $result;
         } catch (\Exception $e) {
-            Log::error('❌ Failed to trigger weekly progress update', [
-                'daily_progress_id' => $dailyProgress->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
 
             // Don't throw - let approval succeed even if update fails
             return false;
@@ -475,18 +435,8 @@ class PekerjaanDetailController extends Controller
                 'rejection_reason' => $request->rejection_reason,
             ]);
 
-            Log::info('Daily Progress Rejected', [
-                'report_id' => $dailyProgressId,
-                'rejected_by' => Auth::user()->name,
-                'reason' => $request->rejection_reason
-            ]);
-
             return redirect()->back()->with('warning', 'Dokumentasi telah ditolak.');
         } catch (\Exception $e) {
-            Log::error('Reject Daily Progress Error', [
-                'report_id' => $dailyProgressId,
-                'error' => $e->getMessage()
-            ]);
 
             return redirect()->back()->with('error', 'Gagal menolak dokumentasi: ' . $e->getMessage());
         }
@@ -516,20 +466,9 @@ class PekerjaanDetailController extends Controller
 
             DB::commit();
 
-            Log::info('Daily Progress Revised', [
-                'report_id' => $dailyProgressId,
-                'revised_by' => Auth::user()->name,
-                'old_status' => $oldStatus
-            ]);
-
             return redirect()->back()->with('success', 'Dokumentasi dikembalikan ke status pending.');
         } catch (\Exception $e) {
             DB::rollBack();
-
-            Log::error('Revise Daily Progress Error', [
-                'report_id' => $dailyProgressId,
-                'error' => $e->getMessage()
-            ]);
 
             return redirect()->back()->with('error', 'Gagal merevisi dokumentasi: ' . $e->getMessage());
         }
@@ -563,11 +502,6 @@ class PekerjaanDetailController extends Controller
             }
 
             DB::commit();
-
-            Log::info('Daily Progress Deleted by Admin', [
-                'report_id' => $dailyProgressId,
-                'deleted_by' => Auth::user()->name
-            ]);
 
             return redirect()->back()->with('success', 'Dokumentasi berhasil dihapus!');
         } catch (\Exception $e) {
@@ -828,11 +762,6 @@ class PekerjaanDetailController extends Controller
     public function exportDokumentasiPdf(Request $request, $id)
     {
         try {
-            Log::info('Admin Export Dokumentasi PDF', [
-                'user_id' => Auth::id(),
-                'pekerjaan_id' => $id,
-                'selected_ids' => $request->input('daily_progress_ids')
-            ]);
 
             $validated = $request->validate([
                 'daily_progress_ids' => 'required|array|min:1',
@@ -936,18 +865,9 @@ class PekerjaanDetailController extends Controller
 
             $filename = 'Dokumentasi_' . str_replace(' ', '_', $pekerjaan->nama_investasi) . '_' . now()->format('YmdHis') . '.pdf';
 
-            Log::info('Admin PDF Generated Successfully', [
-                'filename' => $filename,
-                'photos_count' => count($selectedPhotos),
-                'reports_count' => $reports->count()
-            ]);
 
             return $pdf->download($filename);
         } catch (\Exception $e) {
-            Log::error('Error exporting admin dokumentasi PDF', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
 
             return response()->json([
                 'success' => false,
@@ -978,10 +898,6 @@ class PekerjaanDetailController extends Controller
 
             return null;
         } catch (\Exception $e) {
-            Log::warning('Failed to convert admin image to base64', [
-                'url' => $imageUrl,
-                'error' => $e->getMessage()
-            ]);
             return null;
         }
     }

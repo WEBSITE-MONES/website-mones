@@ -23,7 +23,6 @@ class GeoController extends Controller
                     $json = $response->json();
 
                     if (isset($json['error'])) {
-                        Log::warning("ipapi.co error: " . ($json['reason'] ?? 'Unknown'));
                         return $this->getFallbackLocation();
                     }
 
@@ -36,7 +35,6 @@ class GeoController extends Controller
                     ];
                 }
             } catch (\Exception $e) {
-                Log::warning("Location API failed, using fallback: " . $e->getMessage());
             }
 
             return $this->getFallbackLocation();

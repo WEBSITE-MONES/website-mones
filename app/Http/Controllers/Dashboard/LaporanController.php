@@ -85,8 +85,6 @@ class LaporanController extends Controller
                     $laporan->load('details');
                 }
             }
-
-            // Parse tanggal_po untuk setiap detail
             foreach ($laporan->details as $detail) {
                 if ($detail->tanggal_po && is_string($detail->tanggal_po)) {
                     try {
@@ -96,14 +94,10 @@ class LaporanController extends Controller
                     }
                 }
             }
-
-            // Group data by COA untuk tampilan nested
             $groupedData = $this->groupDataByCOA($laporan->details);
 
             return view('Dashboard.Pekerjaan.Realisasi.Laporan.detail_laporan_investasi', compact('laporan', 'groupedData'));
         } catch (\Exception $e) {
-            Log::error('Error showing laporan: ' . $e->getMessage());
-            Log::error($e->getTraceAsString());
 
             return back()->with('error', 'Gagal menampilkan laporan: ' . $e->getMessage());
         }
@@ -133,9 +127,6 @@ class LaporanController extends Controller
 
         DB::beginTransaction();
         try {
-            Log::info('=== MULAI PROSES BUAT LAPORAN ===');
-            Log::info('Request data:', $request->all());
-            Log::info('User ID: ' . Auth::id());
 
             // Cek duplikasi
             $exists = LaporanInvestasi::where([
@@ -145,13 +136,11 @@ class LaporanController extends Controller
             ])->exists();
 
             if ($exists) {
-                Log::warning('Laporan sudah ada untuk periode ini');
                 return back()->with('error', 'Laporan untuk periode ini sudah ada!')->withInput();
             }
 
             // Generate kode laporan
             $kode = $this->generateKodeLaporan($request->tahun, $request->bulan);
-            Log::info('Kode laporan generated: ' . $kode);
 
             $namaBulan = [
                 1 => 'Januari',
@@ -169,7 +158,6 @@ class LaporanController extends Controller
             ];
 
             // Create laporan
-            Log::info('Creating laporan record...');
             $laporan = LaporanInvestasi::create([
                 'kode_laporan' => $kode,
                 'jenis_laporan' => $request->jenis_laporan,
@@ -180,23 +168,14 @@ class LaporanController extends Controller
                 'dibuat_oleh' => Auth::id(),
                 'tanggal_dibuat' => now(),
             ]);
-
-            Log::info('Laporan created with ID: ' . $laporan->id);
-
-            // Generate dan simpan data laporan
-            Log::info('Mulai generate data laporan...');
             $data = $this->generateLaporanData($request->tahun, $request->bulan);
-
-            Log::info('Data generated, jumlah records: ' . count($data));
 
             if (empty($data)) {
                 DB::rollBack();
-                Log::warning('Tidak ada data untuk periode yang dipilih');
                 return back()->with('error', 'Tidak ada data untuk periode yang dipilih! Pastikan ada data pekerjaan dengan PR pada periode tersebut.')->withInput();
             }
 
             // Simpan details
-            Log::info('Mulai simpan detail records...');
             $detailsSaved = 0;
             foreach ($data as $item) {
                 try {
@@ -223,29 +202,16 @@ class LaporanController extends Controller
                     LaporanDetail::create($detailData);
                     $detailsSaved++;
                 } catch (\Exception $e) {
-                    Log::error('Error saving detail: ' . $e->getMessage());
-                    Log::error('Detail data: ' . json_encode($detailData ?? []));
                 }
             }
-
-            Log::info("Berhasil simpan {$detailsSaved} detail records");
-
-            // Create approval records
-            Log::info('Mulai create approval records...');
             $this->createApprovalRecords($laporan->id);
-            Log::info('Approval records created');
 
             DB::commit();
-            Log::info('=== SELESAI PROSES BUAT LAPORAN ===');
 
             return redirect()->route('laporan.show', $laporan->id)
                 ->with('success', 'Laporan berhasil dibuat!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('=== ERROR BUAT LAPORAN ===');
-            Log::error('Error message: ' . $e->getMessage());
-            Log::error('File: ' . $e->getFile() . ' Line: ' . $e->getLine());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
 
             return back()
                 ->with('error', 'Gagal membuat laporan: ' . $e->getMessage())
@@ -266,14 +232,8 @@ class LaporanController extends Controller
             if ($laporan->status_approval === 'approved') {
                 return back()->with('error', 'Laporan yang sudah di-approve tidak dapat dihapus!');
             }
-
-            // Hapus details
             $laporan->details()->delete();
-
-            // Hapus approvals
             $laporan->approvals()->delete();
-
-            // Hapus laporan
             $laporan->delete();
 
             DB::commit();
@@ -282,7 +242,6 @@ class LaporanController extends Controller
                 ->with('success', 'Laporan berhasil dihapus!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error deleting laporan: ' . $e->getMessage());
             return back()->with('error', 'Gagal menghapus laporan: ' . $e->getMessage());
         }
     }
@@ -332,8 +291,6 @@ class LaporanController extends Controller
             if ($approval->user_id !== Auth::id()) {
                 return back()->with('error', 'Anda tidak memiliki akses untuk approve!');
             }
-
-            // Check if already approved/rejected
             if ($approval->status !== 'pending') {
                 return back()->with('error', 'Approval ini sudah diproses sebelumnya!');
             }
@@ -344,13 +301,11 @@ class LaporanController extends Controller
                 'tanggal_approval' => now(),
             ]);
 
-            // Check if all approvals are approved
             $laporan = LaporanInvestasi::findOrFail($id);
             $pendingCount = $laporan->approvals()->where('status', 'pending')->count();
             $rejectedCount = $laporan->approvals()->where('status', 'rejected')->count();
 
             if ($rejectedCount > 0) {
-                // Ada yang reject, status tetap rejected
                 $laporan->update(['status_approval' => 'rejected']);
             } elseif ($pendingCount === 0) {
                 // Semua sudah approve
@@ -368,7 +323,6 @@ class LaporanController extends Controller
             return back()->with('success', 'Laporan berhasil di-approve!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error approving laporan: ' . $e->getMessage());
             return back()->with('error', 'Gagal approve laporan: ' . $e->getMessage());
         }
     }
@@ -409,7 +363,6 @@ class LaporanController extends Controller
             return back()->with('success', 'Laporan berhasil di-reject!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error rejecting laporan: ' . $e->getMessage());
             return back()->with('error', 'Gagal reject laporan: ' . $e->getMessage());
         }
     }
@@ -450,8 +403,6 @@ class LaporanController extends Controller
             // Download PDF
             return $pdf->download("Laporan-Investasi-{$laporan->kode_laporan}.pdf");
         } catch (\Exception $e) {
-            Log::error('Error exporting PDF: ' . $e->getMessage());
-            Log::error($e->getTraceAsString());
             return back()->with('error', 'Gagal export PDF: ' . $e->getMessage());
         }
     }
@@ -477,7 +428,6 @@ class LaporanController extends Controller
                 "Laporan-Investasi-{$laporan->kode_laporan}.xlsx"
             );
         } catch (\Exception $e) {
-            Log::error('Error exporting Excel: ' . $e->getMessage());
             return back()->with('error', 'Gagal export Excel: ' . $e->getMessage());
         }
     }
@@ -635,21 +585,16 @@ class LaporanController extends Controller
     private function createApprovalRecords($laporanId)
     {
         try {
-            Log::info('Creating approval records for laporan ID: ' . $laporanId);
 
             $approvalSettings = LaporanApprovalSetting::active()
                 ->ordered()
                 ->get();
 
-            Log::info('Found ' . $approvalSettings->count() . ' active approval settings');
-
             if ($approvalSettings->isEmpty()) {
-                Log::warning('No approval settings found, using fallback logic');
 
                 $currentUser = Auth::user();
 
                 if (!$currentUser) {
-                    Log::error('No authenticated user found');
                     throw new \Exception('User tidak terautentikasi');
                 }
 
@@ -661,8 +606,6 @@ class LaporanController extends Controller
                     'status' => 'pending',
                     'urutan' => 1,
                 ]);
-
-                Log::info('Created fallback approval record for user: ' . $currentUser->name);
                 return;
             }
 
@@ -676,15 +619,9 @@ class LaporanController extends Controller
                     'status' => 'pending',
                     'urutan' => $setting->urutan,
                 ]);
-
-                Log::info("Created approval record for: {$setting->nama_approver} (urutan: {$setting->urutan})");
             }
-
-            Log::info('All approval records created successfully');
         } catch (\Exception $e) {
-            Log::error('Error in createApprovalRecords: ' . $e->getMessage());
-            Log::error('File: ' . $e->getFile() . ' Line: ' . $e->getLine());
-            throw $e; // Re-throw agar rollback terjadi
+            throw $e;
         }
     }
 }

@@ -21,11 +21,9 @@ class DigitalSignatureService
     public function generateQrCodeSignature(array $data, ?string $signatureId = null): string
     {
         try {
-            Log::info('=== START GENERATE QR CODE ===');
 
             // gunakan signatureId yang diberikan jika ada; jika tidak, generate baru
             $uniqueId = $signatureId ?? Str::uuid()->toString();
-            Log::info('Using signature UUID:', ['uuid' => $uniqueId]);
 
             $qrData = [
                 'signature_id' => $uniqueId,
@@ -38,7 +36,6 @@ class DigitalSignatureService
             ];
 
             $qrContent = json_encode($qrData);
-            Log::info('QR Content prepared');
 
             // pastikan direktori ada
             if (!Storage::disk('public')->exists('signatures/qr')) {
@@ -49,7 +46,6 @@ class DigitalSignatureService
             $useImagick = extension_loaded('imagick');
 
             if ($useImagick) {
-                Log::info('Imagick available - generating PNG QR');
                 $qrBinary = QrCode::format('png')
                     ->size(300)
                     ->margin(2)
@@ -63,10 +59,8 @@ class DigitalSignatureService
                 if (!$saved) {
                     throw new \Exception('Failed to save QR code to storage (png)');
                 }
-
             } else {
                 // fallback -> SVG (works without imagick)
-                Log::warning('Imagick not available - falling back to SVG for QR generation');
                 $qrSvg = QrCode::format('svg')
                     ->size(300)
                     ->margin(2)
@@ -82,23 +76,13 @@ class DigitalSignatureService
             }
 
             $fileExists = Storage::disk('public')->exists($path);
-            Log::info('QR save result', ['path' => $path, 'exists' => $fileExists]);
 
             if (!$fileExists) {
                 throw new \Exception('QR code file not found after save');
             }
 
-            Log::info('=== QR CODE GENERATED SUCCESSFULLY ===', ['path' => $path]);
-
             return $path;
-
         } catch (\Exception $e) {
-            Log::error('=== ERROR GENERATING QR CODE ===', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
             throw $e;
         }
     }
@@ -116,17 +100,12 @@ class DigitalSignatureService
     public function generateHybridSignature(string $signatureImagePath, array $data, ?string $signatureId = null): string
     {
         try {
-            Log::info('=== START GENERATE HYBRID SIGNATURE ===');
-            Log::info('Signature path:', ['path' => $signatureImagePath]);
 
             // generate QR menggunakan signatureId yang sama (atau generate baru jika null)
             $qrPath = $this->generateQrCodeSignature($data, $signatureId);
-            Log::info('QR Code generated for hybrid:', ['qr_path' => $qrPath]);
 
             $signatureFullPath = Storage::disk('public')->path($signatureImagePath);
             $qrFullPath = Storage::disk('public')->path($qrPath);
-
-            Log::info('Full paths', ['signature' => $signatureFullPath, 'qr' => $qrFullPath]);
 
             if (!file_exists($signatureFullPath)) {
                 throw new \Exception('Signature image not found: ' . $signatureImagePath);
@@ -147,11 +126,8 @@ class DigitalSignatureService
                     throw new \Exception('Hybrid signature requires Imagick (to convert SVG QR to PNG). Please install the imagick extension.');
                 }
 
-                Log::info('Converting SVG QR to temporary PNG using Imagick for hybrid composition');
-
                 // convert SVG -> PNG using Imagick
                 $imagick = new Imagick();
-                // read from file
                 $svgContent = file_get_contents($qrFullPath);
                 $imagick->readImageBlob($svgContent);
                 $imagick->setImageFormat('png32');
@@ -173,7 +149,6 @@ class DigitalSignatureService
 
                 $tempPngQrFullPath = $tempPngFullPath;
                 $usedQrFullPath = $tempPngFullPath;
-                Log::info('SVG converted to PNG:', ['temp_png' => $tempPngFullPath]);
             }
 
             // Detect dan load image signature
@@ -263,23 +238,12 @@ class DigitalSignatureService
                 // jika kita membuat temporary PNG dari SVG, hapus temp PNG
                 if ($tempPngQrFullPath && file_exists($tempPngQrFullPath)) {
                     @unlink($tempPngQrFullPath);
-                    Log::info('Temporary PNG QR deleted:', ['path' => $tempPngQrFullPath]);
                 }
             } catch (\Throwable $t) {
-                Log::warning('Failed deleting temporary QR PNG', ['msg' => $t->getMessage()]);
             }
 
-            Log::info('=== HYBRID SIGNATURE GENERATED SUCCESSFULLY ===', ['path' => $path]);
-
             return $path;
-
         } catch (\Exception $e) {
-            Log::error('=== ERROR GENERATING HYBRID SIGNATURE ===', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
             throw $e;
         }
     }
@@ -290,15 +254,10 @@ class DigitalSignatureService
     public function verifySignature(string $signatureId): ?array
     {
         try {
-            Log::info('Verifying signature:', ['signature_id' => $signatureId]);
 
             $signature = DigitalSignature::where('signature_id', $signatureId)->first();
 
             if (!$signature) {
-                Log::warning('Signature verification failed: Not found', [
-                    'signature_id' => $signatureId,
-                    'ip' => request()->ip()
-                ]);
 
                 return [
                     'valid' => false,
@@ -335,13 +294,7 @@ class DigitalSignatureService
                 'laporan_count' => $signature->laporanApprovals()->count(),
                 'verification_count' => $signature->verifications()->count()
             ];
-
         } catch (\Exception $e) {
-            Log::error('Error verifying signature', [
-                'signature_id' => $signatureId,
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return null;
         }
     }
@@ -351,14 +304,12 @@ class DigitalSignatureService
      */
     public function generateSignatureMetadata(array $data): array
     {
-        Log::info('Generating signature metadata');
         $metadata = [
             'signature_id' => Str::uuid()->toString(),
             'hash' => hash('sha256', json_encode($data) . now()->timestamp),
             'algorithm' => 'SHA-256',
             'created_at' => now(),
         ];
-        Log::info('Metadata generated', ['signature_id' => $metadata['signature_id']]);
         return $metadata;
     }
 }

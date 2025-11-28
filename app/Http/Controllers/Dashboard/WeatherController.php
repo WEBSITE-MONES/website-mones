@@ -44,13 +44,7 @@ class WeatherController extends Controller
                     ];
                 }
 
-                Log::error("Weather API gagal", [
-                    'status' => $response->status(),
-                    'body'   => $response->body(),
-                ]);
-
             } catch (\Exception $e) {
-                Log::error("Weather API Exception: " . $e->getMessage());
             }
 
             return [

@@ -11,7 +11,6 @@ use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class ProgressImport implements ToCollection, WithCalculatedFormulas
 {

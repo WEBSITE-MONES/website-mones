@@ -406,12 +406,7 @@ class RealisasiController extends Controller
                 ->orderBy('tanggal_awal')
                 ->get();
 
-            // ✅ VALIDASI: Jika master minggu kosong
             if ($masterMinggu->isEmpty()) {
-                Log::warning('⚠️ Master Minggu kosong untuk PO', [
-                    'po_id' => $po->id,
-                    'progress_utama_id' => $progressUtama->id ?? 'NULL'
-                ]);
             }
 
             // Ambil items pekerjaan (hierarki WBS)
@@ -421,14 +416,13 @@ class RealisasiController extends Controller
                 ->orderBy('kode_pekerjaan')
                 ->get();
 
-            // ✅ Buat mapping bulan untuk header tabel
             $monthMap = [];
             foreach ($masterMinggu as $minggu) {
                 $monthName = $minggu->tanggal_awal->translatedFormat('F Y');
                 if (!isset($monthMap[$monthName])) {
                     $monthMap[$monthName] = ['colspan' => 0, 'minggus' => []];
                 }
-                $monthMap[$monthName]['colspan'] += 3; // 3 kolom per minggu (Rencana, Volume, Realisasi)
+                $monthMap[$monthName]['colspan'] += 3;
                 $monthMap[$monthName]['minggus'][] = $minggu;
             }
 
@@ -491,17 +485,6 @@ class RealisasiController extends Controller
             // ✅ Generate data untuk Kurva S
             $chartData = $this->generateCurveSData($po, $masterMinggu);
 
-            // ✅ DEBUG LOG
-            Log::info('📊 Edit Progress Data Prepared', [
-                'po_id' => $po->id,
-                'master_minggu_count' => $masterMinggu->count(),
-                'items_count' => $items->count(),
-                'chart_data_points' => count($chartData),
-                'rencana_pct' => $rencanaPct,
-                'realisasi_pct' => $realisasiPct,
-                'deviasi_pct' => $deviasiPct
-            ]);
-
             return view('Dashboard.Pekerjaan.Realisasi.edit_progress', compact(
                 'po',
                 'items',
@@ -516,12 +499,6 @@ class RealisasiController extends Controller
                 'chartData'
             ));
         } catch (\Exception $e) {
-            Log::error('❌ Error editProgress', [
-                'po_id' => $po->id,
-                'error' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
 
             return redirect()->route('realisasi.index')
                 ->with('error', 'Gagal memuat halaman progress: ' . $e->getMessage());
@@ -588,12 +565,6 @@ class RealisasiController extends Controller
                             'tanggal_awal'  => $awal,
                             'tanggal_akhir' => $akhir,
                         ]);
-
-                        Log::info('✅ Master Minggu M1 Created', [
-                            'progress_id' => $progress->id,
-                            'tanggal_awal' => $awal->format('Y-m-d'),
-                            'tanggal_akhir' => $akhir->format('Y-m-d')
-                        ]);
                     }
                 }
             });
@@ -602,11 +573,6 @@ class RealisasiController extends Controller
                 ->with('success', 'Dokumen BA & PCM berhasil diperbarui!')
                 ->with('activeTab', 'formProgress');
         } catch (\Throwable $e) {
-            Log::error('❌ Update Progress Error', [
-                'po_id' => $po->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
 
             return redirect()->route('realisasi.editProgress', $po->id)
                 ->with('error', 'Gagal memperbarui: ' . $e->getMessage());
@@ -644,16 +610,10 @@ class RealisasiController extends Controller
             $cumulativeRencana = 0;
             $cumulativeRealisasi = 0;
 
-            // ✅ PERBAIKAN: Identifikasi HANYA parent yang punya children
             $parentIds = PekerjaanItem::where('po_id', $po->id)
-                ->whereHas('children') // ← Hanya yang benar-benar punya anak
+                ->whereHas('children')
                 ->pluck('id')
                 ->toArray();
-
-            Log::info('🔍 Parent items identified', [
-                'po_id' => $po->id,
-                'parent_ids' => $parentIds
-            ]);
 
             foreach ($masterMinggu as $minggu) {
                 $rencanaWeek = 0;
@@ -666,10 +626,6 @@ class RealisasiController extends Controller
 
                     // ✅ PERBAIKAN: Skip HANYA jika item adalah parent yang punya children
                     if (in_array($progress->pekerjaan_item_id, $parentIds)) {
-                        Log::debug('⏭️ Skipping parent item', [
-                            'item_id' => $progress->pekerjaan_item_id,
-                            'minggu' => $minggu->kode_minggu
-                        ]);
                         continue;
                     }
 
@@ -682,48 +638,24 @@ class RealisasiController extends Controller
 
                         $rencanaWeek += $bobotRencana;
                         $realisasiWeek += $bobotRealisasi;
-
-                        // ✅ LOG DETAIL untuk debugging
                         if ($bobotRealisasi > 0) {
-                            Log::info('✅ Found realisasi data', [
-                                'item_id' => $progress->pekerjaan_item_id,
-                                'minggu' => $minggu->kode_minggu,
-                                'bobot_rencana' => $bobotRencana,
-                                'bobot_realisasi' => $bobotRealisasi,
-                                'volume_realisasi' => $detail->volume_realisasi
-                            ]);
                         }
                     }
                 }
 
-                // ✅ Akumulasi kumulatif
                 $cumulativeRencana += $rencanaWeek;
                 $cumulativeRealisasi += $realisasiWeek;
-
-                // ✅ LOG per minggu
-                Log::info('📊 Week calculation', [
-                    'minggu' => $minggu->kode_minggu,
-                    'rencana_week' => round($rencanaWeek, 4),
-                    'realisasi_week' => round($realisasiWeek, 4),
-                    'cumulative_rencana' => round($cumulativeRencana, 4),
-                    'cumulative_realisasi' => round($cumulativeRealisasi, 4)
-                ]);
-
-                // ✅ Simpan data untuk chart (gunakan 4 desimal!)
                 $chartData[] = [
                     'week' => $minggu->kode_minggu,
                     'week_label' => $minggu->tanggal_awal->format('d M') . ' - ' . $minggu->tanggal_akhir->format('d M'),
-                    'rencana' => round($cumulativeRencana, 4), // ← 4 desimal!
-                    'realisasi' => round($cumulativeRealisasi, 4), // ← 4 desimal!
+                    'rencana' => round($cumulativeRencana, 4),
+                    'realisasi' => round($cumulativeRealisasi, 4),
                     'deviasi' => round($cumulativeRealisasi - $cumulativeRencana, 4),
                     'rencana_week' => round($rencanaWeek, 4),
                     'realisasi_week' => round($realisasiWeek, 4)
                 ];
             }
-
-            // ✅ Jika tidak ada data, buat dummy
             if (empty($chartData)) {
-                Log::warning('⚠️ Chart data kosong', ['po_id' => $po->id]);
 
                 $chartData = [[
                     'week' => 'M1',
@@ -736,23 +668,9 @@ class RealisasiController extends Controller
                 ]];
             }
 
-            Log::info('📊 Chart Data Generated - FINAL', [
-                'po_id' => $po->id,
-                'data_points' => count($chartData),
-                'final_rencana' => round($cumulativeRencana, 4),
-                'final_realisasi' => round($cumulativeRealisasi, 4),
-                'sample_data' => array_slice($chartData, 0, 3)
-            ]);
 
             return $chartData;
         } catch (\Exception $e) {
-            Log::error('❌ Error generateCurveSData', [
-                'po_id' => $po->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            // Return dummy data jika error
             return [[
                 'week' => 'Error',
                 'week_label' => 'Gagal memuat data',
@@ -843,8 +761,6 @@ class RealisasiController extends Controller
 
         return redirect()->route('realisasi.index')->with('success', 'GR berhasil ditambahkan.');
     }
-
-
     public function editGR(Pr $pr)
     {
         $gr = $pr->gr ?? null;
@@ -883,7 +799,7 @@ class RealisasiController extends Controller
             'tanggal_gr' => 'required|date',
             'nomor_gr'   => 'required|string|max:255|unique:grs,nomor_gr,' . $gr->id,
             'nilai_gr'   => 'required|numeric|min:0',
-            'termin_id'  => 'nullable|exists:termins,id', // 🔄 dibuat nullable
+            'termin_id'  => 'nullable|exists:termins,id',
             'ba_pemeriksaan'      => 'nullable|file|mimes:pdf|max:2048',
             'ba_serah_terima'     => 'nullable|file|mimes:pdf|max:2048',
             'ba_pembayaran'       => 'nullable|file|mimes:pdf|max:2048',
@@ -938,15 +854,10 @@ class RealisasiController extends Controller
         return redirect()->route('realisasi.index')->with('success', 'Data GR berhasil diperbarui.');
     }
 
-
-
-
     // FORM CREATE PAYMENT
     public function createPayment(Pr $pr)
     {
         $gr = $pr->gr;
-
-        // Ambil PO yang terkait dengan PR ini
         $po = $pr->po;
 
         if (!$po) {
@@ -964,7 +875,6 @@ class RealisasiController extends Controller
     // STORE PAYMENT - PERBAIKAN
     public function storePayment(Request $request, Pr $pr)
     {
-        Log::info('Store Payment - Data masuk:', $request->all());
 
         $request->validate([
             'gr_id'           => 'required|exists:grs,id',
@@ -989,19 +899,10 @@ class RealisasiController extends Controller
             if (!$po) {
                 throw new \Exception('PO tidak ditemukan untuk PR ini.');
             }
-
-            // Ambil termin yang dipilih dari PO ini
             $selectedTermins = Termin::whereIn('id', $request->termin_ids)
                 ->where('po_id', $po->id)
                 ->whereNull('payment_id')
                 ->get();
-
-            Log::info('Termin yang dipilih:', [
-                'po_id' => $po->id,
-                'requested_ids' => $request->termin_ids,
-                'found_count' => $selectedTermins->count(),
-                'found_ids' => $selectedTermins->pluck('id')->toArray()
-            ]);
 
             if ($selectedTermins->isEmpty()) {
                 throw new \Exception('Termin yang dipilih tidak valid atau sudah dibayar');
@@ -1027,8 +928,6 @@ class RealisasiController extends Controller
             }
             $payment = Payment::create($paymentData);
 
-            Log::info('Payment dibuat:', ['id' => $payment->id]);
-
             $updatedCount = 0;
             foreach ($selectedTermins as $termin) {
                 $termin->payment_id = $payment->id;
@@ -1036,13 +935,6 @@ class RealisasiController extends Controller
                     $updatedCount++;
                 }
             }
-
-            Log::info('Termin di-update:', [
-                'expected' => $selectedTermins->count(),
-                'success' => $updatedCount
-            ]);
-
-            // Update status PR & pekerjaan
             $pr->update(['status_pekerjaan' => 'Payment']);
             if ($pr->pekerjaan) {
                 $pr->pekerjaan->update(['status_realisasi' => 'Payment']);
@@ -1054,11 +946,6 @@ class RealisasiController extends Controller
                 ->with('success', "Payment Request berhasil! {$updatedCount} termin dibayar (Total: Rp " . number_format($totalNilaiPayment, 0, ',', '.') . ")");
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error Store Payment:', [
-                'message' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
-            ]);
 
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
                 ->withInput();
@@ -1098,7 +985,6 @@ class RealisasiController extends Controller
     // UPDATE PAYMENT
     public function updatePayment(Request $request, Pr $pr, Payment $payment)
     {
-        Log::info('Update Payment - Data masuk:', $request->all());
 
         $request->validate([
             'gr_id'           => 'required|exists:grs,id',
@@ -1130,22 +1016,10 @@ class RealisasiController extends Controller
                 $termin->save();
             }
 
-            Log::info('Termin lama di-reset:', [
-                'payment_id' => $payment->id,
-                'count' => $oldTermins->count()
-            ]);
-
-            // 2. Validasi termin baru yang dipilih
             $selectedTermins = Termin::whereIn('id', $request->termin_ids)
                 ->where('po_id', $po->id)
-                ->whereNull('payment_id') // pastikan belum dibayar
+                ->whereNull('payment_id')
                 ->get();
-
-            Log::info('Termin baru yang valid:', [
-                'requested_ids' => $request->termin_ids,
-                'found_count' => $selectedTermins->count(),
-                'found_ids' => $selectedTermins->pluck('id')->toArray()
-            ]);
 
             if ($selectedTermins->isEmpty()) {
                 throw new \Exception('Termin yang dipilih tidak valid atau sudah dibayar oleh payment lain');
@@ -1166,19 +1040,10 @@ class RealisasiController extends Controller
                         Storage::disk('public')->delete($payment->$fileField);
                     }
                     $data[$fileField] = $request->file($fileField)->store('payments', 'public');
-
-                    Log::info("File {$fileField} di-upload:", [
-                        'path' => $data[$fileField]
-                    ]);
                 }
             }
 
             $payment->update($data);
-
-            Log::info('Payment di-update:', [
-                'payment_id' => $payment->id,
-                'nilai_payment' => $totalNilaiPayment
-            ]);
 
             $updatedCount = 0;
             foreach ($selectedTermins as $termin) {
@@ -1188,29 +1053,17 @@ class RealisasiController extends Controller
                 }
             }
 
-            Log::info('Termin baru di-link:', [
-                'expected' => $selectedTermins->count(),
-                'success' => $updatedCount
-            ]);
-
             DB::commit();
 
             return redirect()->route('realisasi.index')
                 ->with('success', "Payment Request berhasil diperbarui! {$updatedCount} termin terkait (Total: Rp " . number_format($totalNilaiPayment, 0, ',', '.') . ")");
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error Update Payment:', [
-                'message' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
-            ]);
 
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
                 ->withInput();
         }
     }
-
-
 
 
     // --------------------------------------------------TERMIN-----------------------------------------------

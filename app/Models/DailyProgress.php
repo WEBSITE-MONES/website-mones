@@ -55,7 +55,7 @@ class DailyProgress extends Model
     ];
 
     // ==================== RELATIONS ====================
-    
+
     public function po()
     {
         return $this->belongsTo(Po::class, 'po_id');
@@ -78,7 +78,7 @@ class DailyProgress extends Model
     }
 
     // ==================== HELPERS ====================
-    
+
     public function getWeekNumber()
     {
         return $this->tanggal->weekOfYear;
@@ -90,7 +90,7 @@ class DailyProgress extends Model
     }
 
     // ==================== STATUS HELPERS ====================
-    
+
     public function isPending()
     {
         return $this->status_approval === 'pending';
@@ -107,7 +107,7 @@ class DailyProgress extends Model
     }
 
     // ==================== QUERY SCOPES ====================
-    
+
     public function scopePending($query)
     {
         return $query->where('status_approval', 'pending');
@@ -122,7 +122,7 @@ class DailyProgress extends Model
     {
         return $query->where('status_approval', 'rejected');
     }
-    
+
     public function scopeDateRange($query, $startDate, $endDate = null)
     {
         if ($endDate) {
@@ -130,12 +130,12 @@ class DailyProgress extends Model
         }
         return $query->where('tanggal', '>=', $startDate);
     }
-    
+
     public function scopeByPelapor($query, $pelaporId)
     {
         return $query->where('pelapor_id', $pelaporId);
     }
-    
+
     public function scopeByPo($query, $poId)
     {
         return $query->where('po_id', $poId);

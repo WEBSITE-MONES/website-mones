@@ -214,7 +214,6 @@ class PekerjaanController extends Controller
             ]);
         }
 
-        // Redirect ke tab Database Pekerjaan setelah update
         return redirect()->route('realisasi.index', ['tab' => 'database'])
                          ->with('success', 'Data pekerjaan berhasil diperbarui!');
     }

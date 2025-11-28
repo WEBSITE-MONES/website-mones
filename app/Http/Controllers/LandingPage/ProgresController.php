@@ -55,8 +55,6 @@ class ProgresController extends Controller
     {
         try {
             $user = Auth::user();
-
-            // Ambil semua pekerjaan untuk filter dropdown
             $pekerjaans = Pekerjaan::with('wilayah')
                 ->whereHas('subPekerjaan.pr.po.dailyProgresses')
                 ->orderBy('nama_investasi', 'asc')
@@ -64,9 +62,6 @@ class ProgresController extends Controller
 
             return view('LandingPage.dokumentasi', compact('user', 'pekerjaans'));
         } catch (\Exception $e) {
-            Log::error('Error dokumentasi page', [
-                'error' => $e->getMessage()
-            ]);
 
             return redirect()->route('landingpage.index')
                 ->with('error', 'Gagal memuat halaman dokumentasi');
@@ -77,16 +72,10 @@ class ProgresController extends Controller
     {
         try {
             $totalRecords = DailyProgress::count();
-
-            // 2. Cek records dengan foto
             $recordsWithFoto = DailyProgress::whereNotNull('foto')->count();
-
-            // 3. Cek records dengan foto valid (JSON array)
             $recordsWithValidFoto = DailyProgress::whereNotNull('foto')
                 ->whereRaw("JSON_LENGTH(foto) > 0")
                 ->count();
-
-            // 4. Sample data 5 terakhir
             $samples = DailyProgress::with(['pelapor:id,name'])
                 ->orderBy('created_at', 'desc')
                 ->take(5)
@@ -169,9 +158,6 @@ class ProgresController extends Controller
     public function apiGetDokumentasi(Request $request)
     {
         try {
-            Log::info('API Get Dokumentasi called', [
-                'filters' => $request->all()
-            ]);
 
             $query = DailyProgress::with([
                 'po:id,nomor_po,pelaksana,pr_id',
@@ -185,7 +171,6 @@ class ProgresController extends Controller
                 ->orderBy('tanggal', 'desc')
                 ->orderBy('created_at', 'desc');
 
-            // Filter by pekerjaan
             if ($request->has('pekerjaan_id') && $request->pekerjaan_id) {
                 $prIds = SubPekerjaan::where('pekerjaan_id', $request->pekerjaan_id)
                     ->pluck('pr_id');
@@ -193,7 +178,6 @@ class ProgresController extends Controller
                 $query->whereIn('po_id', $poIds);
             }
 
-            // Filter by date range
             if ($request->has('tanggal_mulai') && $request->tanggal_mulai) {
                 $query->where('tanggal', '>=', $request->tanggal_mulai);
             }
@@ -204,14 +188,11 @@ class ProgresController extends Controller
 
             $reports = $query->get();
 
-            Log::info('Reports found', ['count' => $reports->count()]);
-
             $allPhotos = [];
             $photoId = 0;
 
             foreach ($reports as $report) {
                 if (empty($report->foto) || !is_array($report->foto)) {
-                    Log::warning('Report has invalid foto', ['report_id' => $report->id]);
                     continue;
                 }
 
@@ -225,10 +206,6 @@ class ProgresController extends Controller
 
                 foreach ($report->foto as $index => $foto) {
                     if (!is_array($foto) || empty($foto['url'])) {
-                        Log::warning('Invalid photo structure', [
-                            'report_id' => $report->id,
-                            'photo_index' => $index
-                        ]);
                         continue;
                     }
 
@@ -260,8 +237,6 @@ class ProgresController extends Controller
                 }
             }
 
-            Log::info('Photos extracted', ['total' => count($allPhotos)]);
-
             // Calculate stats
             $uniqueGPS = array_unique(array_map(function ($p) {
                 return $p['gps']['lat'] . ',' . $p['gps']['lon'];
@@ -286,10 +261,6 @@ class ProgresController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            Log::error('Error apiGetDokumentasi', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
 
             return response()->json([
                 'success' => false,
@@ -441,10 +412,6 @@ class ProgresController extends Controller
                 'count' => $formattedItems->count()
             ]);
         } catch (\Exception $e) {
-            Log::error('Error getPekerjaanItemsByPo', [
-                'po_id' => $poId,
-                'error' => $e->getMessage()
-            ]);
 
             return response()->json([
                 'success' => false,
@@ -495,11 +462,6 @@ class ProgresController extends Controller
     public function apiStoreReport(Request $request)
     {
         try {
-            Log::info('Store Daily Progress Request', [
-                'user_id' => Auth::id(),
-                'has_files' => $request->hasFile('foto_0'),
-                'all_keys' => array_keys($request->all())
-            ]);
 
             // Validasi data
             $validated = $request->validate([
@@ -521,11 +483,6 @@ class ProgresController extends Controller
             while ($request->hasFile("foto_{$photoIndex}")) {
                 $file = $request->file("foto_{$photoIndex}");
 
-                Log::info("Processing photo {$photoIndex}", [
-                    'original_name' => $file->getClientOriginalName(),
-                    'size' => $file->getSize()
-                ]);
-
                 // Upload file ke storage/public/daily-progress-photos
                 $path = $file->store('daily-progress-photos', 'public');
 
@@ -542,8 +499,6 @@ class ProgresController extends Controller
 
                 $photoIndex++;
             }
-
-            Log::info("Total photos processed: {$photoIndex}");
 
             // Validasi minimal 2 foto
             if (count($fotoData) < 2) {
@@ -590,12 +545,6 @@ class ProgresController extends Controller
 
             $this->updateWeeklyProgress($dailyProgress);
 
-            Log::info('Daily Progress Created Successfully', [
-                'id' => $dailyProgress->id,
-                'lokasi' => $locationName,
-                'photos_count' => count($fotoData)
-            ]);
-
             return response()->json([
                 'success' => true,
                 'message' => 'Laporan progress harian berhasil disimpan',
@@ -606,9 +555,6 @@ class ProgresController extends Controller
                 ]
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation Error', [
-                'errors' => $e->errors()
-            ]);
 
             return response()->json([
                 'success' => false,
@@ -616,10 +562,6 @@ class ProgresController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Error storing daily progress', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
 
             return response()->json([
                 'success' => false,
@@ -679,22 +621,12 @@ class ProgresController extends Controller
             // Rumus: (volume_realisasi_mingguan / volume_total_item) * bobot_item
             $persentaseRealisasi = ($totalVolumeMingguan / $item->volume) * 100;
             $bobotRealisasiDecimal = ($totalVolumeMingguan / $item->volume) * $item->bobot;
-            $bobotRealisasi = $bobotRealisasiDecimal * 100; 
+            $bobotRealisasi = $bobotRealisasiDecimal * 100;
 
             // Cap maksimal pada bobot item (tidak boleh lebih dari 100%)
             $bobotRealisasi = min($bobotRealisasi, $item->bobot);
 
-            Log::info('🧮 Perhitungan bobot realisasi', [
-                'item_id' => $item->id,
-                'kode' => $item->kode_pekerjaan,
-                'volume_mingguan' => $totalVolumeMingguan,
-                'volume_total_item' => $item->volume,
-                'bobot_item' => $item->bobot,
-                'persentase_realisasi' => round($persentaseRealisasi, 2) . '%',
-                'bobot_realisasi_calculated' => $bobotRealisasi,
-                'bobot_realisasi_formatted' => number_format($bobotRealisasi, 4),
-                'is_capped' => $bobotRealisasi >= $item->bobot ? 'YES' : 'NO'
-            ]);
+
 
             // 6. Update atau Create ProgressDetail
             $progressDetail = ProgressDetail::updateOrCreate(
@@ -714,38 +646,15 @@ class ProgresController extends Controller
             // ✅ VERIFY: Baca ulang dari database untuk memastikan tersimpan
             $progressDetail->refresh();
 
-            Log::info('✅ Progress detail updated successfully', [
-                'detail_id' => $progressDetail->id,
-                'progress_id' => $progress->id,
-                'minggu' => $minggu->kode_minggu,
-                'volume_realisasi_saved' => $progressDetail->volume_realisasi,
-                'bobot_realisasi_saved' => $progressDetail->bobot_realisasi,
-                'bobot_realisasi_display' => number_format($progressDetail->bobot_realisasi, 2) . '%'
-            ]);
-
             // ✅ DEBUG: Query langsung untuk verifikasi
             $verifyData = DB::table('progress_details')
                 ->where('id', $progressDetail->id)
                 ->first();
 
-            Log::info('🔍 Database verification', [
-                'id' => $verifyData->id,
-                'volume_realisasi' => $verifyData->volume_realisasi,
-                'bobot_realisasi' => $verifyData->bobot_realisasi,
-                'data_type_volume' => gettype($verifyData->volume_realisasi),
-                'data_type_bobot' => gettype($verifyData->bobot_realisasi)
-            ]);
-
             DB::commit();
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('❌ Error updating weekly progress', [
-                'daily_progress_id' => $dailyProgress->id ?? 'unknown',
-                'error' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return false;
         }
     }
@@ -763,7 +672,6 @@ class ProgresController extends Controller
                 ->first();
 
             if (!$minggu) {
-                Log::warning('⚠️ Minggu tidak ditemukan saat recalculate');
                 DB::rollBack();
                 return false;
             }
@@ -773,7 +681,6 @@ class ProgresController extends Controller
                 ->first();
 
             if (!$progress) {
-                Log::warning('⚠️ Progress tidak ditemukan');
                 DB::rollBack();
                 return false;
             }
@@ -789,7 +696,6 @@ class ProgresController extends Controller
             $item = PekerjaanItem::find($itemId);
 
             if (!$item || $item->volume <= 0) {
-                Log::warning('⚠️ Item tidak valid saat recalculate');
                 DB::rollBack();
                 return false;
             }
@@ -809,30 +715,17 @@ class ProgresController extends Controller
                         'bobot_realisasi' => round($bobotRealisasi, 4)
                     ]
                 );
-
-                Log::info('✅ Week recalculated after delete', [
-                    'minggu' => $minggu->kode_minggu,
-                    'new_volume' => $totalVolumeMingguan,
-                    'new_bobot' => round($bobotRealisasi, 2)
-                ]);
             } else {
                 // Hapus detail jika tidak ada volume lagi
                 ProgressDetail::where('progress_id', $progress->id)
                     ->where('minggu_id', $minggu->id)
                     ->delete();
-
-                Log::info('🗑️ Progress detail deleted (no volume)', [
-                    'minggu' => $minggu->kode_minggu
-                ]);
             }
 
             DB::commit();
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('❌ Error recalculating week after delete', [
-                'error' => $e->getMessage()
-            ]);
             return false;
         }
     }
@@ -1202,17 +1095,11 @@ class ProgresController extends Controller
             $report->delete();
             $this->recalculateWeekAfterDelete($poId, $itemId, $tanggal);
 
-            Log::info('Report Deleted', ['id' => $id]);
-
             return response()->json([
                 'success' => true,
                 'message' => 'Laporan berhasil dihapus'
             ]);
         } catch (\Exception $e) {
-            Log::error('Error deleting report', [
-                'id' => $id,
-                'error' => $e->getMessage()
-            ]);
 
             return response()->json([
                 'success' => false,
@@ -1233,17 +1120,8 @@ class ProgresController extends Controller
                 ->orderBy('nama_investasi', 'asc')
                 ->get();
 
-            Log::info('Monitoring Progress Accessed', [
-                'user_id' => $user->id,
-                'pekerjaan_count' => $pekerjaans->count()
-            ]);
-
             return view('LandingPage.monitoring-progress', compact('user', 'pekerjaans'));
         } catch (\Exception $e) {
-            Log::error('Error monitoringProgress', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
 
             return redirect()->route('landingpage.index')
                 ->with('error', 'Gagal memuat halaman monitoring: ' . $e->getMessage());
@@ -1407,17 +1285,8 @@ class ProgresController extends Controller
             $user = Auth::user();
             $profile = $user->profile;
 
-            Log::info('Vendor Profile Accessed', [
-                'user_id' => $user->id,
-                'name' => $user->name
-            ]);
-
             return view('LandingPage.vendor-profile', compact('user', 'profile'));
         } catch (\Exception $e) {
-            Log::error('Error vendorProfile', [
-                'error' => $e->getMessage()
-            ]);
-
             return redirect()->route('landingpage.index')
                 ->with('error', 'Gagal memuat profil');
         }
@@ -1499,11 +1368,6 @@ class ProgresController extends Controller
                 ]);
             }
 
-            Log::info('Vendor Profile Updated', [
-                'user_id' => $userId,
-                'name' => $validated['name']
-            ]);
-
             return redirect()->route('landingpage.profile')
                 ->with('success', 'Profil berhasil diperbarui');
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -1511,10 +1375,6 @@ class ProgresController extends Controller
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            Log::error('Error vendorProfileUpdate', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
 
             return redirect()->back()
                 ->with('error', 'Gagal memperbarui profil: ' . $e->getMessage())
@@ -1609,11 +1469,6 @@ class ProgresController extends Controller
                 ->withCount('pekerjaans')
                 ->orderBy('nama', 'asc')
                 ->get(['id', 'nama']);
-
-            Log::info('API Get Wilayah', [
-                'count' => $wilayah->count(),
-                'data' => $wilayah->toArray()
-            ]);
 
             return response()->json([
                 'success' => true,
