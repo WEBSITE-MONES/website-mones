@@ -34,7 +34,7 @@ class LaporanApprovalSettingController extends Controller
         $request->merge([
             'is_active' => $request->has('is_active') ? true : false
         ]);
-        
+
         $rules = [
             'user_id' => 'required|exists:users,id',
             'role_approval' => 'required|string|max:100',
@@ -87,7 +87,7 @@ class LaporanApprovalSettingController extends Controller
 
                 if ($request->signature_type === 'qr') {
                     $qrPath = $this->signatureService->generateQrCodeSignature(
-                        $signatureData, 
+                        $signatureData,
                         $metadata['signature_id']
                     );
                     $data['qr_code_path'] = $qrPath;
@@ -123,7 +123,7 @@ class LaporanApprovalSettingController extends Controller
                         'user_agent' => request()->userAgent(),
                     ],
                 ];
-                
+
                 DigitalSignature::create($digitalSigData);
             }
 
@@ -133,10 +133,9 @@ class LaporanApprovalSettingController extends Controller
 
             return redirect()->route('laporan.approval-settings.index')
                 ->with('success', 'Approval setting berhasil ditambahkan dengan digital signature!');
-
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return back()
                 ->with('error', 'Gagal menambahkan approval setting: ' . $e->getMessage())
                 ->withInput();
@@ -148,7 +147,7 @@ class LaporanApprovalSettingController extends Controller
         $request->merge([
             'is_active' => $request->has('is_active') ? true : false
         ]);
-        
+
         $rules = [
             'user_id' => 'required|exists:users,id',
             'role_approval' => 'required|string|max:100',
@@ -259,7 +258,6 @@ class LaporanApprovalSettingController extends Controller
 
             return redirect()->route('laporan.approval-settings.index')
                 ->with('success', 'Approval setting berhasil diupdate!');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal update approval setting: ' . $e->getMessage())->withInput();
@@ -293,7 +291,6 @@ class LaporanApprovalSettingController extends Controller
 
             return redirect()->route('laporan.approval-settings.index')
                 ->with('success', 'Approval setting berhasil dihapus!');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal hapus approval setting: ' . $e->getMessage());
@@ -311,7 +308,6 @@ class LaporanApprovalSettingController extends Controller
                 'message' => 'Status berhasil diubah!',
                 'is_active' => $setting->is_active
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

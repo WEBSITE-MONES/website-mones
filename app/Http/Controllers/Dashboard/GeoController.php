@@ -17,7 +17,7 @@ class GeoController extends Controller
             try {
                 $response = Http::timeout(5)
                     ->withOptions(['verify' => false])
-                    ->get("https://ipapi.co/json/"); 
+                    ->get("https://ipapi.co/json/");
 
                 if ($response->successful()) {
                     $json = $response->json();
@@ -35,7 +35,6 @@ class GeoController extends Controller
                         'longitude' => $json['longitude'] ?? 119.4327,
                     ];
                 }
-
             } catch (\Exception $e) {
                 Log::warning("Location API failed, using fallback: " . $e->getMessage());
             }

@@ -18,7 +18,7 @@ use App\Models\MasterMinggu;
 use App\Models\PekerjaanItem;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ProgressImport;
-use App\Models\ProgressDetail;
+use App\Models\DailyProgress;
 use Illuminate\Support\Facades\Storage;
 
 
@@ -26,9 +26,9 @@ class RealisasiController extends Controller
 {
     // Daftar PR
     public function index()
-{
-    $prs = Pr::with('pekerjaan','subPekerjaan')
-        ->orderByRaw("
+    {
+        $prs = Pr::with('pekerjaan', 'subPekerjaan')
+            ->orderByRaw("
             CASE 
                 WHEN UPPER(TRIM(status_pekerjaan)) = 'PR' THEN 1
                 WHEN UPPER(TRIM(status_pekerjaan)) = 'PO' THEN 2
@@ -38,63 +38,63 @@ class RealisasiController extends Controller
                 ELSE 6
             END
         ")
-        ->orderBy('id', 'asc') 
-        ->get();
+            ->orderBy('id', 'asc')
+            ->get();
 
-    // Ambil semua pekerjaan dengan master_investasi
-    $pekerjaans = \App\Models\Pekerjaan::with('masterInvestasi','wilayah')
-        ->orderBy('id', 'desc')
-        ->get();
+        // Ambil semua pekerjaan dengan master_investasi
+        $pekerjaans = \App\Models\Pekerjaan::with('masterInvestasi', 'wilayah')
+            ->orderBy('id', 'desc')
+            ->get();
 
-    return view('Dashboard.Pekerjaan.realisasi_pekerjaan', compact('prs', 'pekerjaans'));
-}
+        return view('Dashboard.Pekerjaan.realisasi_pekerjaan', compact('prs', 'pekerjaans'));
+    }
 
 
     // Form input PR
     public function createPR()
-{
-    $pekerjaans = Pekerjaan::orderBy('nomor_prodef_sap')->get();
+    {
+        $pekerjaans = Pekerjaan::orderBy('nomor_prodef_sap')->get();
 
-    return view('Dashboard.Pekerjaan.Realisasi.create_pr', compact('pekerjaans'));
-}
+        return view('Dashboard.Pekerjaan.Realisasi.create_pr', compact('pekerjaans'));
+    }
 
     // Simpan PR
     public function storePR(Request $request)
-{
-    $nilaiPR = preg_replace('/[^\d]/', '', $request->nilai_pr);
-    $request->merge(['nilai_pr' => $nilaiPR]);
+    {
+        $nilaiPR = preg_replace('/[^\d]/', '', $request->nilai_pr);
+        $request->merge(['nilai_pr' => $nilaiPR]);
 
-    $request->validate([
-        'jenis_pekerjaan' => 'required|in:Konsultan Perencana,Pelaksanaan Fisik,Konsultan Pengawas',
-        'pekerjaan_id'    => 'required|exists:pekerjaan,id',
-        'nilai_pr'        => 'required|numeric|min:0',
-        'nomor_pr'        => 'required|string|max:255|unique:prs,nomor_pr',
-        'tanggal_pr'      => 'required|date',
-        'sub_pekerjaan'   => 'required|string|max:255', 
-    ]);
+        $request->validate([
+            'jenis_pekerjaan' => 'required|in:Konsultan Perencana,Pelaksanaan Fisik,Konsultan Pengawas',
+            'pekerjaan_id'    => 'required|exists:pekerjaan,id',
+            'nilai_pr'        => 'required|numeric|min:0',
+            'nomor_pr'        => 'required|string|max:255|unique:prs,nomor_pr',
+            'tanggal_pr'      => 'required|date',
+            'sub_pekerjaan'   => 'required|string|max:255',
+        ]);
 
-    $pr = Pr::create([
-        'jenis_pekerjaan' => $request->jenis_pekerjaan,
-        'pekerjaan_id'    => $request->pekerjaan_id,
-        'nilai_pr'        => $nilaiPR,
-        'nomor_pr'        => $request->nomor_pr,
-        'tanggal_pr'      => $request->tanggal_pr,
-        'tahun_anggaran'  => $request->tahun_anggaran,
-        'status_pekerjaan'=> 'PR',
-    ]);
+        $pr = Pr::create([
+            'jenis_pekerjaan' => $request->jenis_pekerjaan,
+            'pekerjaan_id'    => $request->pekerjaan_id,
+            'nilai_pr'        => $nilaiPR,
+            'nomor_pr'        => $request->nomor_pr,
+            'tanggal_pr'      => $request->tanggal_pr,
+            'tahun_anggaran'  => $request->tahun_anggaran,
+            'status_pekerjaan' => 'PR',
+        ]);
 
-    $pr->pekerjaan->update(['status_realisasi' => 'PR']);
+        $pr->pekerjaan->update(['status_realisasi' => 'PR']);
 
-    if ($request->filled('sub_pekerjaan')) {
-    $pr->subPekerjaan()->create([
-        'pekerjaan_id' => $pr->pekerjaan_id,
-        'nama_sub'     => $request->sub_pekerjaan,
-    ]);
-}
+        if ($request->filled('sub_pekerjaan')) {
+            $pr->subPekerjaan()->create([
+                'pekerjaan_id' => $pr->pekerjaan_id,
+                'nama_sub'     => $request->sub_pekerjaan,
+            ]);
+        }
 
-    return redirect()->route('realisasi.index')
-        ->with('success', 'Data PR beserta sub-pekerjaan berhasil ditambahkan.');
-}
+        return redirect()->route('realisasi.index')
+            ->with('success', 'Data PR beserta sub-pekerjaan berhasil ditambahkan.');
+    }
 
     // Update status PR → PO → GR → Payment
     public function updateStatus(Pr $pr, $status)
@@ -120,45 +120,45 @@ class RealisasiController extends Controller
 
     // update PR
     public function updatePR(Request $request, Pr $pr)
-{
-    $nilaiPR = preg_replace('/[^\d]/', '', $request->nilai_pr);
+    {
+        $nilaiPR = preg_replace('/[^\d]/', '', $request->nilai_pr);
 
-    $request->merge([
-        'nilai_pr' => $nilaiPR,
-    ]);
+        $request->merge([
+            'nilai_pr' => $nilaiPR,
+        ]);
 
-    $request->validate([
-        'jenis_pekerjaan' => 'required|in:Konsultan Perencana,Pelaksanaan Fisik,Konsultan Pengawas',
-        'pekerjaan_id'    => 'required|exists:pekerjaan,id',
-        'nilai_pr'        => 'required|numeric|min:0',
-        'nomor_pr'        => 'required|string|max:255|unique:prs,nomor_pr,' . $pr->id,
-        'tanggal_pr'      => 'required|date',
-        'sub_pekerjaan'   => 'required|string|max:255', // tambahkan validasi sub-pekerjaan
-    ]);
+        $request->validate([
+            'jenis_pekerjaan' => 'required|in:Konsultan Perencana,Pelaksanaan Fisik,Konsultan Pengawas',
+            'pekerjaan_id'    => 'required|exists:pekerjaan,id',
+            'nilai_pr'        => 'required|numeric|min:0',
+            'nomor_pr'        => 'required|string|max:255|unique:prs,nomor_pr,' . $pr->id,
+            'tanggal_pr'      => 'required|date',
+            'sub_pekerjaan'   => 'required|string|max:255', // tambahkan validasi sub-pekerjaan
+        ]);
 
-    $pr->update([
-        'jenis_pekerjaan' => $request->jenis_pekerjaan,
-        'pekerjaan_id'    => $request->pekerjaan_id,
-        'nilai_pr'        => $nilaiPR,
-        'nomor_pr'        => $request->nomor_pr,
-        'tanggal_pr'      => $request->tanggal_pr,
-        'tahun_anggaran'  => $request->tahun_anggaran ?? $pr->tahun_anggaran,
-    ]);
+        $pr->update([
+            'jenis_pekerjaan' => $request->jenis_pekerjaan,
+            'pekerjaan_id'    => $request->pekerjaan_id,
+            'nilai_pr'        => $nilaiPR,
+            'nomor_pr'        => $request->nomor_pr,
+            'tanggal_pr'      => $request->tanggal_pr,
+            'tahun_anggaran'  => $request->tahun_anggaran ?? $pr->tahun_anggaran,
+        ]);
 
-    // Update sub-pekerjaan (single string)
-    $sub = $pr->pekerjaan->subPekerjaan()->firstOrNew([]);
-    $sub->nama_sub = $request->sub_pekerjaan;
-    $sub->save();
+        // Update sub-pekerjaan (single string)
+        $sub = $pr->pekerjaan->subPekerjaan()->firstOrNew([]);
+        $sub->nama_sub = $request->sub_pekerjaan;
+        $sub->save();
 
 
-    return redirect()->route('realisasi.index')->with('success', 'PR berhasil diperbarui.');
-}
+        return redirect()->route('realisasi.index')->with('success', 'PR berhasil diperbarui.');
+    }
 
     // PO
     // CREATE
     public function createPO(Pr $pr)
     {
-        
+
         return view('Dashboard.Pekerjaan.Realisasi.create_po', compact('pr'));
     }
 
@@ -172,7 +172,7 @@ class RealisasiController extends Controller
                 Hanya PR yang bisa dibuatkan PO."
             ])->withInput();
         }
-        
+
         // Bersihkan angka rupiah (Rp, titik, koma, dll)
         $request->merge([
             'nilai_po' => preg_replace('/[^\d]/', '', $request->nilai_po),
@@ -393,98 +393,141 @@ class RealisasiController extends Controller
 
     // PROGRES
     public function editProgress(Po $po)
-{
-    // Load relasi
-    $po->load(['progresses.details.minggu', 'progresses.pekerjaanItem']);
+    {
+        try {
+            // Load relasi
+            $po->load(['progresses.details.minggu', 'progresses.pekerjaanItem']);
 
-    // Ambil progress utama (yang tanpa pekerjaan_item_id)
-    $progressUtama = $po->progresses()->whereNull('pekerjaan_item_id')->first();
+            // Ambil progress utama (yang tidak terkait item spesifik)
+            $progressUtama = $po->progresses()->whereNull('pekerjaan_item_id')->first();
 
-    // Ambil master minggu
-    $masterMinggu = MasterMinggu::where('progress_id', $progressUtama->id ?? 0)
-        ->orderBy('tanggal_awal')
-        ->get();
+            // ✅ Ambil master minggu
+            $masterMinggu = MasterMinggu::where('progress_id', $progressUtama->id ?? 0)
+                ->orderBy('tanggal_awal')
+                ->get();
 
-    // Ambil item pekerjaan hierarki
-    $items = PekerjaanItem::where('po_id', $po->id)
-        ->with(['children.children'])
-        ->whereNull('parent_id')
-        ->orderBy('kode_pekerjaan')
-        ->get();
-
-    // Header bulan untuk tabel
-    $monthMap = [];
-    foreach ($masterMinggu as $minggu) {
-        $monthName = $minggu->tanggal_awal->translatedFormat('F Y');
-        if (!isset($monthMap[$monthName])) {
-            $monthMap[$monthName] = ['colspan' => 0, 'minggus' => []];
-        }
-        $monthMap[$monthName]['colspan'] += 2; // Rencana + Realisasi
-        $monthMap[$monthName]['minggus'][] = $minggu;
-    }
-
-    // Range tanggal
-    $dateRanges = $masterMinggu->map(fn($m) => 
-        $m->tanggal_awal->format('d M') . ' - ' . $m->tanggal_akhir->format('d M')
-    );
-
-    // ✅ HITUNG KUMULATIF RENCANA & REALISASI
-    $totalRencanaPerMinggu = [];
-    $totalRealisasiPerMinggu = [];
-    
-    foreach ($masterMinggu as $minggu) {
-        $rencana = 0;
-        $realisasi = 0;
-        
-        foreach ($po->progresses as $p) {
-            if (!$p->pekerjaan_item_id) continue; 
-            
-            $detail = $p->details->firstWhere('minggu_id', $minggu->id);
-            if ($detail) {
-                $rencana += (float) $detail->bobot_rencana;
-                $realisasi += (float) $detail->bobot_realisasi;
+            // ✅ VALIDASI: Jika master minggu kosong
+            if ($masterMinggu->isEmpty()) {
+                Log::warning('⚠️ Master Minggu kosong untuk PO', [
+                    'po_id' => $po->id,
+                    'progress_utama_id' => $progressUtama->id ?? 'NULL'
+                ]);
             }
+
+            // Ambil items pekerjaan (hierarki WBS)
+            $items = PekerjaanItem::where('po_id', $po->id)
+                ->with(['children.children'])
+                ->whereNull('parent_id')
+                ->orderBy('kode_pekerjaan')
+                ->get();
+
+            // ✅ Buat mapping bulan untuk header tabel
+            $monthMap = [];
+            foreach ($masterMinggu as $minggu) {
+                $monthName = $minggu->tanggal_awal->translatedFormat('F Y');
+                if (!isset($monthMap[$monthName])) {
+                    $monthMap[$monthName] = ['colspan' => 0, 'minggus' => []];
+                }
+                $monthMap[$monthName]['colspan'] += 3; // 3 kolom per minggu (Rencana, Volume, Realisasi)
+                $monthMap[$monthName]['minggus'][] = $minggu;
+            }
+
+            // ✅ Range tanggal untuk display
+            $dateRanges = $masterMinggu->map(
+                fn($m) => $m->tanggal_awal->format('d M') . ' - ' . $m->tanggal_akhir->format('d M')
+            );
+
+            // ✅ Identifikasi parent items (untuk exclude dari summary)
+            $parentItemIds = PekerjaanItem::where('po_id', $po->id)
+                ->whereNotNull('parent_id')
+                ->distinct()
+                ->pluck('parent_id')
+                ->toArray();
+
+            // ✅ Hitung total rencana & realisasi per minggu
+            $totalRencanaPerMinggu = [];
+            $totalRealisasiPerMinggu = [];
+
+            foreach ($masterMinggu as $minggu) {
+                $rencana = 0;
+                $realisasi = 0;
+
+                foreach ($po->progresses as $p) {
+                    // Skip jika bukan item pekerjaan atau adalah parent
+                    if (!$p->pekerjaan_item_id) continue;
+                    if (in_array($p->pekerjaan_item_id, $parentItemIds)) continue;
+
+                    $detail = $p->details->firstWhere('minggu_id', $minggu->id);
+                    if ($detail) {
+                        $rencana += (float) $detail->bobot_rencana;
+                        $realisasi += (float) $detail->bobot_realisasi;
+                    }
+                }
+
+                $totalRencanaPerMinggu[$minggu->id] = $rencana;
+                $totalRealisasiPerMinggu[$minggu->id] = $realisasi;
+            }
+
+            // ✅ Kumulatif total untuk summary cards
+            $rencanaPct = round(array_sum($totalRencanaPerMinggu), 2);
+            $realisasiPct = round(array_sum($totalRealisasiPerMinggu), 2);
+            $deviasiPct = round($realisasiPct - $rencanaPct, 2);
+
+            // ✅ Map progress details untuk akses cepat di view
+            $progressDetailsMap = [];
+            foreach ($po->progresses as $progress) {
+                if (!$progress->pekerjaan_item_id) continue;
+
+                foreach ($progress->details as $detail) {
+                    $progressDetailsMap[$progress->pekerjaan_item_id][$detail->minggu_id] = [
+                        'bobot_rencana' => (float) $detail->bobot_rencana,
+                        'volume_realisasi' => (float) $detail->volume_realisasi,
+                        'bobot_realisasi' => (float) $detail->bobot_realisasi,
+                        'keterangan' => $detail->keterangan
+                    ];
+                }
+            }
+
+            // ✅ Generate data untuk Kurva S
+            $chartData = $this->generateCurveSData($po, $masterMinggu);
+
+            // ✅ DEBUG LOG
+            Log::info('📊 Edit Progress Data Prepared', [
+                'po_id' => $po->id,
+                'master_minggu_count' => $masterMinggu->count(),
+                'items_count' => $items->count(),
+                'chart_data_points' => count($chartData),
+                'rencana_pct' => $rencanaPct,
+                'realisasi_pct' => $realisasiPct,
+                'deviasi_pct' => $deviasiPct
+            ]);
+
+            return view('Dashboard.Pekerjaan.Realisasi.edit_progress', compact(
+                'po',
+                'items',
+                'masterMinggu',
+                'monthMap',
+                'dateRanges',
+                'progressDetailsMap',
+                'parentItemIds',
+                'rencanaPct',
+                'realisasiPct',
+                'deviasiPct',
+                'chartData'
+            ));
+        } catch (\Exception $e) {
+            Log::error('❌ Error editProgress', [
+                'po_id' => $po->id,
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->route('realisasi.index')
+                ->with('error', 'Gagal memuat halaman progress: ' . $e->getMessage());
         }
-        
-        $totalRencanaPerMinggu[$minggu->id] = $rencana;
-        $totalRealisasiPerMinggu[$minggu->id] = $realisasi;
     }
 
-    // Kumulatif total
-    $rencanaPct = round(array_sum($totalRencanaPerMinggu), 2);
-    $realisasiPct = round(array_sum($totalRealisasiPerMinggu), 2);
-    $deviasiPct = round($realisasiPct - $rencanaPct, 2);
-
-    // Map detail per item per minggu
-    $progressDetailsMap = [];
-    foreach ($po->progresses as $progress) {
-        if (!$progress->pekerjaan_item_id) continue;
-        
-        foreach ($progress->details as $detail) {
-            $progressDetailsMap[$progress->pekerjaan_item_id][$detail->minggu_id] = $detail;
-        }
-    }
-
-    // ✅ Data untuk chart Kurva S (PERBAIKAN DI SINI)
-    $chartData = $this->generateCurveSData($po, $masterMinggu);
-    
-    // ✅ Tambahkan log untuk debugging
-    Log::info('Chart Data Generated:', ['count' => count($chartData), 'data' => $chartData]);
-
-    return view('Dashboard.Pekerjaan.Realisasi.edit_progress', compact(
-        'po',
-        'items',
-        'masterMinggu',
-        'monthMap',
-        'dateRanges',
-        'progressDetailsMap',
-        'rencanaPct',
-        'realisasiPct',
-        'deviasiPct',
-        'chartData'
-    ));
-}
-    
     public function updateProgress(Request $request, Po $po)
     {
         $rules = [
@@ -504,13 +547,10 @@ class RealisasiController extends Controller
         try {
             DB::transaction(function () use ($validated, $po, $request) {
 
-                // ✅ Ambil/buat progress utama (tanpa pekerjaan_item_id)
                 $progress = $po->progresses()->firstOrCreate([
                     'po_id' => $po->id,
                     'pekerjaan_item_id' => null
                 ]);
-
-                // ✅ Update BA
                 $progress->nomor_ba_mulai_kerja   = $validated['nomor_ba_mulai_kerja'] ?? $progress->nomor_ba_mulai_kerja;
                 $progress->tanggal_ba_mulai_kerja = $validated['tanggal_ba_mulai_kerja'] ?? $progress->tanggal_ba_mulai_kerja;
 
@@ -522,7 +562,6 @@ class RealisasiController extends Controller
                     $progress->file_ba = $request->file('file_ba')->store('ba_files', 'public');
                 }
 
-                // ✅ Update PCM
                 $progress->nomor_pcm_mulai_kerja   = $validated['nomor_pcm_mulai_kerja'] ?? $progress->nomor_pcm_mulai_kerja;
                 $progress->tanggal_pcm_mulai_kerja = $validated['tanggal_pcm_mulai_kerja'] ?? $progress->tanggal_pcm_mulai_kerja;
 
@@ -535,7 +574,6 @@ class RealisasiController extends Controller
 
                 $progress->save();
 
-                // ✅ Generate minggu pertama (M1) hanya sekali
                 if (!empty($progress->tanggal_ba_mulai_kerja)) {
                     $existing = MasterMinggu::where('progress_id', $progress->id)->count();
 
@@ -557,21 +595,16 @@ class RealisasiController extends Controller
             return redirect()->route('realisasi.editProgress', $po->id)
                 ->with('success', 'Dokumen BA & PCM berhasil diperbarui!')
                 ->with('activeTab', 'formProgress');
-                
         } catch (\Throwable $e) {
             Log::error('Update Progress Error', [
                 'po_id' => $po->id,
                 'error' => $e->getMessage()
             ]);
-            
+
             return redirect()->route('realisasi.editProgress', $po->id)
                 ->with('error', 'Gagal memperbarui: ' . $e->getMessage());
         }
     }
-
-    /**
-     * IMPORT EXCEL - Import rencana progress mingguan
-     */
     public function importExcel(Request $request, Po $po)
     {
         $request->validate([
@@ -580,76 +613,146 @@ class RealisasiController extends Controller
 
         try {
             Excel::import(new ProgressImport($po->id), $request->file('file'));
-            
+
             return redirect()->back()
                 ->with('success', 'Rencana progress berhasil diimport!')
                 ->with('activeTab', 'rekapProgress');
-                
         } catch (\Throwable $e) {
-            Log::error('Import Progress Error', [
+
+            return redirect()->back()
+                ->with('error', 'Import gagal: ' . $e->getMessage())
+                ->with('activeTab', 'rekapProgress');
+        }
+    }
+
+    /**
+     * GENERATE DATA KURVA S - KUMULATIF VERSION
+     */
+    private function generateCurveSData(Po $po, $masterMinggu)
+    {
+        try {
+            $chartData = [];
+            $cumulativeRencana = 0;
+            $cumulativeRealisasi = 0;
+
+            // ✅ PERBAIKAN: Identifikasi HANYA parent yang punya children
+            $parentIds = PekerjaanItem::where('po_id', $po->id)
+                ->whereHas('children') // ← Hanya yang benar-benar punya anak
+                ->pluck('id')
+                ->toArray();
+
+            Log::info('🔍 Parent items identified', [
+                'po_id' => $po->id,
+                'parent_ids' => $parentIds
+            ]);
+
+            foreach ($masterMinggu as $minggu) {
+                $rencanaWeek = 0;
+                $realisasiWeek = 0;
+
+                // Loop semua progress untuk minggu ini
+                foreach ($po->progresses as $progress) {
+                    // Skip jika bukan item pekerjaan
+                    if (!$progress->pekerjaan_item_id) continue;
+
+                    // ✅ PERBAIKAN: Skip HANYA jika item adalah parent yang punya children
+                    if (in_array($progress->pekerjaan_item_id, $parentIds)) {
+                        Log::debug('⏭️ Skipping parent item', [
+                            'item_id' => $progress->pekerjaan_item_id,
+                            'minggu' => $minggu->kode_minggu
+                        ]);
+                        continue;
+                    }
+
+                    // Ambil detail untuk minggu ini
+                    $detail = $progress->details->firstWhere('minggu_id', $minggu->id);
+
+                    if ($detail) {
+                        $bobotRencana = (float) $detail->bobot_rencana;
+                        $bobotRealisasi = (float) $detail->bobot_realisasi;
+
+                        $rencanaWeek += $bobotRencana;
+                        $realisasiWeek += $bobotRealisasi;
+
+                        // ✅ LOG DETAIL untuk debugging
+                        if ($bobotRealisasi > 0) {
+                            Log::info('✅ Found realisasi data', [
+                                'item_id' => $progress->pekerjaan_item_id,
+                                'minggu' => $minggu->kode_minggu,
+                                'bobot_rencana' => $bobotRencana,
+                                'bobot_realisasi' => $bobotRealisasi,
+                                'volume_realisasi' => $detail->volume_realisasi
+                            ]);
+                        }
+                    }
+                }
+
+                // ✅ Akumulasi kumulatif
+                $cumulativeRencana += $rencanaWeek;
+                $cumulativeRealisasi += $realisasiWeek;
+
+                // ✅ LOG per minggu
+                Log::info('📊 Week calculation', [
+                    'minggu' => $minggu->kode_minggu,
+                    'rencana_week' => round($rencanaWeek, 4),
+                    'realisasi_week' => round($realisasiWeek, 4),
+                    'cumulative_rencana' => round($cumulativeRencana, 4),
+                    'cumulative_realisasi' => round($cumulativeRealisasi, 4)
+                ]);
+
+                // ✅ Simpan data untuk chart (gunakan 4 desimal!)
+                $chartData[] = [
+                    'week' => $minggu->kode_minggu,
+                    'week_label' => $minggu->tanggal_awal->format('d M') . ' - ' . $minggu->tanggal_akhir->format('d M'),
+                    'rencana' => round($cumulativeRencana, 4), // ← 4 desimal!
+                    'realisasi' => round($cumulativeRealisasi, 4), // ← 4 desimal!
+                    'deviasi' => round($cumulativeRealisasi - $cumulativeRencana, 4),
+                    'rencana_week' => round($rencanaWeek, 4),
+                    'realisasi_week' => round($realisasiWeek, 4)
+                ];
+            }
+
+            // ✅ Jika tidak ada data, buat dummy
+            if (empty($chartData)) {
+                Log::warning('⚠️ Chart data kosong', ['po_id' => $po->id]);
+
+                $chartData = [[
+                    'week' => 'M1',
+                    'week_label' => 'Belum ada data',
+                    'rencana' => 0,
+                    'realisasi' => 0,
+                    'deviasi' => 0,
+                    'rencana_week' => 0,
+                    'realisasi_week' => 0
+                ]];
+            }
+
+            Log::info('📊 Chart Data Generated - FINAL', [
+                'po_id' => $po->id,
+                'data_points' => count($chartData),
+                'final_rencana' => round($cumulativeRencana, 4),
+                'final_realisasi' => round($cumulativeRealisasi, 4),
+                'sample_data' => array_slice($chartData, 0, 3)
+            ]);
+
+            return $chartData;
+        } catch (\Exception $e) {
+            Log::error('❌ Error generateCurveSData', [
                 'po_id' => $po->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return redirect()->back()
-                ->with('error', 'Import gagal: ' . $e->getMessage())
-                ->with('activeTab', 'rekapProgress'); 
+            // Return dummy data jika error
+            return [[
+                'week' => 'Error',
+                'week_label' => 'Gagal memuat data',
+                'rencana' => 0,
+                'realisasi' => 0,
+                'deviasi' => 0
+            ]];
         }
     }
-
-    /**
-     * GENERATE DATA KURVA S
-     */
-    private function generateCurveSData(Po $po, $masterMinggu)
-{
-    $chartData = [];
-    $cumulativeRencana = 0;
-    $cumulativeRealisasi = 0;
-
-    foreach ($masterMinggu as $minggu) {
-        $rencanaWeek = 0;
-        $realisasiWeek = 0;
-
-        // Hitung total per minggu dari semua progress items
-        foreach ($po->progresses as $progress) {
-            // Skip progress utama (yang tidak punya pekerjaan_item_id)
-            if (!$progress->pekerjaan_item_id) continue;
-
-            // Cari detail untuk minggu ini
-            $detail = $progress->details->firstWhere('minggu_id', $minggu->id);
-            if ($detail) {
-                $rencanaWeek += (float) $detail->bobot_rencana;
-                $realisasiWeek += (float) $detail->bobot_realisasi;
-            }
-        }
-
-        // Akumulasi
-        $cumulativeRencana += $rencanaWeek;
-        $cumulativeRealisasi += $realisasiWeek;
-
-        $chartData[] = [
-            'week' => $minggu->kode_minggu,
-            'week_label' => $minggu->tanggal_awal->format('d M') . ' - ' . $minggu->tanggal_akhir->format('d M'),
-            'rencana' => round($cumulativeRencana, 2),
-            'realisasi' => round($cumulativeRealisasi, 2),
-            'deviasi' => round($cumulativeRealisasi - $cumulativeRencana, 2)
-        ];
-    }
-
-    // ✅ Jika tidak ada data, buat data dummy untuk visualisasi
-    if (empty($chartData)) {
-        $chartData = [[
-            'week' => 'M1',
-            'week_label' => 'Belum ada data',
-            'rencana' => 0,
-            'realisasi' => 0,
-            'deviasi' => 0
-        ]];
-    }
-
-    return $chartData;
-}
 
     /**
      * DOWNLOAD TEMPLATE EXCEL
@@ -657,23 +760,16 @@ class RealisasiController extends Controller
     public function downloadTemplate()
     {
         $path = public_path('templates/template_progress.xlsx');
-        
+
         if (!file_exists($path)) {
             return redirect()->back()->with('error', 'Template tidak ditemukan.');
         }
-        
+
         return response()->download($path, 'template_progress.xlsx');
     }
 
-    // DATA MODAL INPUT
-    // public function getModalData($itemId)
-    // {
-    //     $item = PekerjaanItem::with('progress.details')->findOrFail($itemId);
-    //     return view('Dashboard.Pekerjaan.Realisasi.modal_progress_form', compact('item'))->render();
-    // }
-
     // -------------------------------------------------------------- sekarang kerja gr dan payment
-    
+
     public function createGR(Pr $pr)
     {
         $po = $pr->po()->first();
@@ -685,60 +781,59 @@ class RealisasiController extends Controller
         return view('Dashboard.Pekerjaan.Realisasi.create_gr', compact('pr', 'po'));
     }
 
-public function storeGR(Request $request, Pr $pr)
-{
-    
-    $request->merge([
-        'nilai_gr' => isset($request->nilai_gr) ? preg_replace('/[^\d\-]/', '', $request->nilai_gr) : null,
-    ]);
+    public function storeGR(Request $request, Pr $pr)
+    {
 
-    // Validasi input
-    $validated = $request->validate([
-        'tanggal_gr' => 'required|date',
-        'nomor_gr'   => 'required|string|max:255|unique:grs,nomor_gr',
-        'nilai_gr'   => 'required|numeric|min:0',
-        'ba_pemeriksaan'      => 'nullable|file|mimes:pdf|max:2048',
-        'ba_serah_terima'     => 'nullable|file|mimes:pdf|max:2048',
-        'ba_pembayaran'       => 'nullable|file|mimes:pdf|max:2048',
-        'laporan_dokumentasi' => 'nullable|file|mimes:pdf|max:2048',
-    ]);
+        $request->merge([
+            'nilai_gr' => isset($request->nilai_gr) ? preg_replace('/[^\d\-]/', '', $request->nilai_gr) : null,
+        ]);
 
-    $po = $pr->po()->first();
+        $validated = $request->validate([
+            'tanggal_gr' => 'required|date',
+            'nomor_gr'   => 'required|string|max:255|unique:grs,nomor_gr',
+            'nilai_gr'   => 'required|numeric|min:0',
+            'ba_pemeriksaan'      => 'nullable|file|mimes:pdf|max:2048',
+            'ba_serah_terima'     => 'nullable|file|mimes:pdf|max:2048',
+            'ba_pembayaran'       => 'nullable|file|mimes:pdf|max:2048',
+            'laporan_dokumentasi' => 'nullable|file|mimes:pdf|max:2048',
+        ]);
 
-    if (!$po) {
-        return redirect()->back()->with('error', 'PO tidak ditemukan.');
-    }
+        $po = $pr->po()->first();
 
-    // Simpan data GR
-    $gr = \App\Models\Gr::create([
-        'pr_id'      => $pr->id,
-        'po_id'      => $po->id,
-        'tanggal_gr' => $validated['tanggal_gr'],
-        'nomor_gr'   => $validated['nomor_gr'],
-        'nilai_gr'   => $validated['nilai_gr'],
-    ]);
-
-    // Simpan file PDF jika ada
-    foreach ([
-        'ba_pemeriksaan'      => 'file_ba_pemeriksaan',
-        'ba_serah_terima'     => 'file_ba_serah_terima',
-        'ba_pembayaran'       => 'file_ba_pembayaran',
-        'laporan_dokumentasi' => 'file_laporan_dokumentasi',
-    ] as $inputName => $columnName) {
-        if ($request->hasFile($inputName)) {
-            $path = $request->file($inputName)->store('gr', 'public');
-            $gr->update([$columnName => $path]);
+        if (!$po) {
+            return redirect()->back()->with('error', 'PO tidak ditemukan.');
         }
-    }
 
-    // Update status PR dan pekerjaan
-    $pr->update(['status_pekerjaan' => 'GR']);
-    if ($pr->pekerjaan) {
-        $pr->pekerjaan->update(['status_realisasi' => 'GR']);
-    }
+        $gr = \App\Models\Gr::create([
+            'pr_id'      => $pr->id,
+            'po_id'      => $po->id,
+            'tanggal_gr' => $validated['tanggal_gr'],
+            'nomor_gr'   => $validated['nomor_gr'],
+            'nilai_gr'   => $validated['nilai_gr'],
+        ]);
 
-    return redirect()->route('realisasi.index')->with('success', 'GR berhasil ditambahkan.');
-}
+        foreach (
+            [
+                'ba_pemeriksaan'      => 'file_ba_pemeriksaan',
+                'ba_serah_terima'     => 'file_ba_serah_terima',
+                'ba_pembayaran'       => 'file_ba_pembayaran',
+                'laporan_dokumentasi' => 'file_laporan_dokumentasi',
+            ] as $inputName => $columnName
+        ) {
+            if ($request->hasFile($inputName)) {
+                $path = $request->file($inputName)->store('gr', 'public');
+                $gr->update([$columnName => $path]);
+            }
+        }
+
+        // Update status PR dan pekerjaan
+        $pr->update(['status_pekerjaan' => 'GR']);
+        if ($pr->pekerjaan) {
+            $pr->pekerjaan->update(['status_realisasi' => 'GR']);
+        }
+
+        return redirect()->route('realisasi.index')->with('success', 'GR berhasil ditambahkan.');
+    }
 
 
     public function editGR(Pr $pr)
@@ -750,7 +845,6 @@ public function storeGR(Request $request, Pr $pr)
             return redirect()->back()->with('error', 'GR belum tersedia untuk PR ini.');
         }
 
-        // Termin yang sudah dipakai oleh GR lain (kecuali GR ini)
         $terminYangSudahDigunakan = Gr::where('po_id', $po->id)
             ->where('id', '!=', $gr->id)
             ->whereNotNull('termin_id')
@@ -759,7 +853,7 @@ public function storeGR(Request $request, Pr $pr)
 
         // Termin yang masih bisa dipilih
         $termins = $po->termins()
-            ->where(function($query) use ($terminYangSudahDigunakan, $gr) {
+            ->where(function ($query) use ($terminYangSudahDigunakan, $gr) {
                 $query->whereNotIn('id', $terminYangSudahDigunakan)
                     ->orWhere('id', $gr->termin_id);
             })
@@ -776,7 +870,6 @@ public function storeGR(Request $request, Pr $pr)
         $cleanedNilai = preg_replace('/[^\d]/', '', $request->nilai_gr ?? '0');
         $request->merge(['nilai_gr' => $cleanedNilai]);
 
-        // 🔹 Validasi input
         $validated = $request->validate([
             'tanggal_gr' => 'required|date',
             'nomor_gr'   => 'required|string|max:255|unique:grs,nomor_gr,' . $gr->id,
@@ -815,13 +908,14 @@ public function storeGR(Request $request, Pr $pr)
             'termin_id'  => $validated['termin_id'] ?? null,
         ]);
 
-        // 🔹 Update file-file lampiran (hapus lama, upload baru)
-        foreach ([
-            'ba_pemeriksaan'      => 'file_ba_pemeriksaan',
-            'ba_serah_terima'     => 'file_ba_serah_terima',
-            'ba_pembayaran'       => 'file_ba_pembayaran',
-            'laporan_dokumentasi' => 'file_laporan_dokumentasi',
-        ] as $inputName => $columnName) {
+        foreach (
+            [
+                'ba_pemeriksaan'      => 'file_ba_pemeriksaan',
+                'ba_serah_terima'     => 'file_ba_serah_terima',
+                'ba_pembayaran'       => 'file_ba_pembayaran',
+                'laporan_dokumentasi' => 'file_laporan_dokumentasi',
+            ] as $inputName => $columnName
+        ) {
             if ($request->hasFile($inputName)) {
                 if ($gr->$columnName && Storage::disk('public')->exists($gr->$columnName)) {
                     Storage::disk('public')->delete($gr->$columnName);
@@ -837,29 +931,28 @@ public function storeGR(Request $request, Pr $pr)
 
 
 
-    
+
     // FORM CREATE PAYMENT
-        public function createPayment(Pr $pr)
+    public function createPayment(Pr $pr)
     {
         $gr = $pr->gr;
-        
+
         // Ambil PO yang terkait dengan PR ini
-        $po = $pr->po; // atau Po::where('pr_id', $pr->id)->first();
-        
+        $po = $pr->po;
+
         if (!$po) {
             return redirect()->back()->with('error', 'PO belum dibuat untuk PR ini.');
         }
-        
-        // Ambil termin dari PO yang BELUM dibayar
+
         $termins = Termin::where('po_id', $po->id)
-                        ->whereNull('payment_id')
-                        ->orderBy('id')
-                        ->get();
-        
+            ->whereNull('payment_id')
+            ->orderBy('id')
+            ->get();
+
         return view('Dashboard.Pekerjaan.Realisasi.create_payment', compact('pr', 'gr', 'termins'));
     }
 
-// STORE PAYMENT - PERBAIKAN
+    // STORE PAYMENT - PERBAIKAN
     public function storePayment(Request $request, Pr $pr)
     {
         Log::info('Store Payment - Data masuk:', $request->all());
@@ -890,11 +983,11 @@ public function storeGR(Request $request, Pr $pr)
 
             // Ambil termin yang dipilih dari PO ini
             $selectedTermins = Termin::whereIn('id', $request->termin_ids)
-                                    ->where('po_id', $po->id)
-                                    ->whereNull('payment_id')
-                                    ->get();
-            
-            \Log::info('Termin yang dipilih:', [
+                ->where('po_id', $po->id)
+                ->whereNull('payment_id')
+                ->get();
+
+            Log::info('Termin yang dipilih:', [
                 'po_id' => $po->id,
                 'requested_ids' => $request->termin_ids,
                 'found_count' => $selectedTermins->count(),
@@ -923,13 +1016,10 @@ public function storeGR(Request $request, Pr $pr)
                     $paymentData[$fileField] = $request->file($fileField)->store('payments', 'public');
                 }
             }
-
-            // Buat payment
             $payment = Payment::create($paymentData);
 
             Log::info('Payment dibuat:', ['id' => $payment->id]);
 
-            // Update payment_id di termin (PENTING!)
             $updatedCount = 0;
             foreach ($selectedTermins as $termin) {
                 $termin->payment_id = $payment->id;
@@ -952,8 +1042,7 @@ public function storeGR(Request $request, Pr $pr)
             DB::commit();
 
             return redirect()->route('realisasi.index')
-                            ->with('success', "Payment Request berhasil! {$updatedCount} termin dibayar (Total: Rp " . number_format($totalNilaiPayment, 0, ',', '.') . ")");
-
+                ->with('success', "Payment Request berhasil! {$updatedCount} termin dibayar (Total: Rp " . number_format($totalNilaiPayment, 0, ',', '.') . ")");
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error Store Payment:', [
@@ -961,9 +1050,9 @@ public function storeGR(Request $request, Pr $pr)
                 'line' => $e->getLine(),
                 'file' => $e->getFile()
             ]);
-            
+
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
-                        ->withInput();
+                ->withInput();
         }
     }
 
@@ -971,30 +1060,28 @@ public function storeGR(Request $request, Pr $pr)
     public function editPayment(Pr $pr, Payment $payment)
     {
         $gr = $pr->gr;
-        
+
         // Ambil PO dari PR
         $po = $pr->po;
-        
+
         if (!$po) {
             return redirect()->back()->with('error', 'PO tidak ditemukan untuk PR ini.');
         }
-        
-        // Ambil termin yang sudah terpilih di payment ini
+
         $selectedTermins = Termin::where('payment_id', $payment->id)
-                                ->where('po_id', $po->id)
-                                ->get();
-        
-        // Ambil termin yang belum dibayar (available untuk ditambahkan)
+            ->where('po_id', $po->id)
+            ->get();
+
         $availableTermins = Termin::where('po_id', $po->id)
-                                ->whereNull('payment_id')
-                                ->orderBy('id')
-                                ->get();
+            ->whereNull('payment_id')
+            ->orderBy('id')
+            ->get();
 
         return view('Dashboard.Pekerjaan.Realisasi.edit_payment', compact(
-            'pr', 
-            'gr', 
-            'payment', 
-            'selectedTermins', 
+            'pr',
+            'gr',
+            'payment',
+            'selectedTermins',
             'availableTermins'
         ));
     }
@@ -1028,7 +1115,6 @@ public function storeGR(Request $request, Pr $pr)
                 throw new \Exception('PO tidak ditemukan untuk PR ini.');
             }
 
-            // 1. Reset semua termin yang sebelumnya terkait dengan payment ini
             $oldTermins = Termin::where('payment_id', $payment->id)->get();
             foreach ($oldTermins as $termin) {
                 $termin->payment_id = null;
@@ -1042,9 +1128,9 @@ public function storeGR(Request $request, Pr $pr)
 
             // 2. Validasi termin baru yang dipilih
             $selectedTermins = Termin::whereIn('id', $request->termin_ids)
-                                    ->where('po_id', $po->id)
-                                    ->whereNull('payment_id') // pastikan belum dibayar
-                                    ->get();
+                ->where('po_id', $po->id)
+                ->whereNull('payment_id') // pastikan belum dibayar
+                ->get();
 
             Log::info('Termin baru yang valid:', [
                 'requested_ids' => $request->termin_ids,
@@ -1056,10 +1142,8 @@ public function storeGR(Request $request, Pr $pr)
                 throw new \Exception('Termin yang dipilih tidak valid atau sudah dibayar oleh payment lain');
             }
 
-            // 3. Hitung ulang total nilai payment
             $totalNilaiPayment = $selectedTermins->sum('nilai_pembayaran');
 
-            // 4. Update data payment
             $data = [
                 'gr_id'           => $request->gr_id,
                 'tanggal_payment' => $request->tanggal_payment,
@@ -1067,22 +1151,19 @@ public function storeGR(Request $request, Pr $pr)
                 'nilai_payment'   => $totalNilaiPayment,
             ];
 
-            // 5. Upload file baru atau pertahankan yang lama
             foreach (['invoice', 'receipt', 'nodin_payment', 'bill'] as $fileField) {
                 if ($request->hasFile($fileField)) {
-                    // Hapus file lama jika ada
                     if ($payment->$fileField) {
                         Storage::disk('public')->delete($payment->$fileField);
                     }
                     $data[$fileField] = $request->file($fileField)->store('payments', 'public');
-                    
+
                     Log::info("File {$fileField} di-upload:", [
                         'path' => $data[$fileField]
                     ]);
                 }
             }
 
-            // 6. Update payment
             $payment->update($data);
 
             Log::info('Payment di-update:', [
@@ -1090,7 +1171,6 @@ public function storeGR(Request $request, Pr $pr)
                 'nilai_payment' => $totalNilaiPayment
             ]);
 
-            // 7. Link termin baru ke payment ini
             $updatedCount = 0;
             foreach ($selectedTermins as $termin) {
                 $termin->payment_id = $payment->id;
@@ -1107,8 +1187,7 @@ public function storeGR(Request $request, Pr $pr)
             DB::commit();
 
             return redirect()->route('realisasi.index')
-                            ->with('success', "Payment Request berhasil diperbarui! {$updatedCount} termin terkait (Total: Rp " . number_format($totalNilaiPayment, 0, ',', '.') . ")");
-
+                ->with('success', "Payment Request berhasil diperbarui! {$updatedCount} termin terkait (Total: Rp " . number_format($totalNilaiPayment, 0, ',', '.') . ")");
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error Update Payment:', [
@@ -1116,9 +1195,9 @@ public function storeGR(Request $request, Pr $pr)
                 'line' => $e->getLine(),
                 'file' => $e->getFile()
             ]);
-            
+
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])
-                        ->withInput();
+                ->withInput();
         }
     }
 
@@ -1131,8 +1210,6 @@ public function storeGR(Request $request, Pr $pr)
     {
         return view('Dashboard.Pekerjaan.Realisasi.create_termin', compact('po'));
     }
-
-    // Simpan termin
     public function storeTermin(Request $request, Po $po)
     {
         $request->validate([
@@ -1173,12 +1250,33 @@ public function storeGR(Request $request, Pr $pr)
         return redirect()->back()->with('success', 'Termin berhasil dihapus.');
     }
 
-
-
     // Hapus PR
     public function destroy(Pr $pr)
     {
         $pr->delete();
         return redirect()->back()->with('success', 'PR berhasil dihapus.');
+    }
+
+
+    // Dropdown mingguan
+    public function showWeeklyBreakdown(Po $po, $mingguId)
+    {
+        $minggu = MasterMinggu::findOrFail($mingguId);
+
+        // Ambil semua daily progress untuk minggu ini
+        $dailyReports = DailyProgress::with(['pekerjaanItem', 'pelapor'])
+            ->where('po_id', $po->id)
+            ->whereBetween('tanggal', [$minggu->tanggal_awal, $minggu->tanggal_akhir])
+            ->orderBy('tanggal', 'asc')
+            ->get();
+
+        // Group by item pekerjaan
+        $reportsByItem = $dailyReports->groupBy('pekerjaan_item_id');
+
+        return view('Dashboard.Pekerjaan.Realisasi.weekly_breakdown', compact(
+            'po',
+            'minggu',
+            'reportsByItem'
+        ));
     }
 }

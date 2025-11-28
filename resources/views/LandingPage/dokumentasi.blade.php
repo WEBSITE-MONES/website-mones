@@ -8,23 +8,16 @@
 
     <title>Dokumentasi Proyek - P-Mones</title>
 
-    <!-- Vendor CSS Files -->
     <link href="/LandingPage/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/LandingPage/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <link href="/LandingPage/assets/css/main.css" rel="stylesheet">
-
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@400;600;700&family=Jost:wght@400;600;700&display=swap"
         rel="stylesheet">
-    </style>
-    <!-- Leaflet for Maps -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="/LandingPage/assets/css/main.css" rel="stylesheet">
 
-    <!-- Custom CSS -->
     <style>
     .user-menu-btn {
         display: flex;
@@ -219,11 +212,6 @@
         font-size: 11px;
     }
 
-    #map {
-        height: 450px;
-        border-radius: 15px;
-    }
-
     .lightbox {
         display: none;
         position: fixed;
@@ -305,6 +293,22 @@
         background: rgba(255, 255, 255, 0.3);
         transform: scale(1.1);
     }
+
+    .photo-checkbox {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        z-index: 10;
+        accent-color: #1d6ba8;
+    }
+
+    .photo-card.selected {
+        border: 3px solid #1d6ba8;
+        box-shadow: 0 0 15px rgba(29, 107, 168, 0.5);
+    }
     </style>
 </head>
 
@@ -326,7 +330,6 @@
             </nav>
 
             @auth
-            {{-- User sudah login - Tampilkan nama & dropdown --}}
             <div class="user-dropdown" style="position: relative;">
                 <button class="btn-getstarted user-menu-btn" id="userMenuBtn" type="button">
                     <i class="bi bi-person-circle" style="font-size: 18px; margin-right: 8px;"></i>
@@ -375,7 +378,6 @@
             </div>
 
             @else
-            {{-- User belum login - Tampilkan tombol login --}}
             <a class="btn-getstarted" href="{{ route('login') }}">
                 <i class="bi bi-box-arrow-in-right" style="margin-right: 5px;"></i>
                 Login
@@ -396,7 +398,6 @@
             </div>
         </div>
 
-        <!-- Stats Cards -->
         <div class="container mb-4">
             <div class="row g-3">
                 <div class="col-md-3">
@@ -449,7 +450,6 @@
             </div>
         </div>
 
-        <!-- Filters -->
         <div class="container mb-4">
             <div class="card shadow-sm">
                 <div class="card-body">
@@ -481,7 +481,31 @@
             </div>
         </div>
 
-        <!-- Loading -->
+        <div class="container mb-3" id="exportControls" style="display: none;">
+            <div class="card shadow-sm border-primary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center gap-3">
+                                <button class="btn btn-outline-primary" onclick="selectAllPhotos()">
+                                    <i class="bi bi-check-all"></i> Pilih Semua
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="deselectAllPhotos()">
+                                    <i class="bi bi-x-circle"></i> Batal Pilih
+                                </button>
+                                <span class="text-muted fw-semibold" id="selectedCount">0 foto dipilih</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button class="btn btn-danger" onclick="exportToPDF()" id="exportBtn" disabled>
+                                <i class="bi bi-file-pdf"></i> Export ke PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="loadingSpinner" class="text-center py-5" style="display: none;">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -489,15 +513,11 @@
             <p class="mt-3 text-muted">Memuat dokumentasi...</p>
         </div>
 
-        <!-- Photos Grid -->
         <div class="container mb-5" id="photosContainer">
-            <div class="row g-3" id="photosGrid">
-                <!-- Photos will be rendered here -->
-            </div>
+            <div class="row g-3" id="photosGrid"></div>
         </div>
     </main>
 
-    <!-- Lightbox -->
     <div id="lightbox" class="lightbox">
         <button onclick="closeLightbox()" class="lightbox-close">
             <i class="bi bi-x-lg"></i>
@@ -520,18 +540,17 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="/LandingPage/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="assets/js/main.js"></script>
 
     <script>
-    // Toggle dropdown
     document.getElementById('userMenuBtn').addEventListener('click', function(e) {
         e.stopPropagation();
         const dropdown = document.getElementById('userDropdownMenu');
         dropdown.classList.toggle('show');
     });
 
-    // Close dropdown saat klik di luar
     document.addEventListener('click', function(e) {
         const dropdown = document.getElementById('userDropdownMenu');
         const button = document.getElementById('userMenuBtn');
@@ -541,7 +560,6 @@
         }
     });
 
-    // Close dropdown saat klik item menu
     document.querySelectorAll('.dropdown-item').forEach(item => {
         item.addEventListener('click', function() {
             document.getElementById('userDropdownMenu').classList.remove('show');
@@ -552,10 +570,9 @@
     <script>
     let allPhotos = [];
     let currentPhotoIndex = 0;
+    let selectedPhotoIds = new Set();
 
-    // Load photos on page load
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('📸 Dokumentasi page loaded');
         loadPhotos();
     });
 
@@ -570,8 +587,6 @@
             const params = new URLSearchParams(filters);
             const url = `/landingpage/api/dokumentasi?${params}`;
 
-            console.log('🔍 Fetching from:', url);
-
             const response = await fetch(url, {
                 headers: {
                     'Accept': 'application/json',
@@ -579,26 +594,20 @@
                 }
             });
 
-            console.log('📥 Response status:', response.status);
-
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const result = await response.json();
-            console.log('📦 Result:', result);
 
             if (result.success) {
                 allPhotos = result.data.photos;
-                console.log('✅ Photos loaded:', allPhotos.length);
 
-                // Update stats
                 document.getElementById('totalPhotos').textContent = result.data.stats.total_photos;
                 document.getElementById('uniqueLocations').textContent = result.data.stats.unique_locations;
                 document.getElementById('activeProjects').textContent = result.data.stats.active_projects;
                 document.getElementById('lastUpdate').textContent = result.data.stats.last_update;
 
-                // Render photos
                 renderPhotos(allPhotos);
             } else {
                 throw new Error(result.message || 'Unknown error');
@@ -632,15 +641,27 @@
                 <p class="text-muted">Upload foto melalui halaman Pelaporan</p>
             </div>
         `;
+            document.getElementById('exportControls').style.display = 'none';
             return;
         }
 
+        document.getElementById('exportControls').style.display = 'block';
+
         photos.forEach((photo, index) => {
+            const isSelected = selectedPhotoIds.has(photo.id);
             const photoCard = `
             <div class="col-md-3">
-                <div class="photo-card" onclick="openLightbox(${index})">
+                <div class="photo-card ${isSelected ? 'selected' : ''}" id="photo-${photo.id}">
                     <div style="position: relative;">
-                        <img src="${photo.url}" alt="${photo.title}" onerror="this.src='https://via.placeholder.com/400x200?text=Image+Error'">
+                        <input type="checkbox" 
+                               class="photo-checkbox" 
+                               id="checkbox-${photo.id}"
+                               ${isSelected ? 'checked' : ''}
+                               onclick="togglePhotoSelection(${photo.id}, event)">
+                        <img src="${photo.url}" 
+                             alt="${photo.title}" 
+                             onclick="openLightbox(${index})"
+                             onerror="this.src='https://via.placeholder.com/400x200?text=Image+Error'">
                         <div class="weather-badge">
                             <span>${photo.weather.temp}°C</span>
                             <span>${photo.weather.icon}</span>
@@ -661,6 +682,8 @@
         `;
             grid.insertAdjacentHTML('beforeend', photoCard);
         });
+
+        updateSelectedCount();
     }
 
     function applyFilters() {
@@ -670,7 +693,6 @@
             tanggal_akhir: document.getElementById('filterTanggalAkhir').value
         };
 
-        console.log('🔍 Applying filters:', filters);
         loadPhotos(filters);
     }
 
@@ -712,7 +734,6 @@
         openLightbox(currentPhotoIndex);
     }
 
-    // Keyboard navigation
     document.addEventListener('keydown', (e) => {
         if (document.getElementById('lightbox').classList.contains('active')) {
             if (e.key === 'Escape') closeLightbox();
@@ -721,7 +742,6 @@
         }
     });
 
-    // Touch swipe for mobile
     let touchStartX = 0;
     let touchEndX = 0;
 
@@ -740,10 +760,139 @@
 
         if (Math.abs(diff) > swipeThreshold) {
             if (diff > 0) {
-                nextPhoto(); // Swipe left
+                nextPhoto();
             } else {
-                prevPhoto(); // Swipe right
+                prevPhoto();
             }
+        }
+    }
+
+    function togglePhotoSelection(photoId, event) {
+        event.stopPropagation();
+
+        const checkbox = document.getElementById(`checkbox-${photoId}`);
+        const photoCard = document.getElementById(`photo-${photoId}`);
+
+        if (checkbox.checked) {
+            selectedPhotoIds.add(photoId);
+            photoCard.classList.add('selected');
+        } else {
+            selectedPhotoIds.delete(photoId);
+            photoCard.classList.remove('selected');
+        }
+
+        updateSelectedCount();
+    }
+
+    function selectAllPhotos() {
+        selectedPhotoIds.clear();
+        allPhotos.forEach(photo => {
+            selectedPhotoIds.add(photo.id);
+        });
+
+        document.querySelectorAll('.photo-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        document.querySelectorAll('.photo-card').forEach(card => {
+            card.classList.add('selected');
+        });
+
+        updateSelectedCount();
+    }
+
+    function deselectAllPhotos() {
+        selectedPhotoIds.clear();
+
+        document.querySelectorAll('.photo-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        document.querySelectorAll('.photo-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        const count = selectedPhotoIds.size;
+        document.getElementById('selectedCount').textContent = `${count} foto dipilih`;
+        document.getElementById('exportBtn').disabled = count === 0;
+    }
+
+    async function exportToPDF() {
+        if (selectedPhotoIds.size === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Pilih Foto',
+                text: 'Silakan pilih minimal 1 foto untuk diexport'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Membuat PDF...',
+            html: `Memproses ${selectedPhotoIds.size} foto`,
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        try {
+            const formData = new FormData();
+
+            const photoIdsArray = Array.from(selectedPhotoIds);
+            photoIdsArray.forEach(id => {
+                formData.append('photo_ids[]', id);
+            });
+
+            const pekerjaanId = document.getElementById('filterPekerjaan').value;
+            if (pekerjaanId) {
+                formData.append('pekerjaan_id', pekerjaanId);
+            }
+
+            formData.append('judul', 'Dokumentasi Proyek P-Mones');
+
+            const response = await fetch('/landingpage/api/dokumentasi/export-pdf', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/pdf'
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Gagal export PDF');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Dokumentasi_${new Date().getTime()}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: `PDF dengan ${selectedPhotoIds.size} foto berhasil didownload`,
+                timer: 2000
+            });
+
+            deselectAllPhotos();
+
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Export Gagal',
+                text: error.message || 'Terjadi kesalahan saat membuat PDF'
+            });
         }
     }
     </script>

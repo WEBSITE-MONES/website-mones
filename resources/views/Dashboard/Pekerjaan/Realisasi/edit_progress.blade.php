@@ -4,6 +4,37 @@
 
 @section('content')
 
+
+{{-- ===== CSS STYLING ===== --}}
+@push('styles')
+<style>
+.toggle-icon {
+    transition: transform 0.2s ease;
+}
+
+tr[class*="child-of-"] {
+    transition: opacity 0.2s ease;
+}
+
+.parent-row:hover {
+    background-color: #f8f9fa !important;
+    cursor: pointer;
+}
+
+.level-0 {
+    font-weight: bold;
+}
+
+.level-1 {
+    background-color: #f8f9fa;
+}
+
+.level-2 {
+    background-color: #ffffff;
+}
+</style>
+@endpush
+
 <div class="page-inner">
     <!-- Breadcrumb -->
     <div class="d-flex justify-content-between align-items-center flex-wrap grid-margin mb-4">
@@ -521,7 +552,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-{{-- ===== TABLE COLLAPSE/EXPAND SCRIPT ===== --}}
 <script>
 function toggleChildren(rowId) {
     const icon = document.querySelector(`tr[data-id="${rowId}"] .toggle-icon`);
@@ -595,34 +625,4 @@ document.getElementById('importForm')?.addEventListener('submit', function(e) {
     this.submit();
 });
 </script>
-@endpush
-
-{{-- ===== CSS STYLING ===== --}}
-@push('styles')
-<style>
-.toggle-icon {
-    transition: transform 0.2s ease;
-}
-
-tr[class*="child-of-"] {
-    transition: opacity 0.2s ease;
-}
-
-.parent-row:hover {
-    background-color: #f8f9fa !important;
-    cursor: pointer;
-}
-
-.level-0 {
-    font-weight: bold;
-}
-
-.level-1 {
-    background-color: #f8f9fa;
-}
-
-.level-2 {
-    background-color: #ffffff;
-}
-</style>
 @endpush

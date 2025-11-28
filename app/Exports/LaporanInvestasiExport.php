@@ -24,7 +24,7 @@ class LaporanInvestasiExport implements
     WithStyles, 
     WithTitle,
     ShouldAutoSize,
-    WithEvents  // ✅ Tambahan untuk handle tanda tangan
+    WithEvents  
 {
     protected $laporan;
     protected $rowNumber = 0;

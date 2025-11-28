@@ -21,7 +21,6 @@
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    {{-- Description List untuk layout Key-Value yang modern --}}
                     <dl class="row g-3">
                         <dt class="col-md-3 text-muted fw-normal d-flex align-items-center">
                             <i class="fas fa-user fa-fw me-2"></i> Nama Lengkap

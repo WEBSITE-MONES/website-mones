@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Log;
 
 class PekerjaanItem extends Model
 {
@@ -22,6 +23,24 @@ class PekerjaanItem extends Model
         'sat',
         'bobot',
     ];
+
+
+    public function getDisplayNameAttribute()
+    {
+        $subSub = trim((string) ($this->sub_sub_pekerjaan ?? ''));
+        $sub    = trim((string) ($this->sub_pekerjaan ?? ''));
+        $jenis  = trim((string) ($this->jenis_pekerjaan_utama ?? ''));
+
+        if ($subSub !== '') {
+            return $subSub;
+        }
+
+        if ($sub !== '') {
+            return $sub;
+        }
+
+        return $jenis;
+    }
 
 
     public function po()

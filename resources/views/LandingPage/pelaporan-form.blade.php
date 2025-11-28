@@ -4,7 +4,6 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <!-- ✅ CSRF Token untuk AJAX -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>Pelaporan Progress Harian - P-Mones</title>
@@ -25,6 +24,9 @@
     <!-- Vendor CSS Files -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 
     <!-- SweetAlert2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
@@ -322,7 +324,6 @@
                                 </div>
                             </div>
 
-                            <!-- ✅ 1. TAMBAHKAN: Pilih Wilayah (BARU) -->
                             <div class="mb-3">
                                 <label for="wilayah" class="form-label">
                                     Wilayah / Regional <span class="required">*</span>
@@ -336,7 +337,6 @@
                                 </small>
                             </div>
 
-                            <!-- ✅ 2. UPDATE: Pilih Pekerjaan (akan terisi setelah pilih wilayah) -->
                             <div class="mb-3">
                                 <label for="pekerjaan" class="form-label">
                                     Nama Pekerjaan / Proyek <span class="required">*</span>
@@ -346,7 +346,6 @@
                                 </select>
                             </div>
 
-                            <!-- 3. Pilih PO (muncul setelah pilih pekerjaan) -->
                             <div class="mb-3" id="poWrapper" style="display: none;">
                                 <label for="po" class="form-label">
                                     Nomor PO / Kontrak <span class="required">*</span>
@@ -357,7 +356,6 @@
                                 <small class="text-muted" id="poInfo"></small>
                             </div>
 
-                            <!-- 4. Pilih Item Pekerjaan (muncul setelah pilih PO) -->
                             <div class="mb-3" id="itemPekerjaanWrapper" style="display: none;">
                                 <label for="pekerjaan_item" class="form-label">
                                     Item Pekerjaan yang Dikerjakan <span class="required">*</span>
@@ -620,6 +618,7 @@
 
     <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <!-- Pelaporan JS -->
     <script src="assets/js/pelaporan.js"></script>
@@ -649,11 +648,10 @@
                         option.textContent = `${wilayah.nama} (${wilayah.jumlah_pekerjaan} pekerjaan)`;
                         wilayahSelect.appendChild(option);
                     });
-                    console.log('✅ Wilayah loaded:', result.data.length);
                 }
             })
             .catch(error => {
-                console.error('❌ Error loading wilayah:', error);
+                console.error('Error loading wilayah:', error);
                 wilayahSelect.disabled = false;
                 wilayahSelect.innerHTML = '<option value="">❌ Gagal memuat wilayah</option>';
             });
@@ -695,14 +693,13 @@
                                 option.textContent = pekerjaan.nama_investasi;
                                 pekerjaanSelect.appendChild(option);
                             });
-                            console.log('✅ Pekerjaan loaded:', result.data.length);
                         } else {
                             pekerjaanSelect.innerHTML =
-                                '<option value="">⚠️ Tidak ada pekerjaan</option>';
+                                '<option value="">❌ Tidak ada pekerjaan</option>';
                         }
                     })
                     .catch(error => {
-                        console.error('❌ Error loading pekerjaan:', error);
+                        console.error('Error loading pekerjaan:', error);
                         pekerjaanSelect.disabled = false;
                         pekerjaanSelect.innerHTML =
                             '<option value="">❌ Gagal memuat pekerjaan</option>';
@@ -736,17 +733,23 @@
                                 result.data.forEach(po => {
                                     const option = document.createElement('option');
                                     option.value = po.id;
-                                    option.textContent =
-                                        `${po.nomor_po} - ${po.pelaksana || 'N/A'}`;
+                                    option.textContent = po.display;
+
+                                    option.dataset.nomor = po.nomor_po;
+                                    option.dataset.investasi = po.nama_investasi;
+                                    option.dataset.pelaksana = po.pelaksana;
+                                    option.dataset.nilai = po.nilai_po;
+                                    option.dataset.tanggal = po.tanggal_po;
+
                                     poSelect.appendChild(option);
                                 });
                             } else {
                                 poSelect.innerHTML =
-                                    '<option value="">⚠️ Tidak ada PO tersedia</option>';
+                                    '<option value="">❌ Tidak ada PO tersedia</option>';
                             }
                         })
                         .catch(error => {
-                            console.error('❌ Error loading PO:', error);
+                            console.error('Error loading PO:', error);
                             poSelect.disabled = false;
                             poSelect.innerHTML = '<option value="">❌ Gagal memuat data</option>';
                         });
@@ -766,11 +769,13 @@
                 const poId = this.value;
                 const itemWrapper = document.getElementById('itemPekerjaanWrapper');
                 const itemSelect = document.getElementById('pekerjaan_item');
+                const itemInfo = document.getElementById('itemInfo');
 
                 if (poId) {
                     itemWrapper.style.display = 'block';
                     itemSelect.innerHTML = '<option value="">⏳ Memuat item...</option>';
                     itemSelect.disabled = true;
+                    if (itemInfo) itemInfo.style.display = 'none';
 
                     fetch(`/landingpage/api/pekerjaan-items/po/${poId}`)
                         .then(response => response.json())
@@ -779,24 +784,75 @@
                             if (result.success && result.data.length > 0) {
                                 itemSelect.innerHTML =
                                     '<option value="">-- Pilih Item Pekerjaan --</option>';
+
                                 result.data.forEach(item => {
                                     const option = document.createElement('option');
                                     option.value = item.id;
                                     option.innerHTML = item.display;
+
+                                    // ✅ PENTING: Set dataset untuk info
+                                    option.dataset.kode = item.kode;
+                                    option.dataset.volume = item.volume;
+                                    option.dataset.satuan = item.sat;
+                                    option.dataset.bobot = item.bobot;
+
                                     itemSelect.appendChild(option);
                                 });
                             } else {
-                                itemSelect.innerHTML =
-                                    '<option value="">⚠️ Tidak ada item</option>';
+                                itemSelect.innerHTML = '<option value="">❌ Tidak ada item</option>';
                             }
                         })
                         .catch(error => {
-                            console.error('❌ Error loading items:', error);
+                            console.error('Error loading items:', error);
                             itemSelect.disabled = false;
                             itemSelect.innerHTML = '<option value="">❌ Gagal memuat data</option>';
                         });
                 } else {
                     itemWrapper.style.display = 'none';
+                    if (itemInfo) itemInfo.style.display = 'none';
+                }
+            });
+        }
+    });
+
+    // Item Pekerjaan → Tampilkan Info
+    document.addEventListener('DOMContentLoaded', function() {
+        const itemSelect = document.getElementById('pekerjaan_item');
+        if (itemSelect) {
+            itemSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const itemInfo = document.getElementById('itemInfo');
+                const itemDetails = document.getElementById('itemDetails');
+
+                if (this.value && selectedOption.dataset.kode) {
+                    const kode = selectedOption.dataset.kode;
+                    const volume = selectedOption.dataset.volume;
+                    const satuan = selectedOption.dataset.satuan;
+                    const bobot = selectedOption.dataset.bobot;
+
+                    itemDetails.innerHTML = `
+                    <div class="row g-2 mt-1">
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Kode WBS</small>
+                            <strong class="text-primary">${kode}</strong>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Volume</small>
+                            <strong>${parseFloat(volume).toFixed(2)} ${satuan}</strong>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Bobot</small>
+                            <strong class="text-success">${parseFloat(bobot).toFixed(2)}%</strong>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Satuan</small>
+                            <strong>${satuan}</strong>
+                        </div>
+                    </div>
+                `;
+                    itemInfo.style.display = 'block';
+                } else {
+                    itemInfo.style.display = 'none';
                 }
             });
         }

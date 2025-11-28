@@ -253,7 +253,7 @@
                             class="{{ request()->routeIs('landingpage.monitoring.progress') ? 'active' : '' }}">Monitoring</a>
                     </li>
                     <li><a href="{{ route('landingpage.monitoring.progress') }}"
-                            class="{{ request()->routeIs('#') ? 'active' : '' }}">Gambar</a>
+                            class="{{ request()->routeIs('landingpage.monitoring.progress') ? 'active' : '' }}">Gambar</a>
                     </li>
                     @else
                     <li><a href="#about">Tentang</a></li>

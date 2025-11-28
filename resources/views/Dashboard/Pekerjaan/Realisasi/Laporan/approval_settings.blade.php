@@ -251,6 +251,7 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
+                            <th class="text-center" style="width: 200px;">Action</th>
                             <th class="text-center" style="width: 80px;">Urutan</th>
                             <th>Nama Approver</th>
                             <th>Role</th>
@@ -258,12 +259,44 @@
                             <th class="text-center">Signature Type</th>
                             <th class="text-center">Tanda Tangan</th>
                             <th class="text-center" style="width: 150px;">Status</th>
-                            <th class="text-center" style="width: 200px;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($approvalSettings as $setting)
                         <tr>
+                            <td class="text-center">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light rounded-circle p-0" type="button"
+                                        data-bs-toggle="dropdown" style="width: 32px; height: 32px;">
+                                        <i class="fa fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li>
+                                            <h6 class="dropdown-header text-uppercase small">Menu Aksi</h6>
+                                        </li>
+                                        <li>
+                                            <button type="button" class="dropdown-item" data-bs-toggle="modal"
+                                                data-bs-target="#modalEdit{{ $setting->id }}">
+                                                <i class="fa fa-edit text-warning me-2"></i> Edit Approver
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <form
+                                                action="{{ route('laporan.approval-settings.destroy', $setting->id) }}"
+                                                method="POST" class="delete-form">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="fa fa-trash me-2"></i> Hapus Approver
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
                             <td class="text-center">
                                 <span class="badge bg-primary rounded-circle badge-urutan" data-bs-toggle="tooltip"
                                     title="Urutan ke-{{ $setting->urutan }}">
@@ -295,7 +328,7 @@
                                     <i class="fas fa-stamp"></i> Hybrid
                                 </span>
                                 @else
-                                <span class="badge bg-secondary signature-type-badge">
+                                <span class="badge bg-primary signature-type-badge">
                                     <i class="fas fa-pen"></i> Manual
                                 </span>
                                 @endif
@@ -303,10 +336,10 @@
                             <td class="text-center">
                                 @if($setting->signature_type === 'qr' && $setting->qr_code_path)
                                 <div class="digital-signature-indicator">
-                                    <a href="{{ Storage::url($setting->qr_code_path) }}" target="_blank">
-                                        <img src="{{ Storage::url($setting->qr_code_path) }}" alt="QR"
-                                            class="qr-code-preview">
-                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#previewModal{{ $setting->id }}">
+                                        <i class="fas fa-qrcode"></i> Lihat QR
+                                    </button>
                                     @if($setting->signature_id)
                                     <a href="{{ route('verify.signature', $setting->signature_id) }}" target="_blank"
                                         class="badge bg-success text-white badge-verify mt-1 d-inline-block">
@@ -314,12 +347,13 @@
                                     </a>
                                     @endif
                                 </div>
+
                                 @elseif($setting->signature_type === 'hybrid' && $setting->qr_code_path)
                                 <div class="digital-signature-indicator">
-                                    <a href="{{ Storage::url($setting->qr_code_path) }}" target="_blank">
-                                        <img src="{{ Storage::url($setting->qr_code_path) }}" alt="Hybrid"
-                                            class="signature-preview">
-                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#previewModal{{ $setting->id }}">
+                                        <i class="fas fa-stamp"></i> Lihat Hybrid
+                                    </button>
                                     @if($setting->signature_id)
                                     <a href="{{ route('verify.signature', $setting->signature_id) }}" target="_blank"
                                         class="badge bg-success text-white badge-verify mt-1 d-inline-block">
@@ -327,48 +361,74 @@
                                     </a>
                                     @endif
                                 </div>
+
                                 @elseif($setting->tanda_tangan)
-                                <a href="{{ Storage::url($setting->tanda_tangan) }}" target="_blank">
-                                    <img src="{{ Storage::url($setting->tanda_tangan) }}" alt="TTD"
-                                        class="signature-preview">
-                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                                    data-bs-target="#previewModal{{ $setting->id }}">
+                                    <i class="fas fa-pen"></i> Lihat TTD
+                                </button>
+
                                 @else
                                 <span class="text-muted">
                                     <i class="fas fa-image-slash"></i> Belum upload
                                 </span>
                                 @endif
                             </td>
+
+                            {{-- Modal Preview (tambahkan di dalam loop, setelah td) --}}
+                            <div class="modal fade" id="previewModal{{ $setting->id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">
+                                                <i class="fas fa-image me-2"></i>
+                                                Preview Tanda Tangan - {{ $setting->nama_approver }}
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            @if($setting->signature_type === 'qr' && $setting->qr_code_path)
+                                            <img src="{{ Storage::url($setting->qr_code_path) }}" alt="QR Code"
+                                                class="img-fluid" style="max-height: 400px;">
+
+                                            @elseif($setting->signature_type === 'hybrid' && $setting->qr_code_path)
+                                            <img src="{{ Storage::url($setting->qr_code_path) }}" alt="Hybrid Signature"
+                                                class="img-fluid" style="max-height: 400px;">
+
+                                            @elseif($setting->tanda_tangan)
+                                            <img src="{{ Storage::url($setting->tanda_tangan) }}" alt="Tanda Tangan"
+                                                class="img-fluid" style="max-height: 400px;">
+                                            @endif
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                                                <i class="fas fa-times"></i> Tutup
+                                            </button>
+                                            @if($setting->signature_type !== 'qr')
+                                            <a href="{{ Storage::url($setting->tanda_tangan ?? $setting->qr_code_path) }}"
+                                                target="_blank" class="btn btn-primary">
+                                                <i class="fas fa-download"></i> Download
+                                            </a>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <td class="text-center">
                                 <div class="form-check form-switch d-flex justify-content-center">
                                     <input class="form-check-input toggle-active" type="checkbox"
                                         data-id="{{ $setting->id }}" id="toggle{{ $setting->id }}"
                                         {{ $setting->is_active ? 'checked' : '' }} style="font-size: 1.25rem;">
                                     <label class="form-check-label ms-2" for="toggle{{ $setting->id }}">
-                                        <span class="badge {{ $setting->is_active ? 'bg-success' : 'bg-secondary' }}">
+                                        <span class="badge {{ $setting->is_active ? 'bg-success' : 'bg-primary' }}">
                                             {{ $setting->is_active ? 'Aktif' : 'Nonaktif' }}
                                         </span>
                                     </label>
                                 </div>
                             </td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-warning rounded-pill px-3 btn-action"
-                                    data-bs-toggle="modal" data-bs-target="#modalEdit{{ $setting->id }}"
-                                    data-bs-tooltip="tooltip" title="Edit Approver">
-                                    <i class="fa fa-edit"></i> Edit
-                                </button>
-                                <form action="{{ route('laporan.approval-settings.destroy', $setting->id) }}"
-                                    method="POST" class="d-inline delete-form">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3 btn-action"
-                                        data-bs-toggle="tooltip" title="Hapus Approver">
-                                        <i class="fa fa-trash"></i> Hapus
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
 
-                        {{-- MODAL EDIT (DITEMPATKAN DI DALAM LOOP) --}}
+
+                        </tr>
                         @include('Dashboard.Pekerjaan.Realisasi.Laporan.partials.modal_edit', ['setting' =>
                         $setting])
 
@@ -394,15 +454,12 @@
     </div>
 </div>
 
-{{-- MODAL TAMBAH (DITEMPATKAN DI LUAR LOOP) --}}
 @include('Dashboard.Pekerjaan.Realisasi.Laporan.partials.modal_tambah')
 
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-{{-- Pastikan Bootstrap JS (bundle) sudah ter-load di 'Dashboard.base' untuk tooltips --}}
-{{-- Jika belum, tambahkan: <script src="https.../bootstrap.bundle.min.js"></script> --}}
 
 <script>
 // ===== APPROVAL SETTINGS SCRIPT (REVISED UI/UX) =====
@@ -448,7 +505,6 @@ $(document).ready(function() {
                 '<span class="text-success fw-bold"><i class="fas fa-check-circle"></i> Tidak perlu upload.</span><br><small>QR Code akan di-generate otomatis.</small>'
             );
 
-            // Sembunyikan preview
             $modal.find('.image-preview-container').hide();
             $modal.find('.signature-preview-current').hide();
 
@@ -469,7 +525,6 @@ $(document).ready(function() {
                     '<span class="text-info fw-bold"><i class="fas fa-info-circle"></i> Opsional.</span><br><small>Kosongkan jika tidak ingin mengubah tanda tangan.</small>'
                 );
             } else {
-                // Mode Tambah: Wajib
                 $fileInput.prop('required', true);
                 $requiredIndicator.show();
                 $fileNote.html(
@@ -481,8 +536,6 @@ $(document).ready(function() {
 
     // Pasang listener
     $(document).on('change', 'input[name="signature_type"]', handleSignatureTypeChange);
-
-    // ===== IMAGE PREVIEW (IMPROVED) =====
     $(document).on('change', '.signature-file-input', function(e) {
         const file = e.target.files[0];
         const $modal = $(this).closest('.modal');
@@ -492,8 +545,7 @@ $(document).ready(function() {
         console.log('File selected:', file ? file.name : 'none');
 
         if (file) {
-            // Validasi file
-            const maxSize = 2 * 1024 * 1024; // 2MB
+            const maxSize = 2 * 1024 * 1024;
             const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
 
             if (!allowedTypes.includes(file.type)) {
@@ -525,12 +577,10 @@ $(document).ready(function() {
             };
             reader.readAsDataURL(file);
         } else {
-            // Sembunyikan preview jika tidak ada file
             $previewContainer.hide();
         }
     });
 
-    // ===== TOGGLE ACTIVE STATUS =====
     $('.toggle-active').on('change', function() {
         const id = $(this).data('id');
         const isChecked = $(this).is(':checked');
@@ -565,7 +615,7 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 console.error('Toggle error:', xhr);
-                $checkbox.prop('checked', !isChecked); // Kembalikan ke state awal
+                $checkbox.prop('checked', !isChecked);
 
                 Swal.fire({
                     icon: 'error',
@@ -598,7 +648,6 @@ $(document).ready(function() {
         });
     });
 
-    // ===== FORM SUBMIT VALIDATION (Client-side check) =====
     $('form[id^="formTambahApproval"], form[id^="formEditApproval"]').on('submit', function(e) {
         const $form = $(this);
         const signatureType = $form.find('input[name="signature_type"]:checked').val();
@@ -608,10 +657,9 @@ $(document).ready(function() {
         console.log('Form submitting - Type:', signatureType, 'Has File:', hasFile, 'Edit Mode:',
             isEditMode);
 
-        // Validasi hanya untuk:
-        // Mode TAMBAH && (Tipe Manual ATAU Hybrid) && TIDAK ADA FILE
+
         if (!isEditMode && (signatureType === 'hybrid' || signatureType === 'manual') && !hasFile) {
-            e.preventDefault(); // Hentikan submit
+            e.preventDefault();
             Swal.fire({
                 icon: 'warning',
                 title: 'File Tanda Tangan Diperlukan',
@@ -621,9 +669,7 @@ $(document).ready(function() {
             return false;
         }
 
-        // Untuk kasus lainnya, biarkan form submit ke server
         console.log('Form validation passed, submitting to server...');
-        // (opsional) Tambahkan loading indicator di tombol submit
         $form.find('button[type="submit"]').prop('disabled', true).html(
             '<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
     });
@@ -631,18 +677,15 @@ $(document).ready(function() {
     // ===== TRIGGER HANDLER SAAT MODAL DIBUKA =====
     $('.modal').on('show.bs.modal', function() {
         console.log('Modal opened, triggering signature type check...');
-        // Trigger check untuk memastikan UI file-input sesuai
         const $checkedRadio = $(this).find('input[name="signature_type"]:checked');
         if ($checkedRadio.length > 0) {
             $checkedRadio.trigger('change');
         }
 
-        // Reset state tombol submit jika sebelumnya loading
         $(this).find('button[type="submit"]').prop('disabled', false).html(
             '<i class="fa fa-save"></i> Simpan');
     });
 
-    // Trigger saat halaman load untuk modal edit yg mungkin sudah ada
     $('input[name="signature_type"]:checked').each(handleSignatureTypeChange);
 
     console.log('All event handlers initialized successfully (REVISED)');

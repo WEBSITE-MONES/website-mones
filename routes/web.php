@@ -46,7 +46,7 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     Route::get('/sidebar-weather', [WeatherController::class, 'getWeather'])->name('sidebar.weather');
 
     // ====================== ACCOUNT ======================
-    Route::prefix('account')->group(function() {
+    Route::prefix('account')->group(function () {
         Route::get('/', [AccountSettingController::class, 'index'])->name('account.index');
         Route::get('/edit', [AccountSettingController::class, 'edit'])->name('account.edit');
         Route::put('/update', [AccountSettingController::class, 'update'])->name('account.update');
@@ -116,7 +116,7 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
                 ->name('approval-settings.destroy');
             Route::post('/approval-settings/{id}/toggle-active', [LaporanApprovalSettingController::class, 'toggleActive'])
                 ->name('approval-settings.toggle-active');
-            
+
             // Laporan Approval
             Route::post('/{id}/approve', [LaporanController::class, 'approve'])->name('approve');
             Route::post('/{id}/reject', [LaporanController::class, 'reject'])->name('reject');
@@ -192,7 +192,7 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
         // approve laporan dokumentasi
         Route::get('/laporan-dokumentasi', [PekerjaanDetailController::class, 'laporanDokumentasi'])
             ->name('pekerjaan.laporan.dokumentasi');
-            
+
         Route::get('/laporan-dokumentasi/{dailyProgressId}', [PekerjaanDetailController::class, 'showDokumentasi'])
             ->name('pekerjaan.laporan.dokumentasi.show');
 
@@ -217,7 +217,7 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     });
 
     // ====================== SUPERADMIN ONLY ======================
-    Route::middleware(['role:superadmin'])->group(function() {
+    Route::middleware(['role:superadmin'])->group(function () {
 
         // CRUD Pekerjaan
         Route::get('/pekerjaan/create', [PekerjaanController::class, 'create'])->name('pekerjaan.create');
@@ -240,35 +240,38 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
     });
 
     // ====================== ADMIN + SUPERADMIN ======================
-    Route::middleware(['role:admin,superadmin'])->group(function() {
+    Route::middleware(['role:admin,superadmin'])->group(function () {
         Route::post('/pekerjaan/{id}/approve', [PekerjaanController::class, 'approve'])->name('pekerjaan.approve');
     });
 
     Route::get('/pekerjaan/{id}', [PekerjaanController::class, 'show'])->name('pekerjaan.show');
-}); 
+});
 
 
 // ======================= PWA MOBILE ===================
 Route::prefix('landingpage')->name('landingpage.')->group(function () {
     Route::middleware(['auth', 'role:user'])->group(function () {
-        
+
         // ========== VIEW ROUTES ==========
         Route::get('/beranda', [ProgresController::class, 'index'])->name('index');
         Route::get('/pelaporan', [ProgresController::class, 'pelaporan'])->name('index.pelaporan');
         Route::get('/pelaporanform', [ProgresController::class, 'pelaporanform'])->name('index.pelaporanform');
         Route::get('/pelaporanform-edit', [ProgresController::class, 'pelaporanformedit'])->name('index.pelaporanformedit');
         Route::get('/dokumentasi', [ProgresController::class, 'dokumentasi'])->name('index.dokumentasi');
-        
+
         // API Get Photos untuk Dokumentasi
         Route::get('/api/dokumentasi', [ProgresController::class, 'apiGetDokumentasi'])
             ->name('api.dokumentasi');
-
         Route::get('/debug/dokumentasi', [ProgresController::class, 'debugDokumentasi'])
             ->name('debug.dokumentasi');
-            
+        Route::post('/api/dokumentasi/export-pdf', [ProgresController::class, 'exportDokumentasiPdf'])
+            ->name('api.dokumentasi.export.pdf');
+        Route::get('/debug/dokumentasi', [ProgresController::class, 'debugDokumentasi'])
+            ->name('debug.dokumentasi');
+
         // monitoring progress
         Route::get('/monitoring-progress', [ProgresController::class, 'monitoringProgress'])
-        ->name('monitoring.progress');
+            ->name('monitoring.progress');
 
         // ========== PROFILE VENDOR ROUTES (BARU) ==========
         Route::get('/profile', [ProgresController::class, 'vendorProfile'])->name('profile');
@@ -280,20 +283,20 @@ Route::prefix('landingpage')->name('landingpage.')->group(function () {
         // ========== API ROUTES - CASCADE SELECTION ==========
         Route::get('/api/po/pekerjaan/{pekerjaanId}', [ProgresController::class, 'getPoByPekerjaan'])
             ->name('api.po.by.pekerjaan');
-        
+
         Route::get('/api/pekerjaan-items/po/{poId}', [ProgresController::class, 'getPekerjaanItemsByPo'])
             ->name('api.items.by.po');
-        
+
         // ========== API ROUTES - DAILY PROGRESS CRUD ==========
-        
+
         // GET: List all reports (Ringkasan)
         Route::get('/api/progress-harian', [ProgresController::class, 'apiGetReports'])
             ->name('api.reports');
-        
+
         // POST: Create new report
         Route::post('/api/progress-harian/store', [ProgresController::class, 'apiStoreReport'])
             ->name('api.store.report');
-        
+
         // GET: Show single report detail (untuk edit)
         Route::get('/api/progress-harian/{id}', [ProgresController::class, 'apiShowReport'])
             ->name('api.show.report');
@@ -301,18 +304,16 @@ Route::prefix('landingpage')->name('landingpage.')->group(function () {
         // Wilayah & Pekerjaan API
         Route::get('api/wilayah', [ProgresController::class, 'apiGetWilayah']);
         Route::get('api/pekerjaan/wilayah/{wilayahId}', [ProgresController::class, 'apiGetPekerjaanByWilayah']);
-            
+
         // PUT/PATCH: Update existing report
         Route::put('/api/progress-harian/{id}', [ProgresController::class, 'apiUpdateReport'])
             ->name('api.update.report');
-        
+
         // DELETE: Delete report
         Route::delete('/api/progress-harian/{id}', [ProgresController::class, 'apiDeleteReport'])
             ->name('api.delete.report');
 
-            Route::get('/api/progress/{id}', [ProgresController::class, 'apiGetProgressData'])
-    ->name('api.progress.data');
-
-    
+        Route::get('/api/progress/{id}', [ProgresController::class, 'apiGetProgressData'])
+            ->name('api.progress.data');
     });
 });

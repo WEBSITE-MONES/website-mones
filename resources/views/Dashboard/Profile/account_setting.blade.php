@@ -9,7 +9,6 @@
             <h3 class="card-title">Account Setting</h3>
         </div>
 
-        {{-- tampilkan error validasi --}}
         @if ($errors->any())
         <div class="alert alert-danger">
             <ul class="mb-0">
