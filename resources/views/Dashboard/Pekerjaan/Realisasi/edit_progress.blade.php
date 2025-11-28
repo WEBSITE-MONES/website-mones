@@ -423,7 +423,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     labels: chartData.map(d => d.week_label || d.week || 'Unknown'),
                     datasets: [{
                             label: 'Rencana (%)',
-                            data: chartData.map(d => parseFloat(d.rencana) || 0),
+                            data: chartData.map(d => {
+                                let val = parseFloat(d.rencana) || 0;
+                                // ✅ Jika nilai < 1, kalikan 100
+                                return val < 1 && val > 0 ? val * 100 : val;
+                            }),
                             borderColor: 'rgb(54, 162, 235)',
                             backgroundColor: 'rgba(54, 162, 235, 0.1)',
                             borderWidth: 3,
@@ -437,7 +441,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         {
                             label: 'Realisasi (%)',
-                            data: chartData.map(d => parseFloat(d.realisasi) || 0),
+                            data: chartData.map(d => {
+                                let val = parseFloat(d.realisasi) || 0;
+                                // ✅ Jika nilai < 1, kalikan 100
+                                return val < 1 && val > 0 ? val * 100 : val;
+                            }),
                             borderColor: 'rgb(75, 192, 192)',
                             backgroundColor: 'rgba(75, 192, 192, 0.1)',
                             borderWidth: 3,
