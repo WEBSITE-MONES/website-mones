@@ -167,6 +167,11 @@ function renderTable() {
             <li><a class="dropdown-item" href="#" onclick="viewDetail(${report.id}); return false;">
               <i class="bi bi-eye-fill"></i> Lihat Detail
             </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" onclick="exportPdf(${report.id}); return false;">
+              <i class="bi bi-file-pdf-fill"></i> Export PDF
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="/landingpage/pelaporanform-edit?id=${report.id}">
               <i class="bi bi-pencil-fill"></i> Edit
             </a></li>
@@ -180,6 +185,43 @@ function renderTable() {
   `
     )
     .join("");
+}
+
+
+// ==================== EXPORT PDF ====================
+function exportPdf(id) {
+  console.log('Exporting PDF for report ID:', id);
+  
+  Swal.fire({
+    title: 'Export PDF',
+    text: 'Mengunduh laporan dalam format PDF...',
+    icon: 'info',
+    showConfirmButton: false,
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+
+  // Create temporary link for download
+  const downloadUrl = `/landingpage/laporan/${id}/export-pdf`;
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = `Laporan_${id}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  setTimeout(() => {
+    Swal.close();
+    Swal.fire({
+      title: 'Berhasil!',
+      text: 'PDF berhasil diunduh',
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  }, 1500);
 }
 
 // ==================== UPDATE VIEW DETAIL MODAL ====================
@@ -258,10 +300,18 @@ function viewDetail(reportId) {
       </div>
     `,
     width: "800px",
-    confirmButtonText: "Tutup",
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-printer"></i> Print',
+    cancelButtonText: 'Tutup',
     confirmButtonColor: "#2c5aa0",
+    cancelButtonColor: "#6c757d",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      printLaporan(reportId);
+    }
   });
 }
+
 // ==================== GET STATUS BADGE (FIXED) ====================
 function getStatusBadge(status) {
   const statusConfig = {
@@ -339,90 +389,6 @@ function changePage(page) {
   renderTable();
   renderPagination();
   window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-// ==================== VIEW DETAIL (MODAL) ====================
-function viewDetail(reportId) {
-  const report = allReports.find((r) => r.id === reportId);
-
-  if (!report) {
-    Swal.fire("Error", "Laporan tidak ditemukan", "error");
-    return;
-  }
-
-  const weatherInfo = report.cuaca_deskripsi
-    ? `${report.cuaca_deskripsi}, ${report.cuaca_suhu}°C, Kelembaban: ${report.cuaca_kelembaban}%`
-    : "Data tidak tersedia";
-
-  let photosHtml = "";
-  if (report.fotos && report.fotos.length > 0) {
-    photosHtml = '<div class="row g-2 mt-2">';
-    report.fotos.forEach((foto) => {
-      photosHtml += `
-        <div class="col-4">
-          <img src="${foto.url}" class="img-fluid rounded" alt="Foto" style="cursor: pointer;" onclick="window.open('${foto.url}', '_blank')">
-        </div>
-      `;
-    });
-    photosHtml += "</div>";
-  } else {
-    photosHtml = '<p class="text-muted">Tidak ada foto</p>';
-  }
-
-  Swal.fire({
-    title: "<strong>Detail Laporan</strong>",
-    html: `
-      <div class="text-start">
-        <div class="mb-3">
-          <strong>Tanggal:</strong> ${formatDate(report.tanggal)}<br>
-          <strong>Pelapor:</strong> ${report.pelapor}<br>
-          <strong>Pekerjaan:</strong> ${getPekerjaanName(report.pekerjaan)}<br>
-          <strong>Status:</strong> ${getStatusBadge(report.status_approval)}
-        </div>
-        <hr>
-        <div class="mb-3">
-          <strong>Lokasi GPS:</strong><br>
-          <small class="text-muted">
-            <i class="bi bi-geo-alt-fill"></i> 
-            Lat: ${report.latitude.toFixed(6)}, Lon: ${report.longitude.toFixed(6)}
-          </small>
-        </div>
-        <hr>
-        <div class="mb-3">
-          <strong>Jenis Pekerjaan:</strong><br>
-          ${report.jenis_pekerjaan}
-        </div>
-        <div class="mb-3">
-          <strong>Volume:</strong> ${report.volume || "-"} ${report.satuan || ""}
-        </div>
-        <div class="mb-3">
-          <strong>Deskripsi:</strong><br>
-          ${report.deskripsi}
-        </div>
-        <hr>
-        <div class="mb-3">
-          <strong>Cuaca:</strong> ${weatherInfo}<br>
-          <strong>Jam Kerja:</strong> ${report.jam_kerja || "-"} jam<br>
-          <strong>Kondisi Lapangan:</strong> ${report.kondisi_lapangan || "-"}
-        </div>
-        ${report.kendala ? `<div class="mb-3"><strong>Kendala:</strong><br>${report.kendala}</div>` : ""}
-        ${report.solusi ? `<div class="mb-3"><strong>Solusi:</strong><br>${report.solusi}</div>` : ""}
-        <hr>
-        <div class="mb-3">
-          <strong>Rencana Besok:</strong><br>
-          ${report.rencana_besok}
-        </div>
-        <hr>
-        <div>
-          <strong>Dokumentasi Foto:</strong>
-          ${photosHtml}
-        </div>
-      </div>
-    `,
-    width: "800px",
-    confirmButtonText: "Tutup",
-    confirmButtonColor: "#1d6ba8",
-  });
 }
 
 // ==================== DELETE REPORT ====================

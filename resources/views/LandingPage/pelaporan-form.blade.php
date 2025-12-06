@@ -35,160 +35,8 @@
     <link href="assets/css/main.css" rel="stylesheet">
     <!-- Pelaporan CSS -->
     <link href="assets/css/pelaporan.css" rel="stylesheet">
-    <style>
-    .btn-outline-light {
-        border: 2px solid rgba(255, 255, 255, 0.5);
-        color: #fff;
-        transition: all 0.3s ease;
-    }
+    <link href="/LandingPage/assets/css/user-dropdown.css" rel="stylesheet">
 
-    .btn-outline-light:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.8);
-        color: #fff;
-    }
-
-    .user-menu-btn {
-        display: flex;
-        align-items: center;
-        background: transparent;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        color: #fff;
-        padding: 8px 12px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border-radius: 8px;
-    }
-
-    .user-menu-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.5);
-    }
-
-    .dropdown-menu-custom {
-        display: none;
-        position: absolute;
-        top: calc(100% + 10px);
-        right: 0;
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        min-width: 280px;
-        z-index: 1000;
-        animation: slideDown 0.3s ease;
-    }
-
-    .dropdown-menu-custom.show {
-        display: block;
-    }
-
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .dropdown-header {
-        padding: 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 12px 12px 0 0;
-        color: #fff;
-    }
-
-    .user-info {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .user-avatar {
-        font-size: 50px;
-        line-height: 1;
-    }
-
-    .user-details {
-        flex: 1;
-    }
-
-    .user-name {
-        font-weight: 600;
-        font-size: 16px;
-        margin-bottom: 4px;
-    }
-
-    .user-email {
-        font-size: 13px;
-        opacity: 0.9;
-        margin-bottom: 6px;
-    }
-
-    .badge-role {
-        background: rgba(255, 255, 255, 0.2);
-        padding: 3px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .dropdown-divider {
-        height: 1px;
-        background: #eee;
-        margin: 8px 0;
-    }
-
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 20px;
-        color: #333;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        border: none;
-        background: none;
-        width: 100%;
-        text-align: left;
-        font-size: 14px;
-    }
-
-    .dropdown-item i {
-        font-size: 18px;
-        width: 20px;
-        text-align: center;
-    }
-
-    .dropdown-item:hover {
-        background: #f8f9fa;
-    }
-
-    .logout-btn {
-        color: #dc3545;
-    }
-
-    .logout-btn:hover {
-        background: #fff5f5;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .user-menu-btn {
-            padding: 8px;
-        }
-
-        .btn-outline-light {
-            padding: 6px 12px;
-            font-size: 14px;
-        }
-    }
-    </style>
 </head>
 
 <body>
@@ -227,7 +75,6 @@
             </nav>
 
             @auth
-            {{-- User Dropdown - Vendor Only --}}
             <div class="user-dropdown" style="position: relative;">
                 <button class="btn-getstarted user-menu-btn" id="userMenuBtn" type="button">
                     <i class="bi bi-person-circle" style="font-size: 18px; margin-right: 8px;"></i>
@@ -245,7 +92,7 @@
                                 <div class="user-name">{{ Auth::user()->name }}</div>
                                 <div class="user-email">{{ Auth::user()->email }}</div>
                                 <div class="user-role">
-                                    <span class="badge-role">Vendor</span>
+                                    <span class="badge-role">{{ ucfirst(Auth::user()->role) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -274,8 +121,8 @@
                     </form>
                 </div>
             </div>
+
             @else
-            {{-- User belum login --}}
             <a class="btn-getstarted" href="{{ route('login') }}">
                 <i class="bi bi-box-arrow-in-right" style="margin-right: 5px;"></i>
                 Login
@@ -621,6 +468,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <!-- Pelaporan JS -->
+    <script src="/LandingPage/assets/js/user-dropdown.js"></script>
     <script src="assets/js/pelaporan.js"></script>
     <script src="assets/js/main.js"></script>
     <script>

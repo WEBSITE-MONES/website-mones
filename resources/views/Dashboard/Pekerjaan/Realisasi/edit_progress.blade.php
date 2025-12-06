@@ -41,23 +41,40 @@ tr[class*="child-of-"] {
         <div class="page-header">
             <h3 class="fw-bold mb-3">Formulir Edit Progress Pekerjaan</h3>
             <ul class="breadcrumbs mb-3">
+                {{-- HOME (selalu tampil) --}}
                 <li class="nav-home">
                     <a href="{{ route('dashboard.index') }}">
                         <i class="icon-home"></i>
                     </a>
                 </li>
-                <li class="separator">
-                    <i class="icon-arrow-right"></i>
-                </li>
+
+                {{-- Jika datang dari menu Pekerjaan --}}
+                @if(session('from_pekerjaan'))
+                <li class="separator"><i class="icon-arrow-right"></i></li>
                 <li class="nav-item">
-                    <a href="#">Realisasi Berjalan</a>
+                    <a href="{{ route('pekerjaan.index') }}">Daftar Pekerjaan</a>
                 </li>
-                <li class="separator">
-                    <i class="icon-arrow-right"></i>
-                </li>
+                <li class="separator"><i class="icon-arrow-right"></i></li>
                 <li class="nav-item">
-                    <a href="#">Edit Progress</a>
+                    <a href="{{ route('pekerjaan.detail', session('pekerjaan_id')) }}">
+                        {{ session('pekerjaan_name') }}
+                    </a>
                 </li>
+                <li class="separator"><i class="icon-arrow-right"></i></li>
+                <li class="nav-item">
+                    <span class="text-muted">{{ session('sub_name') }}</span>
+                </li>
+                @else
+                {{-- Default breadcrumb (dari menu Realisasi) --}}
+                <li class="separator"><i class="icon-arrow-right"></i></li>
+                <li class="nav-item">
+                    <a href="{{ route('realisasi.index') }}">Realisasi Berjalan</a>
+                </li>
+                <li class="separator"><i class="icon-arrow-right"></i></li>
+                <li class="nav-item">
+                    <span class="text-muted">Edit Progress</span>
+                </li>
+                @endif
             </ul>
         </div>
         <a href="{{ url()->previous() }}" class="btn btn-light btn-sm">

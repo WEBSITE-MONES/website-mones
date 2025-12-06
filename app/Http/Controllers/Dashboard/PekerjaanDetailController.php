@@ -46,16 +46,34 @@ class PekerjaanDetailController extends Controller
         try {
             $pekerjaan = Pekerjaan::findOrFail($pekerjaan_id);
             $sub = SubPekerjaan::findOrFail($sub_id);
-            $pr = Pr::where('sub_pekerjaan_id', $sub->id)->first();
+
+            $pr = Pr::where('pekerjaan_id', $pekerjaan_id)
+                ->where(function ($query) use ($sub_id) {
+                    $query->where('sub_pekerjaan_id', $sub_id)
+                        ->orWhereHas('subPekerjaan', function ($q) use ($sub_id) {
+                            $q->where('id', $sub_id);
+                        });
+                })
+                ->first();
 
             if (!$pr) {
-                return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik_no_pr', compact('pekerjaan', 'sub'));
+                $pr = Pr::where('pekerjaan_id', $pekerjaan_id)->first();
+            }
+
+            if (!$pr) {
+                return view(
+                    'Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik_no_pr',
+                    compact('pekerjaan', 'sub')
+                );
             }
 
             $po = $pr->po;
+
             if (!$po) {
-                Log::warning("PO tidak ditemukan untuk PR ID: {$pr->id}");
-                return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik_no_po', compact('pekerjaan', 'pr', 'sub'));
+                return view(
+                    'Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik_no_po',
+                    compact('pekerjaan', 'pr', 'sub')
+                );
             }
 
             $progresses = $po->progresses()
@@ -63,115 +81,30 @@ class PekerjaanDetailController extends Controller
                 ->get();
 
             if ($progresses->isEmpty()) {
-                return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik_empty', compact('pekerjaan', 'pr', 'po', 'sub'));
+                return view(
+                    'Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik_empty',
+                    compact('pekerjaan', 'pr', 'po', 'sub')
+                );
             }
 
-            $masterMinggu = MasterMinggu::where('po_id', $po->id)
-                ->orderBy('minggu_ke')
-                ->get();
-
-            if ($masterMinggu->isEmpty()) {
-                return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik_empty', compact('pekerjaan', 'pr', 'po', 'sub'));
-            }
-            $chartLabels = [];
-            $chartRencana = [];
-            $chartRealisasi = [];
-            $rencanaKumulatif = 0;
-            $realisasiKumulatif = 0;
-
-            foreach ($masterMinggu as $minggu) {
-                $chartLabels[] = $minggu->kode_minggu;
-
-                $totalRencana = $progresses->sum(function ($p) use ($minggu) {
-                    $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
-                    return (float) ($detail?->bobot_rencana ?? 0);
-                });
-
-                $totalRealisasi = $progresses->sum(function ($p) use ($minggu) {
-                    $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
-                    return (float) ($detail?->bobot_realisasi ?? 0);
-                });
-
-                $rencanaKumulatif += $totalRencana;
-                $realisasiKumulatif += $totalRealisasi;
-
-                $chartRencana[] = round($rencanaKumulatif, 2);
-                $chartRealisasi[] = round($realisasiKumulatif, 2);
-            }
-
-            $rencanaPct = $rencanaKumulatif;
-            $realisasiPct = $realisasiKumulatif;
-            $deviasiPct = $realisasiPct - $rencanaPct;
-
-            $monthlyData = collect();
-            foreach ($masterMinggu->groupBy('bulan') as $bulan => $minggus) {
-                $rencana = 0;
-                $realisasi = 0;
-
-                foreach ($minggus as $minggu) {
-                    $rencana += $progresses->sum(function ($p) use ($minggu) {
-                        $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
-                        return (float) ($detail?->bobot_rencana ?? 0);
-                    });
-
-                    $realisasi += $progresses->sum(function ($p) use ($minggu) {
-                        $detail = $p->details?->firstWhere('minggu_id', $minggu->id);
-                        return (float) ($detail?->bobot_realisasi ?? 0);
-                    });
-                }
-
-                $monthlyData->push([
-                    'bulan' => $bulan,
-                    'bulan_label' => \Carbon\Carbon::parse($bulan . '-01')->format('M Y'),
-                    'rencana' => $rencana,
-                    'realisasi' => $realisasi,
-                    'deviasi' => $realisasi - $rencana,
-                ]);
-            }
-
-            $rencanaKumulatifBulanan = [];
-            $realisasiKumulatifBulanan = [];
-            $totalRencanaBulan = 0;
-            $totalRealisasiBulan = 0;
-
-            foreach ($monthlyData as $item) {
-                $totalRencanaBulan += $item['rencana'];
-                $totalRealisasiBulan += $item['realisasi'];
-
-                $rencanaKumulatifBulanan[] = round($totalRencanaBulan, 2);
-                $realisasiKumulatifBulanan[] = round($totalRealisasiBulan, 2);
-            }
-
-            $labels = $monthlyData->pluck('bulan_label');
-
-            return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik', compact(
-                'pekerjaan',
-                'pr',
-                'po',
-                'progresses',
-                'masterMinggu',
-                'rencanaPct',
-                'realisasiPct',
-                'deviasiPct',
-                'chartLabels',
-                'chartRencana',
-                'chartRealisasi',
-                'monthlyData',
-                'labels',
-                'rencanaKumulatifBulanan',
-                'realisasiKumulatifBulanan',
-                'sub'
-            ));
+            // ✅ REDIRECT KE HALAMAN EDIT PROGRESS
+            return redirect()->route('realisasi.editProgress', $po->id)
+                ->with('from_pekerjaan', true)
+                ->with('pekerjaan_id', $pekerjaan->id)
+                ->with('pekerjaan_name', $pekerjaan->nama_investasi)
+                ->with('sub_name', $sub->nama_sub)
+                ->with('success', "Menampilkan progress untuk: {$sub->nama_sub}");
         } catch (\Exception $e) {
-
-            return view('Dashboard.Pekerjaan.Pekerjaan_Detail.progress.progress_fisik_error', [
-                'pekerjaan' => Pekerjaan::find($pekerjaan_id),
-                'error' => $e->getMessage()
+            Log::error('Error loading progress fisik sub: ' . $e->getMessage(), [
+                'pekerjaan_id' => $pekerjaan_id,
+                'sub_id' => $sub_id,
+                'trace' => $e->getTraceAsString()
             ]);
+
+            return redirect()->route('pekerjaan.index')
+                ->with('error', 'Gagal memuat progress: ' . $e->getMessage());
         }
     }
-
-
 
     // Progress RKAP
     public function penyerapanRkap($id)

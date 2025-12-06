@@ -1657,4 +1657,80 @@ class ProgresController extends Controller
         }
     }
     // end export dokumentasi pdf
+
+    // laporan harian print dan export pdf
+    public function exportLaporanPdf($id)
+    {
+        try {
+            $report = DailyProgress::with([
+                'po:id,nomor_po,pelaksana,pr_id',
+                'po.pr.pekerjaan:id,nama_investasi',
+                'pekerjaanItem:id,kode_pekerjaan,jenis_pekerjaan_utama,sub_pekerjaan,sub_sub_pekerjaan',
+                'pelapor:id,name'
+            ])->findOrFail($id);
+
+            // Check authorization
+            if (Auth::user()->role === 'user' && $report->pelapor_id !== Auth::id()) {
+                abort(403, 'Unauthorized access');
+            }
+
+            // Get project name
+            $namaProyek = 'Unknown Project';
+            if ($report->po && $report->po->pr && $report->po->pr->pekerjaan) {
+                $namaProyek = $report->po->pr->pekerjaan->nama_investasi;
+            }
+
+            // Get item name
+            $namaItem = 'Unknown Item';
+            if ($report->pekerjaanItem) {
+                $item = $report->pekerjaanItem;
+                $namaItem = $item->jenis_pekerjaan_utama
+                    ?: ($item->sub_pekerjaan
+                        ?: ($item->sub_sub_pekerjaan
+                            ?: 'Item Pekerjaan'));
+            }
+
+            // Convert photos to base64
+            $photosWithBase64 = [];
+            if (!empty($report->foto) && is_array($report->foto)) {
+                foreach ($report->foto as $index => $foto) {
+                    $imageData = $this->getImageAsBase64($foto['url']);
+                    if ($imageData) {
+                        $photosWithBase64[] = [
+                            'data' => $imageData,
+                            'location' => $foto['location_name'] ?? 'Unknown',
+                            'gps' => [
+                                'lat' => $foto['gps_lat'] ?? $report->gps_latitude ?? 0,
+                                'lon' => $foto['gps_lon'] ?? $report->gps_longitude ?? 0
+                            ]
+                        ];
+                    }
+                }
+            }
+
+            $data = [
+                'report' => $report,
+                'namaProyek' => $namaProyek,
+                'namaItem' => $namaItem,
+                'photos' => $photosWithBase64
+            ];
+
+            $pdf = Pdf::loadView('LandingPage.pdf.laporan-harian', $data);
+            $pdf->setPaper('a4', 'portrait');
+
+            $filename = 'Laporan_Harian_' . $report->tanggal->format('Ymd') . '_' . $report->id . '.pdf';
+
+            return $pdf->download($filename);
+        } catch (\Exception $e) {
+            Log::error('Error exporting laporan PDF', [
+                'id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Gagal export PDF: ' . $e->getMessage());
+        }
+    }
+
+    // end
 }

@@ -11,6 +11,10 @@
     <link href="/LandingPage/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/LandingPage/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <link href="/LandingPage/assets/css/main.css" rel="stylesheet">
+
+    <!-- User Dropdown CSS -->
+    <link href="/LandingPage/assets/css/user-dropdown.css" rel="stylesheet">
+
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
     <link
@@ -19,134 +23,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
-    .user-menu-btn {
-        display: flex;
-        align-items: center;
-        background: transparent;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        color: #fff;
-        padding: 8px 16px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .user-menu-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.5);
-    }
-
-    .dropdown-menu-custom {
-        display: none;
-        position: absolute;
-        top: calc(100% + 10px);
-        right: 0;
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        min-width: 280px;
-        z-index: 1000;
-        animation: slideDown 0.3s ease;
-    }
-
-    .dropdown-menu-custom.show {
-        display: block;
-    }
-
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .dropdown-header {
-        padding: 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 12px 12px 0 0;
-        color: #fff;
-    }
-
-    .user-info {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .user-avatar {
-        font-size: 50px;
-        line-height: 1;
-    }
-
-    .user-details {
-        flex: 1;
-    }
-
-    .user-name {
-        font-weight: 600;
-        font-size: 16px;
-        margin-bottom: 4px;
-    }
-
-    .user-email {
-        font-size: 13px;
-        opacity: 0.9;
-        margin-bottom: 6px;
-    }
-
-    .badge-role {
-        background: rgba(255, 255, 255, 0.2);
-        padding: 3px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .dropdown-divider {
-        height: 1px;
-        background: #eee;
-        margin: 8px 0;
-    }
-
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 20px;
-        color: #333;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        border: none;
-        background: none;
-        width: 100%;
-        text-align: left;
-        font-size: 14px;
-    }
-
-    .dropdown-item i {
-        font-size: 18px;
-        width: 20px;
-        text-align: center;
-    }
-
-    .dropdown-item:hover {
-        background: #f8f9fa;
-    }
-
-    .logout-btn {
-        color: #dc3545;
-    }
-
-    .logout-btn:hover {
-        background: #fff5f5;
-    }
-
+    /* ✅ HANYA STYLE UNTUK PAGE-SPECIFIC (BUKAN USER DROPDOWN) */
     :root {
         --primary-color: #1d6ba8;
         --secondary-color: #2b7ab5;
@@ -355,14 +232,14 @@
 
                     <div class="dropdown-divider"></div>
 
-                    <a href="{{ route('account.index') }}" class="dropdown-item">
+                    <a href="{{ route('landingpage.profile') }}" class="dropdown-item">
                         <i class="bi bi-person"></i>
                         <span>Profile Saya</span>
                     </a>
 
-                    <a href="{{ route('account.setting') }}" class="dropdown-item">
-                        <i class="bi bi-gear"></i>
-                        <span>Pengaturan</span>
+                    <a href="{{ route('landingpage.profile.password') }}" class="dropdown-item">
+                        <i class="bi bi-key"></i>
+                        <span>Ubah Password</span>
                     </a>
 
                     <div class="dropdown-divider"></div>
@@ -540,34 +417,18 @@
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="/LandingPage/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/main.js"></script>
+
+    <!-- ✅ User Dropdown JS - MUST BE LOADED BEFORE page-specific scripts -->
+    <script src="/LandingPage/assets/js/user-dropdown.js"></script>
+
+    <!-- Page-specific scripts -->
+    <script src="/LandingPage/assets/js/main.js"></script>
 
     <script>
-    document.getElementById('userMenuBtn').addEventListener('click', function(e) {
-        e.stopPropagation();
-        const dropdown = document.getElementById('userDropdownMenu');
-        dropdown.classList.toggle('show');
-    });
-
-    document.addEventListener('click', function(e) {
-        const dropdown = document.getElementById('userDropdownMenu');
-        const button = document.getElementById('userMenuBtn');
-
-        if (!button.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.classList.remove('show');
-        }
-    });
-
-    document.querySelectorAll('.dropdown-item').forEach(item => {
-        item.addEventListener('click', function() {
-            document.getElementById('userDropdownMenu').classList.remove('show');
-        });
-    });
-    </script>
-
-    <script>
+    // ✅ HANYA SCRIPT UNTUK PHOTO GALLERY (BUKAN USER DROPDOWN)
     let allPhotos = [];
     let currentPhotoIndex = 0;
     let selectedPhotoIds = new Set();

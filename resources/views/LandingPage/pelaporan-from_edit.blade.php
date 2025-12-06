@@ -442,10 +442,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Pelaporan Edit JS -->
+    <script src="/LandingPage/assets/js/user-dropdown.js"></script>
     <script src="assets/js/pelaporan_edit.js"></script>
     <script src="assets/js/main.js"></script>
-
-
 </body>
 
 </html>

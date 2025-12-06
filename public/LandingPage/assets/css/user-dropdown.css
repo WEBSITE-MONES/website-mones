@@ -1,0 +1,224 @@
+/* ====================================
+   USER DROPDOWN MENU - GLOBAL STYLES
+   ==================================== */
+
+/* Button Styling */
+.user-menu-btn {
+    display: flex;
+    align-items: center;
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.user-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.user-menu-btn:active {
+    transform: translateY(0);
+}
+
+/* Dropdown Container */
+.user-dropdown {
+    position: relative;
+}
+
+.dropdown-menu-custom {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    min-width: 280px;
+    z-index: 1000;
+    animation: slideDown 0.3s ease;
+    overflow: hidden;
+}
+
+.dropdown-menu-custom.show {
+    display: block;
+}
+
+/* Animation */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header Section */
+.dropdown-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #37517e 0%, #37517e 100%);
+    border-radius: 12px 12px 0 0;
+    color: #fff;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-avatar {
+    font-size: 50px;
+    line-height: 1;
+    color: #fff;
+}
+
+.user-details {
+    flex: 1;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 4px;
+    color: #fff;
+}
+
+.user-email {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-bottom: 6px;
+    color: #fff;
+    word-break: break-word;
+}
+
+.user-role {
+    margin-top: 6px;
+}
+
+.badge-role {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+/* Divider */
+.dropdown-divider {
+    height: 1px;
+    background: #eee;
+    margin: 8px 0;
+}
+
+/* Menu Items */
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: #333;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-size: 14px;
+}
+
+.dropdown-item i {
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+    color: #667eea;
+}
+
+.dropdown-item:hover {
+    background: #f8f9fa;
+}
+
+.dropdown-item:active {
+    background: #e9ecef;
+}
+
+/* Logout Button Specific */
+.logout-btn {
+    color: #dc3545;
+}
+
+.logout-btn i {
+    color: #dc3545;
+}
+
+.logout-btn:hover {
+    background: #fff5f5;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .user-menu-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .user-menu-btn i {
+        font-size: 16px !important;
+    }
+    
+    .dropdown-menu-custom {
+        min-width: 260px;
+        right: -10px;
+    }
+    
+    .user-avatar {
+        font-size: 40px;
+    }
+    
+    .user-name {
+        font-size: 14px;
+    }
+    
+    .user-email {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dropdown-menu-custom {
+        min-width: calc(100vw - 40px);
+        right: -10px;
+    }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+    .dropdown-menu-custom {
+        background: #ffffff;
+        box-shadow: 0 10px 40px rgba(245, 232, 232, 0.5);
+    }
+    
+    .dropdown-item {
+        color: #524949;
+    }
+    
+    .dropdown-item:hover {
+        background: #ece9e9;
+    }
+    
+    .dropdown-divider {
+        background: #a19e9e;
+    }
+}

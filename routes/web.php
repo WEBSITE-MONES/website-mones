@@ -273,7 +273,11 @@ Route::prefix('landingpage')->name('landingpage.')->group(function () {
         Route::get('/monitoring-progress', [ProgresController::class, 'monitoringProgress'])
             ->name('monitoring.progress');
 
-        // ========== PROFILE VENDOR ROUTES (BARU) ==========
+        // ========== EXPORT & PRINT ROUTES  ==========
+        Route::get('/laporan/{id}/export-pdf', [ProgresController::class, 'exportLaporanPdf'])
+            ->name('laporan.export.pdf');
+
+        // ========== PROFILE VENDOR ROUTES ==========
         Route::get('/profile', [ProgresController::class, 'vendorProfile'])->name('profile');
         Route::get('/profile/edit', [ProgresController::class, 'vendorProfileEdit'])->name('profile.edit');
         Route::put('/profile/update', [ProgresController::class, 'vendorProfileUpdate'])->name('profile.update');

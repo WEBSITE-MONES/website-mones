@@ -166,7 +166,7 @@
                     <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center"
                         data-aos="zoom-out">
                         <h1>SELAMAT DATANG</h1>
-                        <p>PT. CIPTA RANCANG KONTRUKSI</p>
+                        <p>PT. Pelabuhan Indonesia (Persero) Regional 4</p>
                         <div class="d-flex">
                             <a href="#about" class="btn-get-started">Get Started</a>
                         </div>

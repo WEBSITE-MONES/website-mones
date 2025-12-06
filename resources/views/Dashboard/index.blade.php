@@ -47,7 +47,25 @@
                             <h4 class="card-title fw-bolder text-dark mb-0">
                                 Rp {{ number_format($totalNilaiInvestasi, 0, ',', '.') }}
                             </h4>
-                            <small class="text-success fw-bold"><i class="fas fa-arrow-up"></i> 5%</small>
+                            @if($growthNilaiInvestasi != 0)
+                            @if(abs($growthNilaiInvestasi) > 100)
+                            <small class="fw-bold {{ $growthNilaiInvestasi >= 0 ? 'text-success' : 'text-danger' }}">
+                                <i class="fas fa-arrow-{{ $growthNilaiInvestasi >= 0 ? 'up' : 'down' }}"></i>
+                                {{ $growthNilaiInvestasi >= 0 ? 'Naik' : 'Turun' }}
+                                Rp {{ number_format(abs($selisihNilaiInvestasi), 0, ',', '.') }}
+                                <br>
+                                <span class="text-muted" style="font-size: 0.75rem;">vs {{ $tahunLalu }}</span>
+                            </small>
+                            @else
+                            <small class="fw-bold {{ $growthNilaiInvestasi >= 0 ? 'text-success' : 'text-danger' }}">
+                                <i class="fas fa-arrow-{{ $growthNilaiInvestasi >= 0 ? 'up' : 'down' }}"></i>
+                                {{ $growthNilaiInvestasi >= 0 ? '+' : '' }}{{ number_format($growthNilaiInvestasi, 1) }}%
+                                vs {{ $tahunLalu }}
+                            </small>
+                            @endif
+                            @else
+                            <small class="text-muted">Tidak ada data {{ $tahunLalu }}</small>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -64,7 +82,14 @@
                         <div class="flex-grow-1">
                             <p class="card-category text-muted mb-1 small">Total Proyek {{ $tahun }}</p>
                             <h4 class="card-title fw-bolder text-dark mb-0">{{ $jumlahProyek }} Proyek</h4>
-                            <small class="text-success fw-bold"><i class="fas fa-plus"></i> 2 baru</small>
+                            @if($selisihProyek != 0)
+                            <small class="fw-bold {{ $selisihProyek > 0 ? 'text-success' : 'text-danger' }}">
+                                <i class="fas fa-{{ $selisihProyek > 0 ? 'plus' : 'minus' }}"></i>
+                                {{ abs($selisihProyek) }} {{ $selisihProyek > 0 ? 'proyek baru' : 'berkurang' }}
+                            </small>
+                            @else
+                            <small class="text-muted">Sama dengan tahun {{ $tahunLalu }}</small>
+                            @endif
                         </div>
                     </div>
                 </div>

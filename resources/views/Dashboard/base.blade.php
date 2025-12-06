@@ -163,13 +163,13 @@
                                     <li class="{{ request()->routeIs('laporan.index') ? 'active' : '' }}">
                                         <a href="{{ route('laporan.index') }}">
                                             <i></i>
-                                            <span class="sub-item">Investasi</span>
+                                            <span class="sub-item">Laporan Mingguan</span>
                                         </a>
                                     </li>
-                                    <li>
-                                        <a href="#">
+                                    <li class="{{ request()->routeIs('laporan.index') ? 'active' : '' }}">
+                                        <a href="{{ route('laporan.index') }}">
                                             <i></i>
-                                            <span class="sub-item">Kontrak</span>
+                                            <span class="sub-item">Laporan Bulanan</span>
                                         </a>
                                     </li>
                                 </ul>
@@ -498,7 +498,6 @@
         loadWeather();
     }
     </script>
-
 </body>
 
 @stack('scripts')
